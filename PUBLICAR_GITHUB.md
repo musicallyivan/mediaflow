@@ -1,0 +1,55 @@
+# Publicar en GitHub
+
+## 1. Crear el repositorio
+
+Crea un repositorio en GitHub llamado:
+
+```text
+youtube-mp3-downloader
+```
+
+El programa ya esta configurado para usar:
+
+```python
+GITHUB_REPO = os.environ.get("YTMP3_GITHUB_REPO", "musicallyivan/youtube-mp3-downloader")
+```
+
+## 2. Subir el codigo
+
+No subas `ffmpeg.exe`, `ffprobe.exe`, `cookies.txt`, `downloads/`, `dist/` ni `build/`.
+Ya estan excluidos por `.gitignore`.
+
+Comandos:
+
+```powershell
+git init
+git add .
+git commit -m "Initial release"
+git branch -M main
+git remote add origin https://github.com/musicallyivan/youtube-mp3-downloader.git
+git push -u origin main
+```
+
+## 3. Publicar una release
+
+Para publicar la version `1.0.0`:
+
+```powershell
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+GitHub Actions ejecutara `.github/workflows/release.yml` y publicara un ZIP en Releases.
+
+## 4. Nueva version
+
+Para cada version nueva:
+
+1. Cambia `APP_VERSION` en `app.py`.
+2. Cambia `VERSION`.
+3. Añade la seccion correspondiente en `CHANGELOG.md`.
+4. Haz commit.
+5. Crea un tag `vX.Y.Z`.
+6. Sube el tag.
+
+La app detectara la nueva version al consultar la ultima release publicada.
