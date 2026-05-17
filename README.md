@@ -1,8 +1,8 @@
-# Descargar YouTube a MP3
+# Descargar YouTube a MP3/MP4
 
 Version actual: `1.0.0`
 
-Programa local para pegar un enlace de YouTube y descargar el audio como MP3.
+Programa local para pegar un enlace de YouTube y descargarlo como MP3 o MP4.
 
 ## Requisitos
 
@@ -28,8 +28,10 @@ Opcion manual:
 
 1. Haz doble clic en `instalar_y_abrir.bat`.
 2. Pega el enlace de YouTube.
-3. Elige la carpeta donde guardar el MP3.
-4. Pulsa `Descargar MP3`.
+3. Elige la carpeta de destino.
+4. Elige `MP3` o `MP4`.
+5. Elige la calidad de audio: `128 kbps`, `192 kbps`, `256 kbps` o `320 kbps`.
+6. Pulsa `Descargar MP3` o `Descargar MP4`.
 
 ## Si YouTube pide iniciar sesion o comprobar que no eres un robot
 

@@ -18,3 +18,10 @@ Todas las versiones publicadas se documentan en este archivo.
 - Corregidos textos corruptos por codificacion.
 - Evitado el uso automatico de un `cookies.txt` caducado.
 - Mejorados los mensajes de error para `ffmpeg`, cookies y dependencias.
+
+## [1.0.1] - 2026-05-17
+
+### Added
+
+- Hemos añadido la opción de MP4.
+- Hemos configurado para que elijais la opción de calidad de audio MP3 (128, 192, 256 o 320 kbps).

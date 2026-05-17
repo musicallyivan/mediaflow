@@ -13,8 +13,8 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Any, Optional
 
 
-APP_TITLE = "Descargar YouTube a MP3"
-APP_VERSION = "1.0.0"
+APP_TITLE = "Descargar YouTube a MP3/MP4"
+APP_VERSION = "1.0.1"
 GITHUB_REPO = os.environ.get("YTMP3_GITHUB_REPO", "musicallyivan/youtube-mp3-downloader")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 LATEST_RELEASE_PAGE = f"https://github.com/{GITHUB_REPO}/releases/latest"
@@ -135,11 +135,13 @@ class YouTubeMp3App(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title(f"{APP_TITLE} v{APP_VERSION}")
-        self.geometry("620x500")
-        self.minsize(560, 470)
+        self.geometry("620x560")
+        self.minsize(560, 530)
 
         self.output_dir = tk.StringVar(value=str(default_download_dir()))
         self.url = tk.StringVar()
+        self.download_format = tk.StringVar(value="MP3")
+        self.audio_quality = tk.StringVar(value="192 kbps")
         self.browser_cookies = tk.StringVar(value="Ninguno")
         self.cookies_file = tk.StringVar(value="")
         self.status = tk.StringVar(value="Pega un enlace de YouTube para empezar.")
@@ -183,11 +185,37 @@ class YouTubeMp3App(tk.Tk):
         folder_button = ttk.Button(folder_row, text="Elegir...", command=self._choose_folder)
         folder_button.grid(row=0, column=1, padx=(8, 0))
 
+        format_label = ttk.Label(main, text="Formato y calidad de audio")
+        format_label.grid(row=5, column=0, sticky="w", pady=(18, 6))
+
+        format_row = ttk.Frame(main)
+        format_row.grid(row=6, column=0, sticky="ew")
+        format_row.columnconfigure(1, weight=1)
+
+        format_combo = ttk.Combobox(
+            format_row,
+            textvariable=self.download_format,
+            values=("MP3", "MP4"),
+            state="readonly",
+            width=12,
+        )
+        format_combo.grid(row=0, column=0, sticky="w")
+        format_combo.bind("<<ComboboxSelected>>", lambda _event: self._update_download_button_text())
+
+        quality_combo = ttk.Combobox(
+            format_row,
+            textvariable=self.audio_quality,
+            values=("128 kbps", "192 kbps", "256 kbps", "320 kbps"),
+            state="readonly",
+            width=12,
+        )
+        quality_combo.grid(row=0, column=1, sticky="w", padx=(8, 0))
+
         cookies_label = ttk.Label(main, text="Cookies de YouTube (si YouTube pide iniciar sesion)")
-        cookies_label.grid(row=5, column=0, sticky="w", pady=(18, 6))
+        cookies_label.grid(row=7, column=0, sticky="w", pady=(18, 6))
 
         cookies_row = ttk.Frame(main)
-        cookies_row.grid(row=6, column=0, sticky="ew")
+        cookies_row.grid(row=8, column=0, sticky="ew")
         cookies_row.columnconfigure(1, weight=1)
 
         browser_combo = ttk.Combobox(
@@ -210,19 +238,19 @@ class YouTubeMp3App(tk.Tk):
             text="Descargar MP3",
             command=self._start_download,
         )
-        self.download_button.grid(row=7, column=0, sticky="ew", pady=(24, 8), ipady=6)
+        self.download_button.grid(row=9, column=0, sticky="ew", pady=(24, 8), ipady=6)
 
         self.progress = ttk.Progressbar(main, mode="indeterminate")
-        self.progress.grid(row=8, column=0, sticky="ew", pady=(4, 8))
+        self.progress.grid(row=10, column=0, sticky="ew", pady=(4, 8))
 
         status = ttk.Label(main, textvariable=self.status, wraplength=540)
-        status.grid(row=9, column=0, sticky="w")
+        status.grid(row=11, column=0, sticky="w")
 
         progress_detail = ttk.Label(main, textvariable=self.progress_text, foreground="#555555")
-        progress_detail.grid(row=10, column=0, sticky="w", pady=(6, 0))
+        progress_detail.grid(row=12, column=0, sticky="w", pady=(6, 0))
 
         footer = ttk.Frame(main)
-        footer.grid(row=11, column=0, sticky="ew", pady=(20, 0))
+        footer.grid(row=13, column=0, sticky="ew", pady=(20, 0))
         footer.columnconfigure(0, weight=1)
 
         version_label = ttk.Label(footer, text=f"Version {APP_VERSION}", foreground="#666666")
@@ -230,6 +258,9 @@ class YouTubeMp3App(tk.Tk):
 
         update_button = ttk.Button(footer, text="Buscar actualizaciones", command=self._check_for_updates)
         update_button.grid(row=0, column=1, sticky="e")
+
+    def _update_download_button_text(self) -> None:
+        self.download_button.configure(text=f"Descargar {self.download_format.get()}")
 
     def _choose_folder(self) -> None:
         selected = filedialog.askdirectory(initialdir=self.output_dir.get() or str(Path.home()))
@@ -248,6 +279,8 @@ class YouTubeMp3App(tk.Tk):
     def _start_download(self) -> None:
         url = self.url.get().strip()
         output_dir = Path(self.output_dir.get()).expanduser()
+        download_format = self.download_format.get()
+        audio_quality = self.audio_quality.get().split()[0]
         browser = self.browser_cookies.get()
         cookies_file = self.cookies_file.get().strip()
         using_cookies_file = browser == "Ninguno" and bool(cookies_file)
@@ -274,12 +307,12 @@ class YouTubeMp3App(tk.Tk):
 
         self.download_button.configure(state="disabled")
         self.progress.start(12)
-        self.status.set("Descargando y convirtiendo a MP3...")
+        self.status.set(f"Descargando {download_format} con audio a {audio_quality} kbps...")
         self.progress_text.set("")
 
         self.worker = threading.Thread(
             target=self._download,
-            args=(url, str(output_dir), ffmpeg, browser, cookies_file),
+            args=(url, str(output_dir), ffmpeg, browser, cookies_file, download_format, audio_quality),
             daemon=True,
         )
         self.worker.start()
@@ -312,11 +345,21 @@ class YouTubeMp3App(tk.Tk):
             if not silent:
                 self.messages.put(("update_error", f"No se pudo comprobar si hay actualizaciones.\n\n{exc}"))
 
-    def _download(self, url: str, output_dir: str, ffmpeg: str, browser: str, cookies_file: str) -> None:
+    def _download(
+        self,
+        url: str,
+        output_dir: str,
+        ffmpeg: str,
+        browser: str,
+        cookies_file: str,
+        download_format: str,
+        audio_quality: str,
+    ) -> None:
         try:
             import yt_dlp
 
             ffmpeg_dir = str(Path(ffmpeg).resolve().parent)
+            extension = download_format.lower()
 
             def hook(data: dict) -> None:
                 status = data.get("status")
@@ -327,20 +370,15 @@ class YouTubeMp3App(tk.Tk):
                     detail = " ".join(part for part in [percent, speed, f"ETA {eta}" if eta else ""] if part)
                     self.messages.put(("progress", detail))
                 elif status == "finished":
-                    self.messages.put(("progress", "Convirtiendo a MP3..."))
+                    if download_format == "MP3":
+                        self.messages.put(("progress", "Convirtiendo a MP3..."))
+                    else:
+                        self.messages.put(("progress", "Preparando MP4..."))
 
             options = {
-                "format": "bestaudio/best",
                 "outtmpl": os.path.join(output_dir, "%(title).200B.%(ext)s"),
                 "noplaylist": True,
                 "ffmpeg_location": ffmpeg_dir,
-                "postprocessors": [
-                    {
-                        "key": "FFmpegExtractAudio",
-                        "preferredcodec": "mp3",
-                        "preferredquality": "192",
-                    }
-                ],
                 "progress_hooks": [hook],
                 "quiet": True,
                 "no_warnings": True,
@@ -348,6 +386,31 @@ class YouTubeMp3App(tk.Tk):
                 "fragment_retries": 5,
                 "windowsfilenames": True,
             }
+            if download_format == "MP3":
+                options.update(
+                    {
+                        "format": "bestaudio/best",
+                        "postprocessors": [
+                            {
+                                "key": "FFmpegExtractAudio",
+                                "preferredcodec": "mp3",
+                                "preferredquality": audio_quality,
+                            }
+                        ],
+                    }
+                )
+            else:
+                options.update(
+                    {
+                        "format": (
+                            f"bv*[ext=mp4]+ba[ext=m4a][abr<={audio_quality}]/"
+                            f"bv*[ext=mp4]+ba[abr<={audio_quality}]/"
+                            f"b[ext=mp4][abr<={audio_quality}]/"
+                            "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/best"
+                        ),
+                        "merge_output_format": "mp4",
+                    }
+                )
             options.update(selected_cookie_options(browser, cookies_file))
             options.update(javascript_runtime_options())
 
@@ -355,7 +418,7 @@ class YouTubeMp3App(tk.Tk):
                 info = downloader.extract_info(url, download=True)
                 title = info.get("title") or "video"
 
-            self.messages.put(("done", f"Listo: {title}"))
+            self.messages.put(("done", (title, extension)))
         except ModuleNotFoundError:
             self.messages.put(
                 (
@@ -392,15 +455,16 @@ class YouTubeMp3App(tk.Tk):
                 if kind == "progress":
                     self.progress_text.set(text)
                 elif kind == "done":
+                    title, extension = text
                     self.progress.stop()
                     self.download_button.configure(state="normal")
-                    self.status.set(text)
-                    self.progress_text.set("El archivo MP3 esta en la carpeta elegida.")
-                    messagebox.showinfo(APP_TITLE, text)
+                    self.status.set(f"Listo: {title}")
+                    self.progress_text.set(f"El archivo {extension.upper()} esta en la carpeta elegida.")
+                    messagebox.showinfo(APP_TITLE, f"Listo: {title}")
                 elif kind == "error":
                     self.progress.stop()
                     self.download_button.configure(state="normal")
-                    self.status.set("No se pudo descargar el MP3.")
+                    self.status.set("No se pudo descargar el archivo.")
                     self.progress_text.set(text)
                     messagebox.showerror(APP_TITLE, text)
                 elif kind == "update_available":
