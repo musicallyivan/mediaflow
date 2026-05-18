@@ -2,6 +2,12 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.4.1] - 2026-05-18
+
+### Changed
+
+- Actualizado el repositorio de actualizaciones y documentacion a `musicallyivan/mediaflow`.
+
 ## [1.4.0] - 2026-05-18
 
 ### Changed

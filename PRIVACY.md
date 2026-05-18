@@ -22,4 +22,4 @@ La app puede consultar GitHub Releases para comprobar si hay una version nueva. 
 
 Para dudas de privacidad o soporte, usa la pagina del proyecto:
 
-https://github.com/musicallyivan/media-converter
+https://github.com/musicallyivan/mediaflow
