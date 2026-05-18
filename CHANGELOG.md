@@ -2,6 +2,12 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.4.6] - 2026-05-19
+
+### Changed
+
+- Manifest MSIX alineado con la identidad asignada por Microsoft Partner Center.
+
 ## [1.4.5] - 2026-05-19
 
 ### Added

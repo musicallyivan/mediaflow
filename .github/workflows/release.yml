@@ -77,7 +77,8 @@ jobs:
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
           $packageVersion = "$version.0"
-          $publisher = if ($env:MSIX_PUBLISHER) { $env:MSIX_PUBLISHER } else { "CN=musicallyivan" }
+          $packageName = "MusicallyIvan.MediaFlow"
+          $publisher = if ($env:MSIX_PUBLISHER) { $env:MSIX_PUBLISHER } else { "CN=33EC4121-53F8-4312-9812-C8687536BF5A" }
           $msixName = "media-flow-${{ github.ref_name }}.msix"
           $appInstallerName = "media-flow-${{ github.ref_name }}.appinstaller"
           $packageRoot = "build\msix\package"
@@ -117,6 +118,7 @@ jobs:
           }
 
           [xml]$manifest = Get-Content packaging\msix\AppxManifest.xml
+          $manifest.Package.Identity.Name = $packageName
           $manifest.Package.Identity.Version = $packageVersion
           $manifest.Package.Identity.Publisher = $publisher
           $manifest.Save((Join-Path $packageRoot "AppxManifest.xml"))
@@ -160,7 +162,7 @@ jobs:
             Uri="$releaseBaseUri/$appInstallerName"
             Version="$packageVersion">
             <MainPackage
-              Name="musicallyivan.MediaFlow"
+              Name="$packageName"
               Publisher="$publisher"
               Version="$packageVersion"
               ProcessorArchitecture="x64"

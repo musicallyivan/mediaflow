@@ -34,11 +34,11 @@ git push -u origin main
 
 ## 3. Publicar una release
 
-Para publicar la version `1.4.5`:
+Para publicar la version `1.4.6`:
 
 ```powershell
-git tag v1.4.5
-git push origin v1.4.5
+git tag v1.4.6
+git push origin v1.4.6
 ```
 
 GitHub Actions ejecutara `.github/workflows/release.yml` y publicara estos archivos en Releases:
@@ -52,9 +52,17 @@ Para que el MSIX sea instalable directamente fuera de Microsoft Store, configura
 
 - Secret `MSIX_PFX_BASE64`: certificado `.pfx` codificado en base64.
 - Secret `MSIX_PFX_PASSWORD`: contrasena del certificado.
-- Variable `MSIX_PUBLISHER`: publisher del certificado, por ejemplo `CN=musicallyivan`.
+- Variable `MSIX_PUBLISHER`: publisher de Partner Center, por ejemplo `CN=33EC4121-53F8-4312-9812-C8687536BF5A`.
 
 Si no configuras el certificado, el workflow genera el MSIX sin firmar. Ese paquete sirve como base para Microsoft Store o para firmarlo despues, pero Windows no lo instalara directamente con doble clic.
+
+Para Microsoft Store, el manifest debe coincidir con los valores de Partner Center:
+
+- `Package/Identity/Name`: `MusicallyIvan.MediaFlow`
+- `Package/Identity/Publisher`: `CN=33EC4121-53F8-4312-9812-C8687536BF5A`
+- `Package/Properties/PublisherDisplayName`: `Musically Ivan`
+
+No copies el PFN, Package SID ni Store ID en `AppxManifest.xml`; Microsoft los deriva o los usa en Partner Center.
 
 ## 4. Nueva version
 

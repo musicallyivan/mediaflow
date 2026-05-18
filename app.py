@@ -16,7 +16,7 @@ import tkinter as tk
 
 
 APP_TITLE = "Media Flow"
-APP_VERSION = "1.4.5"
+APP_VERSION = "1.4.6"
 GITHUB_REPO = os.environ.get("MEDIA_FLOW_GITHUB_REPO", "musicallyivan/mediaflow")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 

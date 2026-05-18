@@ -5,13 +5,13 @@
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
   IgnorableNamespaces="uap rescap">
   <Identity
-    Name="musicallyivan.MediaFlow"
-    Publisher="CN=musicallyivan"
+    Name="MusicallyIvan.MediaFlow"
+    Publisher="CN=33EC4121-53F8-4312-9812-C8687536BF5A"
     Version="0.0.0.0"
     ProcessorArchitecture="x64" />
   <Properties>
     <DisplayName>Media Flow</DisplayName>
-    <PublisherDisplayName>musicallyivan</PublisherDisplayName>
+    <PublisherDisplayName>Musically Ivan</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
   <Dependencies>
