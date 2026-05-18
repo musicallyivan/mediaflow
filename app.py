@@ -16,7 +16,7 @@ import tkinter as tk
 
 
 APP_TITLE = "Media Flow"
-APP_VERSION = "1.4.4"
+APP_VERSION = "1.4.5"
 GITHUB_REPO = os.environ.get("MEDIA_FLOW_GITHUB_REPO", "musicallyivan/mediaflow")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
@@ -74,6 +74,10 @@ def app_dir() -> Path:
 
 def resource_path(name: str) -> Path:
     return app_dir() / name
+
+
+def is_msix_package() -> bool:
+    return resource_path("msix-package.txt").exists()
 
 
 def default_output_dir() -> Path:
@@ -641,6 +645,10 @@ class MediaConverterApp(tk.Tk):
         self.worker.start()
 
     def _check_for_updates(self, silent: bool = False) -> None:
+        if is_msix_package():
+            if not silent:
+                messagebox.showinfo(APP_TITLE, "Esta instalacion se actualiza automaticamente con Windows App Installer o Microsoft Store.")
+            return
         if "/" not in GITHUB_REPO:
             if not silent:
                 messagebox.showinfo(APP_TITLE, "Todavia falta configurar el repositorio de GitHub en app.py.")

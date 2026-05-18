@@ -1,6 +1,6 @@
 #define MyAppName "Media Flow"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.4.4"
+  #define MyAppVersion "1.4.5"
 #endif
 #define MyAppPublisher "musicallyivan"
 #define MyAppURL "https://github.com/musicallyivan/mediaflow"

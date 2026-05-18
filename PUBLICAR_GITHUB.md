@@ -34,14 +34,27 @@ git push -u origin main
 
 ## 3. Publicar una release
 
-Para publicar la version `1.4.2`:
+Para publicar la version `1.4.5`:
 
 ```powershell
-git tag v1.4.2
-git push origin v1.4.2
+git tag v1.4.5
+git push origin v1.4.5
 ```
 
-GitHub Actions ejecutara `.github/workflows/release.yml` y publicara un ZIP y un instalador `.exe` en Releases.
+GitHub Actions ejecutara `.github/workflows/release.yml` y publicara estos archivos en Releases:
+
+- ZIP portable de Windows.
+- Instalador `.exe`.
+- Paquete `.msix`.
+- Archivo `.appinstaller`.
+
+Para que el MSIX sea instalable directamente fuera de Microsoft Store, configura estos valores en GitHub:
+
+- Secret `MSIX_PFX_BASE64`: certificado `.pfx` codificado en base64.
+- Secret `MSIX_PFX_PASSWORD`: contrasena del certificado.
+- Variable `MSIX_PUBLISHER`: publisher del certificado, por ejemplo `CN=musicallyivan`.
+
+Si no configuras el certificado, el workflow genera el MSIX sin firmar. Ese paquete sirve como base para Microsoft Store o para firmarlo despues, pero Windows no lo instalara directamente con doble clic.
 
 ## 4. Nueva version
 
@@ -49,7 +62,7 @@ Para cada version nueva:
 
 1. Cambia `APP_VERSION` en `app.py`.
 2. Cambia `VERSION`.
-3. Añade la seccion correspondiente en `CHANGELOG.md`.
+3. Anade la seccion correspondiente en `CHANGELOG.md`.
 4. Haz commit.
 5. Crea un tag `vX.Y.Z`.
 6. Sube el tag.

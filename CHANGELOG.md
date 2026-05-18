@@ -2,6 +2,17 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.4.5] - 2026-05-19
+
+### Added
+
+- Paquete MSIX generado automaticamente en el workflow de release.
+- Archivo `.appinstaller` para instalaciones MSIX con actualizaciones gestionadas por Windows App Installer.
+
+### Changed
+
+- Las instalaciones MSIX omiten el actualizador por instalador `.exe` y delegan las actualizaciones en Windows.
+
 ## [1.4.4] - 2026-05-19
 
 ### Added

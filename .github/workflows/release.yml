@@ -68,6 +68,111 @@ jobs:
           & $iscc "/DMyAppVersion=$version" installer.iss
           Copy-Item "build\installer\media-flow-setup-$version.exe" "build\installer\media-flow-setup-${{ github.ref_name }}.exe" -Force
 
+      - name: Build MSIX package
+        shell: pwsh
+        env:
+          MSIX_PFX_BASE64: ${{ secrets.MSIX_PFX_BASE64 }}
+          MSIX_PFX_PASSWORD: ${{ secrets.MSIX_PFX_PASSWORD }}
+          MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          $packageVersion = "$version.0"
+          $publisher = if ($env:MSIX_PUBLISHER) { $env:MSIX_PUBLISHER } else { "CN=musicallyivan" }
+          $msixName = "media-flow-${{ github.ref_name }}.msix"
+          $appInstallerName = "media-flow-${{ github.ref_name }}.appinstaller"
+          $packageRoot = "build\msix\package"
+          $assetsRoot = Join-Path $packageRoot "Assets"
+
+          New-Item -ItemType Directory -Force -Path $packageRoot | Out-Null
+          Copy-Item release\media-flow\* $packageRoot -Recurse -Force
+          "msix" | Set-Content (Join-Path $packageRoot "msix-package.txt")
+          New-Item -ItemType Directory -Force -Path $assetsRoot | Out-Null
+
+          Add-Type -AssemblyName System.Drawing
+          $source = [System.Drawing.Image]::FromFile((Resolve-Path "icon-300.png"))
+          try {
+            function Save-PngAsset($size, $name) {
+              $bitmap = New-Object System.Drawing.Bitmap $size, $size
+              try {
+                $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+                try {
+                  $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+                  $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+                  $graphics.Clear([System.Drawing.Color]::Transparent)
+                  $graphics.DrawImage($source, 0, 0, $size, $size)
+                } finally {
+                  $graphics.Dispose()
+                }
+                $bitmap.Save((Join-Path $assetsRoot $name), [System.Drawing.Imaging.ImageFormat]::Png)
+              } finally {
+                $bitmap.Dispose()
+              }
+            }
+
+            Save-PngAsset 44 "Square44x44Logo.png"
+            Save-PngAsset 150 "Square150x150Logo.png"
+            Save-PngAsset 50 "StoreLogo.png"
+          } finally {
+            $source.Dispose()
+          }
+
+          [xml]$manifest = Get-Content packaging\msix\AppxManifest.xml
+          $manifest.Package.Identity.Version = $packageVersion
+          $manifest.Package.Identity.Publisher = $publisher
+          $manifest.Save((Join-Path $packageRoot "AppxManifest.xml"))
+
+          $makeAppx = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter MakeAppx.exe |
+            Where-Object { $_.FullName -match "\\x64\\MakeAppx.exe$" } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $makeAppx) {
+            throw "MakeAppx.exe not found."
+          }
+
+          & $makeAppx.FullName pack /d $packageRoot /p $msixName /o
+          if ($LASTEXITCODE -ne 0) {
+            throw "MakeAppx failed with exit code $LASTEXITCODE."
+          }
+
+          if ($env:MSIX_PFX_BASE64 -and $env:MSIX_PFX_PASSWORD) {
+            $certPath = Join-Path $env:RUNNER_TEMP "media-flow-msix.pfx"
+            [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:MSIX_PFX_BASE64))
+            $signtool = Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\bin" -Recurse -Filter signtool.exe |
+              Where-Object { $_.FullName -match "\\x64\\signtool.exe$" } |
+              Sort-Object FullName -Descending |
+              Select-Object -First 1
+            if (-not $signtool) {
+              throw "signtool.exe not found."
+            }
+            & $signtool.FullName sign /fd SHA256 /f $certPath /p $env:MSIX_PFX_PASSWORD /tr http://timestamp.digicert.com /td SHA256 $msixName
+            if ($LASTEXITCODE -ne 0) {
+              throw "signtool failed with exit code $LASTEXITCODE."
+            }
+          } else {
+            Write-Host "MSIX signing skipped. Add MSIX_PFX_BASE64 and MSIX_PFX_PASSWORD secrets to publish an installable signed MSIX."
+          }
+
+          $releaseBaseUri = "https://github.com/musicallyivan/mediaflow/releases/download/${{ github.ref_name }}"
+          $appInstaller = @"
+          <?xml version="1.0" encoding="utf-8"?>
+          <AppInstaller
+            xmlns="http://schemas.microsoft.com/appx/appinstaller/2018"
+            Uri="$releaseBaseUri/$appInstallerName"
+            Version="$packageVersion">
+            <MainPackage
+              Name="musicallyivan.MediaFlow"
+              Publisher="$publisher"
+              Version="$packageVersion"
+              ProcessorArchitecture="x64"
+              Uri="$releaseBaseUri/$msixName" />
+            <UpdateSettings>
+              <OnLaunch HoursBetweenUpdateChecks="0" ShowPrompt="false" UpdateBlocksActivation="true" />
+              <AutomaticBackgroundTask />
+            </UpdateSettings>
+          </AppInstaller>
+          "@
+          $appInstaller.Trim() | Set-Content $appInstallerName -Encoding utf8
+
       - name: Extract release notes
         shell: pwsh
         run: |
@@ -88,3 +193,5 @@ jobs:
           files: |
             media-flow-${{ github.ref_name }}-windows.zip
             build\installer\media-flow-setup-${{ github.ref_name }}.exe
+            media-flow-${{ github.ref_name }}.msix
+            media-flow-${{ github.ref_name }}.appinstaller
