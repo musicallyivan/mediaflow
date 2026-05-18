@@ -5,10 +5,10 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import urllib.error
 import urllib.request
-import webbrowser
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Optional
@@ -16,10 +16,9 @@ import tkinter as tk
 
 
 APP_TITLE = "Media Flow"
-APP_VERSION = "1.4.3"
+APP_VERSION = "1.4.4"
 GITHUB_REPO = os.environ.get("MEDIA_FLOW_GITHUB_REPO", "musicallyivan/mediaflow")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-LATEST_RELEASE_PAGE = f"https://github.com/{GITHUB_REPO}/releases/latest"
 
 AUDIO_FORMATS = ("MP3", "M4A", "WAV", "FLAC", "OGG")
 VIDEO_FORMATS = ("MP4", "MOV", "WEBM", "MKV")
@@ -179,6 +178,64 @@ def fetch_latest_release() -> dict[str, Any]:
     )
     with urllib.request.urlopen(request, timeout=8) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def find_windows_installer_asset(release: dict[str, Any]) -> tuple[str, str]:
+    assets = release.get("assets")
+    if not isinstance(assets, list):
+        raise ValueError("La release no incluye archivos descargables.")
+
+    for asset in assets:
+        if not isinstance(asset, dict):
+            continue
+        name = str(asset.get("name") or "")
+        download_url = str(asset.get("browser_download_url") or "")
+        lower_name = name.lower()
+        if lower_name.endswith(".exe") and "setup" in lower_name and download_url:
+            return name, download_url
+
+    raise ValueError("No se encontro el instalador de Windows en la release.")
+
+
+def download_file(url: str, destination: Path) -> None:
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": f"media-flow/{APP_VERSION}"},
+    )
+    with urllib.request.urlopen(request, timeout=30) as response, destination.open("wb") as output:
+        shutil.copyfileobj(response, output)
+
+
+def launch_installer_after_exit(installer_path: Path) -> None:
+    if sys.platform != "win32":
+        raise RuntimeError("La instalacion automatica solo esta disponible en Windows.")
+
+    command = [
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-WindowStyle",
+        "Hidden",
+        "-Command",
+        (
+            "$installer = $args[0]; "
+            "$pidToWait = [int]$args[1]; "
+            "Wait-Process -Id $pidToWait -ErrorAction SilentlyContinue; "
+            "Start-Process -FilePath $installer "
+            "-ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CLOSEAPPLICATIONS' "
+            "-Wait"
+        ),
+        str(installer_path),
+        str(os.getpid()),
+    ]
+    subprocess.Popen(
+        command,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=subprocess.CREATE_NO_WINDOW | subprocess.DETACHED_PROCESS,
+    )
 
 
 def safe_filename(value: str) -> str:
@@ -597,13 +654,18 @@ class MediaConverterApp(tk.Tk):
         try:
             release = fetch_latest_release()
             latest_version = str(release.get("tag_name") or "").strip()
-            release_url = str(release.get("html_url") or LATEST_RELEASE_PAGE)
             release_name = str(release.get("name") or latest_version)
             if latest_version and is_newer_version(latest_version, APP_VERSION):
-                self.messages.put(("update_available", (latest_version, release_name, release_url)))
+                asset_name, download_url = find_windows_installer_asset(release)
+                self.messages.put(("update_downloading", (latest_version, release_name, asset_name)))
+                download_dir = Path(tempfile.gettempdir()) / "media-flow-updates" / latest_version
+                download_dir.mkdir(parents=True, exist_ok=True)
+                installer_path = download_dir / asset_name
+                download_file(download_url, installer_path)
+                self.messages.put(("update_installing", (latest_version, installer_path)))
             elif not silent:
                 self.messages.put(("update_current", "Ya tienes la ultima version disponible."))
-        except (urllib.error.URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
+        except (OSError, urllib.error.URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
             if not silent:
                 self.messages.put(("update_error", f"No se pudo comprobar si hay actualizaciones.\n\n{exc}"))
 
@@ -678,18 +740,22 @@ class MediaConverterApp(tk.Tk):
                     self.status.set("No se pudo convertir el archivo.")
                     self.progress_text.set(text)
                     messagebox.showerror(APP_TITLE, text)
-                elif kind == "update_available":
-                    latest_version, release_name, release_url = text
-                    should_open = messagebox.askyesno(
-                        APP_TITLE,
-                        "Hay una nueva version disponible.\n\n"
-                        f"Version instalada: {APP_VERSION}\n"
-                        f"Version nueva: {latest_version}\n"
-                        f"{release_name}\n\n"
-                        "Quieres abrir la pagina de descarga?",
-                    )
-                    if should_open:
-                        webbrowser.open(release_url)
+                elif kind == "update_downloading":
+                    latest_version, release_name, asset_name = text
+                    self.status.set(f"Descargando actualizacion {latest_version}...")
+                    self.progress_text.set(f"{release_name} - {asset_name}")
+                elif kind == "update_installing":
+                    latest_version, installer_path = text
+                    self.status.set(f"Instalando actualizacion {latest_version}...")
+                    self.progress_text.set("Media Flow se cerrara y se volvera a instalar en segundo plano.")
+                    try:
+                        launch_installer_after_exit(Path(installer_path))
+                    except Exception as exc:
+                        self.status.set("No se pudo iniciar el instalador.")
+                        self.progress_text.set(str(exc))
+                        messagebox.showerror(APP_TITLE, f"No se pudo iniciar el instalador.\n\n{exc}")
+                    else:
+                        self.after(700, self.destroy)
                 elif kind == "update_current":
                     messagebox.showinfo(APP_TITLE, text)
                 elif kind == "update_error":

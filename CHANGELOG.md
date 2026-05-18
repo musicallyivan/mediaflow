@@ -2,6 +2,12 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.4.4] - 2026-05-19
+
+### Added
+
+- Actualizacion automatica: la app descarga el instalador de la ultima release, lo lanza en modo silencioso y se cierra para completar la instalacion.
+
 ## [1.4.3] - 2026-05-18
 
 ### Changed

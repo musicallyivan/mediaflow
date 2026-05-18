@@ -1,6 +1,6 @@
 # Politica de privacidad
 
-Ultima actualizacion: 2026-05-18
+Ultima actualizacion: 2026-05-19
 
 Media Flow procesa archivos localmente en el equipo del usuario.
 
@@ -16,7 +16,7 @@ Si el usuario elige una carpeta sincronizada de OneDrive, Google Drive o iCloud 
 
 ## Conexion a internet
 
-La app puede consultar GitHub Releases para comprobar si hay una version nueva. Esa comprobacion no envia archivos del usuario.
+La app puede consultar GitHub Releases para comprobar si hay una version nueva. Si existe una actualizacion, puede descargar el instalador oficial y ejecutarlo localmente. Esa comprobacion y descarga no envian archivos del usuario.
 
 ## Contacto
 

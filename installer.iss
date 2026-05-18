@@ -1,6 +1,6 @@
 #define MyAppName "Media Flow"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.4.3"
+  #define MyAppVersion "1.4.4"
 #endif
 #define MyAppPublisher "musicallyivan"
 #define MyAppURL "https://github.com/musicallyivan/mediaflow"
@@ -21,6 +21,8 @@ AppUpdatesURL={#MyAppURL}/releases/latest
 DefaultDirName={localappdata}\Programs\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
+CloseApplications=yes
+RestartApplications=no
 UninstallDisplayIcon={app}\{#MyAppExeName}
 SetupIconFile={#MyAppIcon}
 WizardImageFile={#MyWizardImage}
