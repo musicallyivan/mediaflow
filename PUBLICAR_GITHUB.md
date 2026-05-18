@@ -34,11 +34,11 @@ git push -u origin main
 
 ## 3. Publicar una release
 
-Para publicar la version `1.3.1`:
+Para publicar la version `1.4.0`:
 
 ```powershell
-git tag v1.3.1
-git push origin v1.3.1
+git tag v1.4.0
+git push origin v1.4.0
 ```
 
 GitHub Actions ejecutara `.github/workflows/release.yml` y publicara un ZIP en Releases.

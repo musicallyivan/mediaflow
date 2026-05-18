@@ -39,21 +39,21 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller --noconfirm --onefile --windowed --name media-converter app.py
+          pyinstaller --noconfirm --onefile --windowed --name media-flow app.py
 
       - name: Prepare release ZIP
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path release\media-converter
-          Copy-Item dist\media-converter.exe release\media-converter\
-          Copy-Item ffmpeg.exe release\media-converter\
-          Copy-Item ffprobe.exe release\media-converter\
-          Copy-Item README.md release\media-converter\
-          Copy-Item CHANGELOG.md release\media-converter\
-          Copy-Item PRIVACY.md release\media-converter\
-          Copy-Item THIRD_PARTY_NOTICES.md release\media-converter\
-          Copy-Item -Recurse ffmpeg-licenses release\media-converter\
-          Compress-Archive -Path release\media-converter -DestinationPath "media-converter-${{ github.ref_name }}-windows.zip"
+          New-Item -ItemType Directory -Force -Path release\media-flow
+          Copy-Item dist\media-flow.exe release\media-flow\
+          Copy-Item ffmpeg.exe release\media-flow\
+          Copy-Item ffprobe.exe release\media-flow\
+          Copy-Item README.md release\media-flow\
+          Copy-Item CHANGELOG.md release\media-flow\
+          Copy-Item PRIVACY.md release\media-flow\
+          Copy-Item THIRD_PARTY_NOTICES.md release\media-flow\
+          Copy-Item -Recurse ffmpeg-licenses release\media-flow\
+          Compress-Archive -Path release\media-flow -DestinationPath "media-flow-${{ github.ref_name }}-windows.zip"
 
       - name: Extract release notes
         shell: pwsh
@@ -72,4 +72,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body_path: release_notes.md
-          files: media-converter-${{ github.ref_name }}-windows.zip
+          files: media-flow-${{ github.ref_name }}-windows.zip

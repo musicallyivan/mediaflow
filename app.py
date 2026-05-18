@@ -15,8 +15,8 @@ from typing import Any, Optional
 import tkinter as tk
 
 
-APP_TITLE = "Convertidor Multimedia"
-APP_VERSION = "1.3.1"
+APP_TITLE = "Media Flow"
+APP_VERSION = "1.4.0"
 GITHUB_REPO = os.environ.get("MEDIA_CONVERTER_GITHUB_REPO", "musicallyivan/media-converter")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 LATEST_RELEASE_PAGE = f"https://github.com/{GITHUB_REPO}/releases/latest"
@@ -170,7 +170,7 @@ def fetch_latest_release() -> dict[str, Any]:
         LATEST_RELEASE_API,
         headers={
             "Accept": "application/vnd.github+json",
-            "User-Agent": f"media-converter/{APP_VERSION}",
+            "User-Agent": f"media-flow/{APP_VERSION}",
         },
     )
     with urllib.request.urlopen(request, timeout=8) as response:

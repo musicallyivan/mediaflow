@@ -2,7 +2,7 @@
 
 ## App name
 
-Convertidor Multimedia
+Media Flow
 
 ## Short description
 
@@ -10,7 +10,7 @@ Convierte archivos locales de audio, video e imagen en formatos comunes.
 
 ## Description
 
-Convertidor Multimedia es una app local para Windows que permite convertir archivos del equipo a formatos comunes de audio, video e imagen.
+Media Flow es una app local para Windows que permite convertir archivos del equipo a formatos comunes de audio, video e imagen.
 
 Puedes convertir audio a MP3, M4A, WAV, FLAC u OGG; video a MP4, MOV, WEBM o MKV; e imagenes a PNG, JPG, WEBP o BMP. La app incluye modo claro y oscuro, calidad configurable y salida a carpetas locales o carpetas sincronizadas por OneDrive, Google Drive o iCloud Drive.
 

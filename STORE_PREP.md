@@ -4,7 +4,7 @@ Este proyecto se presenta como convertidor multimedia local. La funcionalidad pr
 
 ## Antes de enviar
 
-1. Cambiar el nombre del repositorio y del producto a `media-converter` o un nombre comercial propio.
+1. Reservar el nombre `Media Flow` en Partner Center.
 2. Crear iconos de Store en todos los tamaños requeridos.
 3. Publicar una politica de privacidad publica. Puedes usar `PRIVACY.md` como base.
 4. Revisar la licencia de `ffmpeg` y distribuir los avisos de licencia correspondientes junto al instalador. El proyecto incluye `THIRD_PARTY_NOTICES.md`.

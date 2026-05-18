@@ -2,7 +2,7 @@
 
 Ultima actualizacion: 2026-05-18
 
-Convertidor Multimedia procesa archivos localmente en el equipo del usuario.
+Media Flow procesa archivos localmente en el equipo del usuario.
 
 ## Datos que recoge la app
 

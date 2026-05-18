@@ -2,6 +2,15 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.4.0] - 2026-05-18
+
+### Changed
+
+- Renombrada la app a Media Flow.
+- README simplificado para usuarios finales, sin instrucciones internas de publicacion.
+- Nombres de ejecutable y ZIP de release alineados con la marca Media Flow.
+- Textos de privacidad y ficha de Store actualizados con el nuevo nombre.
+
 ## [1.3.1] - 2026-05-18
 
 ### Added
