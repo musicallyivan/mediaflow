@@ -6,13 +6,16 @@ Este proyecto se presenta como convertidor multimedia local. La funcionalidad pr
 
 1. Cambiar el nombre del repositorio y del producto a `media-converter` o un nombre comercial propio.
 2. Crear iconos de Store en todos los tamaños requeridos.
-3. Crear una politica de privacidad publica. Aunque la app no recoja datos personales, conviene declarar que los archivos se procesan localmente y no se suben a servidores.
-4. Revisar la licencia de `ffmpeg` y distribuir los avisos de licencia correspondientes junto al instalador.
-5. Firmar el binario o el instalador con certificado de firma de codigo valido.
-6. Preparar un instalador `.msi` o `.exe` standalone con instalacion silenciosa, o empaquetar como MSIX.
-7. Usar una URL versionada para cada binario enviado a Partner Center.
-8. Evitar en titulo, descripcion, capturas y keywords cualquier referencia a servicios de video, descarga de videos o extraccion de musica desde servicios de terceros.
-9. Explicar que la sincronizacion con Google Drive, OneDrive e iCloud Drive se hace guardando archivos en carpetas locales ya sincronizadas por los clientes oficiales.
+3. Publicar una politica de privacidad publica. Puedes usar `PRIVACY.md` como base.
+4. Revisar la licencia de `ffmpeg` y distribuir los avisos de licencia correspondientes junto al instalador. El proyecto incluye `THIRD_PARTY_NOTICES.md`.
+5. Elegir empaquetado:
+   - Recomendado: MSIX para que Microsoft Store gestione firma y actualizaciones.
+   - Alternativa: instalador `.msi` o `.exe` firmado con instalacion silenciosa.
+6. Si usas MSI/EXE, firmar el instalador con certificado Authenticode valido de una CA reconocida.
+7. Preparar capturas de pantalla en modo claro, modo oscuro y conversion en progreso.
+8. Usar una URL versionada para cada binario enviado a Partner Center.
+9. Evitar en titulo, descripcion, capturas y keywords cualquier referencia a servicios de video, descarga de videos o extraccion de musica desde servicios de terceros.
+10. Explicar que la sincronizacion con Google Drive, OneDrive e iCloud Drive se hace guardando archivos en carpetas locales ya sincronizadas por los clientes oficiales.
 
 ## Descripcion sugerida
 

@@ -2,6 +2,16 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.3.1] - 2026-05-18
+
+### Added
+
+- Politica de privacidad, borrador de ficha de Microsoft Store y avisos de terceros.
+
+### Changed
+
+- Release ZIP actualizado para incluir avisos de privacidad y licencias.
+
 ## [1.3.0] - 2026-05-18
 
 ### Added

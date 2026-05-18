@@ -16,7 +16,7 @@ import tkinter as tk
 
 
 APP_TITLE = "Convertidor Multimedia"
-APP_VERSION = "1.3.0"
+APP_VERSION = "1.3.1"
 GITHUB_REPO = os.environ.get("MEDIA_CONVERTER_GITHUB_REPO", "musicallyivan/media-converter")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 LATEST_RELEASE_PAGE = f"https://github.com/{GITHUB_REPO}/releases/latest"

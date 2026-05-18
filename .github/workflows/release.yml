@@ -34,6 +34,8 @@ jobs:
           $bin = Get-ChildItem -Path ffmpeg-dist -Recurse -Directory -Filter bin | Select-Object -First 1
           Copy-Item "$($bin.FullName)\ffmpeg.exe" -Destination ffmpeg.exe
           Copy-Item "$($bin.FullName)\ffprobe.exe" -Destination ffprobe.exe
+          New-Item -ItemType Directory -Force -Path ffmpeg-licenses
+          Get-ChildItem -Path ffmpeg-dist -Recurse -File -Include LICENSE*,COPYING*,README* | Copy-Item -Destination ffmpeg-licenses -Force
 
       - name: Build executable
         run: |
@@ -48,6 +50,9 @@ jobs:
           Copy-Item ffprobe.exe release\media-converter\
           Copy-Item README.md release\media-converter\
           Copy-Item CHANGELOG.md release\media-converter\
+          Copy-Item PRIVACY.md release\media-converter\
+          Copy-Item THIRD_PARTY_NOTICES.md release\media-converter\
+          Copy-Item -Recurse ffmpeg-licenses release\media-converter\
           Compress-Archive -Path release\media-converter -DestinationPath "media-converter-${{ github.ref_name }}-windows.zip"
 
       - name: Extract release notes
