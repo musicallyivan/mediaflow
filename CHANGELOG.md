@@ -2,6 +2,18 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.3.0] - 2026-05-18
+
+### Added
+
+- Modo claro y modo oscuro desde la interfaz.
+- Barra de progreso animada durante la conversion.
+- Indicador de estado animado y selector de tipo de conversion mas visual.
+
+### Changed
+
+- Interfaz redisenada con mejor jerarquia visual, botones mas claros y tarjetas mas limpias.
+
 ## [1.2.0] - 2026-05-18
 
 ### Added

@@ -1,6 +1,6 @@
 # Convertidor Multimedia
 
-Version actual: `1.2.0`
+Version actual: `1.3.0`
 
 Programa local para convertir archivos de audio, video e imagen usando `ffmpeg`.
 
@@ -11,6 +11,7 @@ Programa local para convertir archivos de audio, video e imagen usando `ffmpeg`.
 - Conversion de imagen a `PNG`, `JPG`, `WEBP` y `BMP`.
 - Calidad configurable para audio, video e imagen.
 - Salida a carpeta local o a carpetas sincronizadas de OneDrive, Google Drive o iCloud Drive cuando ya estan instaladas en el equipo.
+- Interfaz moderna con modo claro/oscuro, selector segmentado y animaciones de estado durante la conversion.
 
 La app no descarga contenido de servicios de terceros. Convierte archivos locales que ya tengas derecho a usar.
 
@@ -43,6 +44,8 @@ Opcion manual:
 5. Elige la carpeta de salida o una carpeta sincronizada disponible.
 6. Pulsa `Convertir`.
 
+Puedes cambiar entre modo claro y oscuro desde el boton de la esquina superior derecha.
+
 ## Sincronizacion con nube
 
 La app no pide cuentas ni contrasenas. Si OneDrive, Google Drive o iCloud Drive estan instalados, detecta sus carpetas locales y guarda ahi el archivo convertido. El cliente oficial de cada servicio se encarga de la sincronizacion.
@@ -68,8 +71,8 @@ No subas `ffmpeg.exe`, `ffprobe.exe`, `downloads/`, `dist/` ni `build/`. Ya esta
 5. Crea y sube un tag con el mismo numero:
 
 ```powershell
-git tag v1.2.0
-git push origin v1.2.0
+git tag v1.3.0
+git push origin v1.3.0
 ```
 
 Al subir un tag `vX.Y.Z`, GitHub Actions ejecutara `.github/workflows/release.yml`, generara un `.exe`, copiara `ffmpeg.exe` y `ffprobe.exe` dentro del ZIP, y publicara una release con el changelog.

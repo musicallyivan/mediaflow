@@ -16,7 +16,7 @@ import tkinter as tk
 
 
 APP_TITLE = "Convertidor Multimedia"
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.3.0"
 GITHUB_REPO = os.environ.get("MEDIA_CONVERTER_GITHUB_REPO", "musicallyivan/media-converter")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 LATEST_RELEASE_PAGE = f"https://github.com/{GITHUB_REPO}/releases/latest"
@@ -28,6 +28,43 @@ IMAGE_FORMATS = ("PNG", "JPG", "WEBP", "BMP")
 AUDIO_EXTENSIONS = "*.mp3 *.wav *.m4a *.aac *.flac *.ogg *.wma"
 VIDEO_EXTENSIONS = "*.mp4 *.mov *.mkv *.avi *.webm *.wmv *.m4v"
 IMAGE_EXTENSIONS = "*.png *.jpg *.jpeg *.webp *.bmp *.tiff *.gif"
+
+THEMES = {
+    "light": {
+        "window": "#eef2f7",
+        "surface": "#ffffff",
+        "surface_alt": "#f6f8fb",
+        "text": "#111827",
+        "muted": "#667085",
+        "border": "#d8dee8",
+        "accent": "#2563eb",
+        "accent_hover": "#1d4ed8",
+        "accent_soft": "#dbeafe",
+        "success": "#16a34a",
+        "danger": "#dc2626",
+        "input": "#ffffff",
+        "button": "#e8edf3",
+        "button_hover": "#dbe3ec",
+        "shadow": "#d9e0ea",
+    },
+    "dark": {
+        "window": "#0f172a",
+        "surface": "#172033",
+        "surface_alt": "#111a2d",
+        "text": "#eef2ff",
+        "muted": "#a7b1c2",
+        "border": "#2d3b52",
+        "accent": "#60a5fa",
+        "accent_hover": "#3b82f6",
+        "accent_soft": "#1e3a5f",
+        "success": "#22c55e",
+        "danger": "#f87171",
+        "input": "#0f172a",
+        "button": "#23314a",
+        "button_hover": "#2e3f5d",
+        "shadow": "#0a1020",
+    },
+}
 
 
 def app_dir() -> Path:
@@ -160,17 +197,16 @@ class MediaConverterApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title(f"{APP_TITLE} v{APP_VERSION}")
-        self.geometry("760x610")
-        self.minsize(680, 560)
-        self.configure(bg="#f4f6f8")
+        self.geometry("860x680")
+        self.minsize(760, 620)
 
+        self.theme_name = tk.StringVar(value="light")
         self.mode = tk.StringVar(value="Audio")
         self.input_file = tk.StringVar()
         self.output_dir = tk.StringVar(value=str(default_output_dir()))
         self.output_format = tk.StringVar(value="MP3")
         self.audio_quality = tk.StringVar(value="192 kbps")
         self.video_quality = tk.StringVar(value="Equilibrada")
-        self.image_quality = tk.StringVar(value="90")
         self.cloud_target = tk.StringVar(value="Carpeta local")
         self.status = tk.StringVar(value="Elige un archivo para empezar.")
         self.progress_text = tk.StringVar(value="")
@@ -178,71 +214,100 @@ class MediaConverterApp(tk.Tk):
         self.messages: queue.Queue[tuple[str, Any]] = queue.Queue()
         self.worker: Optional[threading.Thread] = None
         self.update_worker: Optional[threading.Thread] = None
+        self.mode_buttons: dict[str, tk.Button] = {}
+        self.canvases: list[tk.Canvas] = []
+        self.busy = False
+        self.progress_phase = 0
+        self.pulse_phase = 0
 
         self._build_ui()
         self.after(100, self._poll_messages)
+        self.after(120, self._animate_status_dot)
         self.after(1500, lambda: self._check_for_updates(silent=True))
 
+    @property
+    def palette(self) -> dict[str, str]:
+        return THEMES[self.theme_name.get()]
+
     def _build_ui(self) -> None:
+        self.style = ttk.Style(self)
+        self.style.theme_use("clam")
         self._configure_style()
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
-        main = ttk.Frame(self, style="App.TFrame", padding=24)
-        main.grid(row=0, column=0, sticky="nsew")
-        main.columnconfigure(0, weight=1)
-        main.rowconfigure(3, weight=1)
+        self.main = ttk.Frame(self, style="App.TFrame", padding=24)
+        self.main.grid(row=0, column=0, sticky="nsew")
+        self.main.columnconfigure(0, weight=1)
+        self.main.rowconfigure(3, weight=1)
 
-        header = ttk.Frame(main, style="App.TFrame")
+        self._build_header()
+        self._build_mode_selector()
+        self._build_conversion_card()
+        self._build_output_card()
+        self._build_action_area()
+        self._apply_theme()
+        self._mode_changed("Audio")
+
+    def _build_header(self) -> None:
+        header = ttk.Frame(self.main, style="App.TFrame")
         header.grid(row=0, column=0, sticky="ew")
-        header.columnconfigure(0, weight=1)
+        header.columnconfigure(1, weight=1)
 
-        title = ttk.Label(header, text=APP_TITLE, style="Title.TLabel")
-        title.grid(row=0, column=0, sticky="w")
+        self.logo = tk.Canvas(header, width=48, height=48, highlightthickness=0)
+        self.logo.grid(row=0, column=0, rowspan=2, sticky="w", padx=(0, 14))
+        self.canvases.append(self.logo)
 
-        subtitle = ttk.Label(header, text="Convierte audio, video e imagenes. Guarda localmente o en carpetas sincronizadas.", style="Muted.TLabel")
-        subtitle.grid(row=1, column=0, sticky="w", pady=(4, 0))
+        ttk.Label(header, text=APP_TITLE, style="Title.TLabel").grid(row=0, column=1, sticky="w")
+        ttk.Label(
+            header,
+            text="Convierte audio, video e imagenes. Guarda localmente o en carpetas sincronizadas.",
+            style="Muted.TLabel",
+        ).grid(row=1, column=1, sticky="w", pady=(4, 0))
 
-        update_button = ttk.Button(header, text="Buscar actualizaciones", command=self._check_for_updates, style="Secondary.TButton")
-        update_button.grid(row=0, column=1, rowspan=2, sticky="e")
+        header_actions = ttk.Frame(header, style="App.TFrame")
+        header_actions.grid(row=0, column=2, rowspan=2, sticky="e")
+        self.theme_button = ttk.Button(header_actions, text="Modo oscuro", command=self._toggle_theme, style="Secondary.TButton")
+        self.theme_button.grid(row=0, column=0, padx=(0, 8))
+        ttk.Button(header_actions, text="Buscar actualizaciones", command=self._check_for_updates, style="Secondary.TButton").grid(row=0, column=1)
 
-        mode_row = ttk.Frame(main, style="Card.TFrame", padding=10)
-        mode_row.grid(row=1, column=0, sticky="ew", pady=(22, 16))
+    def _build_mode_selector(self) -> None:
+        self.mode_card = ttk.Frame(self.main, style="Card.TFrame", padding=8)
+        self.mode_card.grid(row=1, column=0, sticky="ew", pady=(22, 16))
         for index, mode in enumerate(("Audio", "Video", "Imagen")):
-            mode_row.columnconfigure(index, weight=1)
-            button = ttk.Radiobutton(
-                mode_row,
+            self.mode_card.columnconfigure(index, weight=1, uniform="mode")
+            button = tk.Button(
+                self.mode_card,
                 text=mode,
-                value=mode,
-                variable=self.mode,
-                command=self._mode_changed,
-                style="Mode.TRadiobutton",
+                relief="flat",
+                borderwidth=0,
+                font=("Segoe UI", 11, "bold"),
+                command=lambda value=mode: self._mode_changed(value),
+                cursor="hand2",
             )
-            button.grid(row=0, column=index, sticky="ew", padx=3)
+            button.grid(row=0, column=index, sticky="ew", padx=4, ipady=10)
+            self.mode_buttons[mode] = button
 
-        content = ttk.Frame(main, style="Card.TFrame", padding=18)
-        content.grid(row=2, column=0, sticky="ew")
-        content.columnconfigure(0, weight=1)
+    def _build_conversion_card(self) -> None:
+        self.content_card = ttk.Frame(self.main, style="Card.TFrame", padding=20)
+        self.content_card.grid(row=2, column=0, sticky="ew")
+        self.content_card.columnconfigure(0, weight=1)
 
-        file_label = ttk.Label(content, text="Archivo de entrada", style="Section.TLabel")
-        file_label.grid(row=0, column=0, sticky="w")
+        ttk.Label(self.content_card, text="Archivo de entrada", style="Section.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(self.content_card, text="Selecciona un archivo local compatible.", style="CardMuted.TLabel").grid(row=1, column=0, sticky="w", pady=(2, 8))
 
-        file_row = ttk.Frame(content, style="Card.TFrame")
-        file_row.grid(row=1, column=0, sticky="ew", pady=(6, 16))
+        file_row = ttk.Frame(self.content_card, style="Card.TFrame")
+        file_row.grid(row=2, column=0, sticky="ew", pady=(0, 18))
         file_row.columnconfigure(0, weight=1)
+        self.file_entry = ttk.Entry(file_row, textvariable=self.input_file)
+        self.file_entry.grid(row=0, column=0, sticky="ew")
+        ttk.Button(file_row, text="Elegir archivo", command=self._choose_input_file, style="Secondary.TButton").grid(row=0, column=1, padx=(10, 0))
 
-        file_entry = ttk.Entry(file_row, textvariable=self.input_file)
-        file_entry.grid(row=0, column=0, sticky="ew")
-
-        file_button = ttk.Button(file_row, text="Elegir archivo", command=self._choose_input_file)
-        file_button.grid(row=0, column=1, padx=(10, 0))
-
-        options = ttk.Frame(content, style="Card.TFrame")
-        options.grid(row=2, column=0, sticky="ew")
-        options.columnconfigure(0, weight=1)
-        options.columnconfigure(1, weight=1)
-        options.columnconfigure(2, weight=1)
+        options = ttk.Frame(self.content_card, style="Card.TFrame")
+        options.grid(row=3, column=0, sticky="ew")
+        for column in range(3):
+            options.columnconfigure(column, weight=1, uniform="options")
 
         ttk.Label(options, text="Formato", style="Section.TLabel").grid(row=0, column=0, sticky="w")
         self.format_combo = ttk.Combobox(options, textvariable=self.output_format, values=AUDIO_FORMATS, state="readonly")
@@ -267,14 +332,17 @@ class MediaConverterApp(tk.Tk):
         )
         self.visual_quality_combo.grid(row=1, column=2, sticky="ew", pady=(6, 0))
 
-        output = ttk.Frame(main, style="Card.TFrame", padding=18)
-        output.grid(row=3, column=0, sticky="nsew", pady=(16, 0))
-        output.columnconfigure(0, weight=1)
+    def _build_output_card(self) -> None:
+        self.output_card = ttk.Frame(self.main, style="Card.TFrame", padding=20)
+        self.output_card.grid(row=3, column=0, sticky="nsew", pady=(16, 0))
+        self.output_card.columnconfigure(0, weight=1)
 
-        ttk.Label(output, text="Destino", style="Section.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(self.output_card, text="Destino", style="Section.TLabel").grid(row=0, column=0, sticky="w")
+        cloud_text = "Las carpetas sincronizadas aparecen aqui si el cliente oficial esta instalado."
+        ttk.Label(self.output_card, text=cloud_text, style="CardMuted.TLabel").grid(row=1, column=0, sticky="w", pady=(2, 8))
 
-        destination_row = ttk.Frame(output, style="Card.TFrame")
-        destination_row.grid(row=1, column=0, sticky="ew", pady=(6, 12))
+        destination_row = ttk.Frame(self.output_card, style="Card.TFrame")
+        destination_row.grid(row=2, column=0, sticky="ew")
         destination_row.columnconfigure(1, weight=1)
 
         cloud_values = ["Carpeta local"] + list(self.cloud_folders.keys())
@@ -282,47 +350,92 @@ class MediaConverterApp(tk.Tk):
         self.cloud_combo.grid(row=0, column=0, sticky="w", padx=(0, 10))
         self.cloud_combo.bind("<<ComboboxSelected>>", lambda _event: self._cloud_changed())
 
-        folder_entry = ttk.Entry(destination_row, textvariable=self.output_dir)
-        folder_entry.grid(row=0, column=1, sticky="ew")
+        self.folder_entry = ttk.Entry(destination_row, textvariable=self.output_dir)
+        self.folder_entry.grid(row=0, column=1, sticky="ew")
+        ttk.Button(destination_row, text="Elegir carpeta", command=self._choose_folder, style="Secondary.TButton").grid(row=0, column=2, padx=(10, 0))
 
-        folder_button = ttk.Button(destination_row, text="Elegir carpeta", command=self._choose_folder)
-        folder_button.grid(row=0, column=2, padx=(10, 0))
+        detected = ", ".join(self.cloud_folders.keys()) if self.cloud_folders else "No se han detectado carpetas de nube."
+        self.cloud_status = ttk.Label(self.output_card, text=f"Detectado: {detected}", style="CardMuted.TLabel")
+        self.cloud_status.grid(row=3, column=0, sticky="w", pady=(12, 0))
 
-        self.convert_button = ttk.Button(main, text="Convertir a MP3", command=self._start_conversion, style="Primary.TButton")
+    def _build_action_area(self) -> None:
+        self.convert_button = ttk.Button(self.main, text="Convertir a MP3", command=self._start_conversion, style="Primary.TButton")
         self.convert_button.grid(row=4, column=0, sticky="ew", pady=(18, 10), ipady=8)
 
-        self.progress = ttk.Progressbar(main, mode="indeterminate")
-        self.progress.grid(row=5, column=0, sticky="ew")
+        self.progress_canvas = tk.Canvas(self.main, height=12, highlightthickness=0)
+        self.progress_canvas.grid(row=5, column=0, sticky="ew")
+        self.progress_canvas.bind("<Configure>", lambda _event: self._draw_progress_bar())
+        self.canvases.append(self.progress_canvas)
 
-        status_row = ttk.Frame(main, style="App.TFrame")
-        status_row.grid(row=6, column=0, sticky="ew", pady=(12, 0))
-        status_row.columnconfigure(0, weight=1)
+        status_row = ttk.Frame(self.main, style="App.TFrame")
+        status_row.grid(row=6, column=0, sticky="ew", pady=(14, 0))
+        status_row.columnconfigure(1, weight=1)
 
-        ttk.Label(status_row, textvariable=self.status, style="Status.TLabel", wraplength=620).grid(row=0, column=0, sticky="w")
-        ttk.Label(status_row, text=f"Version {APP_VERSION}", style="Muted.TLabel").grid(row=0, column=1, sticky="e")
-        ttk.Label(status_row, textvariable=self.progress_text, style="Muted.TLabel", wraplength=620).grid(row=1, column=0, columnspan=2, sticky="w", pady=(5, 0))
-
-        self._mode_changed()
+        self.status_dot = tk.Canvas(status_row, width=18, height=18, highlightthickness=0)
+        self.status_dot.grid(row=0, column=0, sticky="w", padx=(0, 8))
+        self.canvases.append(self.status_dot)
+        ttk.Label(status_row, textvariable=self.status, style="Status.TLabel", wraplength=650).grid(row=0, column=1, sticky="w")
+        ttk.Label(status_row, text=f"Version {APP_VERSION}", style="Muted.TLabel").grid(row=0, column=2, sticky="e")
+        ttk.Label(status_row, textvariable=self.progress_text, style="Muted.TLabel", wraplength=720).grid(row=1, column=1, columnspan=2, sticky="w", pady=(5, 0))
 
     def _configure_style(self) -> None:
-        style = ttk.Style(self)
-        style.theme_use("clam")
-        style.configure("App.TFrame", background="#f4f6f8")
-        style.configure("Card.TFrame", background="#ffffff", relief="flat")
-        style.configure("Title.TLabel", background="#f4f6f8", foreground="#16202a", font=("Segoe UI", 22, "bold"))
-        style.configure("Muted.TLabel", background="#f4f6f8", foreground="#647282", font=("Segoe UI", 9))
-        style.configure("Section.TLabel", background="#ffffff", foreground="#2b3642", font=("Segoe UI", 10, "bold"))
-        style.configure("Status.TLabel", background="#f4f6f8", foreground="#2b3642", font=("Segoe UI", 10))
-        style.configure("TEntry", fieldbackground="#ffffff", bordercolor="#c9d2dc", padding=7)
-        style.configure("TCombobox", fieldbackground="#ffffff", bordercolor="#c9d2dc", padding=7)
-        style.configure("Primary.TButton", background="#2563eb", foreground="#ffffff", font=("Segoe UI", 11, "bold"), padding=10)
-        style.map("Primary.TButton", background=[("active", "#1d4ed8"), ("disabled", "#9fb7ee")])
-        style.configure("Secondary.TButton", background="#e8edf3", foreground="#26313d", padding=8)
-        style.map("Secondary.TButton", background=[("active", "#dbe3ec")])
-        style.configure("Mode.TRadiobutton", background="#ffffff", foreground="#2b3642", padding=10, indicatorcolor="#ffffff")
+        palette = self.palette
+        self.configure(bg=palette["window"])
+        self.style.configure("App.TFrame", background=palette["window"])
+        self.style.configure("Card.TFrame", background=palette["surface"], relief="flat")
+        self.style.configure("Title.TLabel", background=palette["window"], foreground=palette["text"], font=("Segoe UI", 24, "bold"))
+        self.style.configure("Muted.TLabel", background=palette["window"], foreground=palette["muted"], font=("Segoe UI", 9))
+        self.style.configure("CardMuted.TLabel", background=palette["surface"], foreground=palette["muted"], font=("Segoe UI", 9))
+        self.style.configure("Section.TLabel", background=palette["surface"], foreground=palette["text"], font=("Segoe UI", 10, "bold"))
+        self.style.configure("Status.TLabel", background=palette["window"], foreground=palette["text"], font=("Segoe UI", 10))
+        self.style.configure("TEntry", fieldbackground=palette["input"], foreground=palette["text"], bordercolor=palette["border"], lightcolor=palette["border"], darkcolor=palette["border"], padding=8)
+        self.style.configure("TCombobox", fieldbackground=palette["input"], foreground=palette["text"], bordercolor=palette["border"], arrowcolor=palette["text"], padding=8)
+        self.style.map("TCombobox", fieldbackground=[("readonly", palette["input"])], foreground=[("readonly", palette["text"])])
+        self.style.configure("Primary.TButton", background=palette["accent"], foreground="#ffffff", font=("Segoe UI", 11, "bold"), padding=11, borderwidth=0)
+        self.style.map("Primary.TButton", background=[("active", palette["accent_hover"]), ("disabled", palette["border"])])
+        self.style.configure("Secondary.TButton", background=palette["button"], foreground=palette["text"], padding=9, borderwidth=0)
+        self.style.map("Secondary.TButton", background=[("active", palette["button_hover"])])
 
-    def _mode_changed(self) -> None:
-        mode = self.mode.get()
+    def _apply_theme(self) -> None:
+        self._configure_style()
+        palette = self.palette
+        self.theme_button.configure(text="Modo claro" if self.theme_name.get() == "dark" else "Modo oscuro")
+        for canvas in self.canvases:
+            canvas.configure(bg=palette["window"])
+        self.logo.configure(bg=palette["window"])
+        self.progress_canvas.configure(bg=palette["window"])
+        self.status_dot.configure(bg=palette["window"])
+        self._draw_logo()
+        self._draw_progress_bar()
+        self._update_mode_buttons()
+        self._draw_status_dot()
+
+    def _toggle_theme(self) -> None:
+        self.theme_name.set("dark" if self.theme_name.get() == "light" else "light")
+        self._apply_theme()
+
+    def _draw_logo(self) -> None:
+        palette = self.palette
+        self.logo.delete("all")
+        self.logo.create_oval(2, 2, 46, 46, fill=palette["accent_soft"], outline=palette["accent"])
+        self.logo.create_rectangle(15, 14, 33, 20, fill=palette["accent"], outline="")
+        self.logo.create_rectangle(12, 24, 36, 30, fill=palette["accent_hover"], outline="")
+        self.logo.create_rectangle(18, 34, 30, 39, fill=palette["accent"], outline="")
+
+    def _update_mode_buttons(self) -> None:
+        palette = self.palette
+        selected = self.mode.get()
+        for mode, button in self.mode_buttons.items():
+            is_selected = mode == selected
+            button.configure(
+                bg=palette["accent"] if is_selected else palette["surface_alt"],
+                fg="#ffffff" if is_selected else palette["text"],
+                activebackground=palette["accent_hover"] if is_selected else palette["button_hover"],
+                activeforeground="#ffffff" if is_selected else palette["text"],
+            )
+
+    def _mode_changed(self, mode: str) -> None:
+        self.mode.set(mode)
         if mode == "Audio":
             self.format_combo.configure(values=AUDIO_FORMATS)
             self.output_format.set("MP3")
@@ -346,6 +459,8 @@ class MediaConverterApp(tk.Tk):
                 self.video_quality.set("90")
             self.status.set("Elige una imagen para convertirla a otro formato.")
         self._update_convert_button_text()
+        self._update_mode_buttons()
+        self._draw_status_dot()
 
     def _update_convert_button_text(self) -> None:
         self.convert_button.configure(text=f"Convertir a {self.output_format.get()}")
@@ -362,6 +477,7 @@ class MediaConverterApp(tk.Tk):
         selected = filedialog.askopenfilename(initialdir=str(default_output_dir()), title="Elegir archivo", filetypes=filetypes)
         if selected:
             self.input_file.set(selected)
+            self.progress_text.set(Path(selected).name)
 
     def _choose_folder(self) -> None:
         selected = filedialog.askdirectory(initialdir=self.output_dir.get() or str(Path.home()))
@@ -373,6 +489,51 @@ class MediaConverterApp(tk.Tk):
         selected = self.cloud_target.get()
         if selected in self.cloud_folders:
             self.output_dir.set(str(self.cloud_folders[selected]))
+
+    def _set_busy(self, value: bool) -> None:
+        self.busy = value
+        self.convert_button.configure(state="disabled" if value else "normal")
+        if value:
+            self._animate_progress()
+        else:
+            self.progress_phase = 0
+            self._draw_progress_bar()
+        self._draw_status_dot()
+
+    def _draw_progress_bar(self) -> None:
+        palette = self.palette
+        canvas = self.progress_canvas
+        canvas.delete("all")
+        width = max(canvas.winfo_width(), 1)
+        height = max(canvas.winfo_height(), 12)
+        canvas.create_rectangle(0, 0, width, height, fill=palette["surface_alt"], outline=palette["border"])
+        if self.busy:
+            block_width = max(width // 3, 120)
+            x = (self.progress_phase % (width + block_width)) - block_width
+            canvas.create_rectangle(x, 0, x + block_width, height, fill=palette["accent"], outline="")
+
+    def _animate_progress(self) -> None:
+        if not self.busy:
+            return
+        self.progress_phase += 16
+        self._draw_progress_bar()
+        self.after(35, self._animate_progress)
+
+    def _draw_status_dot(self) -> None:
+        palette = self.palette
+        self.status_dot.delete("all")
+        color = palette["accent"] if self.busy else palette["success"]
+        self.status_dot.create_oval(4, 4, 14, 14, fill=color, outline="")
+
+    def _animate_status_dot(self) -> None:
+        palette = self.palette
+        self.pulse_phase = (self.pulse_phase + 1) % 28
+        radius = 4 + abs(14 - self.pulse_phase) / 7
+        center = 9
+        color = palette["accent"] if self.busy else palette["success"]
+        self.status_dot.delete("all")
+        self.status_dot.create_oval(center - radius, center - radius, center + radius, center + radius, fill=color, outline="")
+        self.after(120 if self.busy else 180, self._animate_status_dot)
 
     def _start_conversion(self) -> None:
         input_file = Path(self.input_file.get().strip()).expanduser()
@@ -396,11 +557,9 @@ class MediaConverterApp(tk.Tk):
             )
             return
 
-        self.convert_button.configure(state="disabled")
-        self.progress.start(12)
+        self._set_busy(True)
         self.status.set(f"Convirtiendo a {output_format}...")
         self.progress_text.set("Preparando archivo de salida.")
-
         self.worker = threading.Thread(
             target=self._convert,
             args=(self.mode.get(), input_file, output_dir, ffmpeg, output_format),
@@ -494,14 +653,12 @@ class MediaConverterApp(tk.Tk):
                     self.progress_text.set(text)
                 elif kind == "done":
                     output_file = Path(text)
-                    self.progress.stop()
-                    self.convert_button.configure(state="normal")
+                    self._set_busy(False)
                     self.status.set("Conversion completada.")
                     self.progress_text.set(str(output_file))
                     messagebox.showinfo(APP_TITLE, f"Listo:\n{output_file}")
                 elif kind == "error":
-                    self.progress.stop()
-                    self.convert_button.configure(state="normal")
+                    self._set_busy(False)
                     self.status.set("No se pudo convertir el archivo.")
                     self.progress_text.set(text)
                     messagebox.showerror(APP_TITLE, text)
