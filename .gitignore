@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+downloads/
+ffmpeg.exe
+ffprobe.exe
+cookies.txt
+dist/
+build/
+*.spec
