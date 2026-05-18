@@ -73,6 +73,10 @@ def app_dir() -> Path:
     return Path(__file__).resolve().parent
 
 
+def resource_path(name: str) -> Path:
+    return app_dir() / name
+
+
 def default_output_dir() -> Path:
     for candidate in (Path.home() / "Music", Path.home() / "Videos", Path.home() / "Pictures", Path.home() / "Downloads"):
         if candidate.exists():
@@ -219,7 +223,9 @@ class MediaConverterApp(tk.Tk):
         self.busy = False
         self.progress_phase = 0
         self.pulse_phase = 0
+        self._icon_image: Optional[tk.PhotoImage] = None
 
+        self._set_window_icon()
         self._build_ui()
         self.after(100, self._poll_messages)
         self.after(120, self._animate_status_dot)
@@ -249,6 +255,16 @@ class MediaConverterApp(tk.Tk):
         self._build_action_area()
         self._apply_theme()
         self._mode_changed("Audio")
+
+    def _set_window_icon(self) -> None:
+        icon_path = resource_path("icon-300.png")
+        if not icon_path.exists():
+            return
+        try:
+            self._icon_image = tk.PhotoImage(file=str(icon_path))
+            self.iconphoto(True, self._icon_image)
+        except tk.TclError:
+            pass
 
     def _build_header(self) -> None:
         header = ttk.Frame(self.main, style="App.TFrame")
