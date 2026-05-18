@@ -39,7 +39,7 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller --noconfirm --onefile --windowed --name media-flow app.py
+          pyinstaller --noconfirm --onefile --windowed --name media-flow --icon assets\installer\media-flow.ico app.py
 
       - name: Prepare release ZIP
         shell: pwsh

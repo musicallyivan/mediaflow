@@ -2,6 +2,13 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.4.3] - 2026-05-18
+
+### Changed
+
+- Instalador de Windows pulido con icono propio, imagen de bienvenida y textos personalizados.
+- Ejecutable de Windows empaquetado con el icono de Media Flow.
+
 ## [1.4.2] - 2026-05-18
 
 ### Added
