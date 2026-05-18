@@ -1,0 +1,54 @@
+#define MyAppName "Media Flow"
+#ifndef MyAppVersion
+  #define MyAppVersion "1.4.2"
+#endif
+#define MyAppPublisher "musicallyivan"
+#define MyAppURL "https://github.com/musicallyivan/mediaflow"
+#define MyAppExeName "media-flow.exe"
+
+[Setup]
+AppId={{D2B8B1A3-7B27-4C6B-BD3A-2D7B0F1D7F21}}
+AppName={#MyAppName}
+AppVersion={#MyAppVersion}
+AppVerName={#MyAppName} {#MyAppVersion}
+AppPublisher={#MyAppPublisher}
+AppPublisherURL={#MyAppURL}
+AppSupportURL={#MyAppURL}
+AppUpdatesURL={#MyAppURL}/releases/latest
+DefaultDirName={localappdata}\Programs\{#MyAppName}
+DefaultGroupName={#MyAppName}
+DisableProgramGroupPage=yes
+UninstallDisplayIcon={app}\{#MyAppExeName}
+OutputDir=build\installer
+OutputBaseFilename=media-flow-setup-{#MyAppVersion}
+Compression=lzma2
+SolidCompression=yes
+WizardStyle=modern
+PrivilegesRequired=lowest
+ArchitecturesAllowed=x64compatible
+ArchitecturesInstallIn64BitMode=x64compatible
+
+[Languages]
+Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[Tasks]
+Name: "desktopicon"; Description: "Crear un acceso directo en el escritorio"; GroupDescription: "Accesos directos adicionales:"; Flags: unchecked
+
+[Files]
+Source: "release\media-flow\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "release\media-flow\ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "release\media-flow\ffprobe.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "release\media-flow\icon-300.png"; DestDir: "{app}"; Flags: ignoreversion
+Source: "release\media-flow\README.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "release\media-flow\CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "release\media-flow\PRIVACY.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "release\media-flow\THIRD_PARTY_NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "release\media-flow\ffmpeg-licenses\*"; DestDir: "{app}\ffmpeg-licenses"; Flags: ignoreversion recursesubdirs createallsubdirs
+
+[Icons]
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\{#MyAppExeName}"; Description: "Abrir {#MyAppName}"; Flags: nowait postinstall skipifsilent

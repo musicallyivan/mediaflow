@@ -2,6 +2,16 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.4.2] - 2026-05-18
+
+### Added
+
+- Instalador standalone de Windows para distribuir Media Flow como `.exe`.
+
+### Changed
+
+- Workflow de release actualizado para publicar el ZIP y el instalador.
+
 ## [1.4.1] - 2026-05-18
 
 ### Changed

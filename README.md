@@ -1,6 +1,6 @@
 # Media Flow
 
-Version actual: `1.4.1`
+Version actual: `1.4.2`
 
 Media Flow es una app local para Windows que convierte archivos de audio, video e imagen usando `ffmpeg`.
 
@@ -15,6 +15,12 @@ Media Flow es una app local para Windows que convierte archivos de audio, video 
 - Salida a carpeta local o a carpetas sincronizadas de OneDrive, Google Drive o iCloud Drive cuando ya estan instaladas en el equipo.
 
 La app no descarga contenido de servicios de terceros. Convierte archivos locales que ya tengas derecho a usar.
+
+## Instalacion
+
+1. En Releases, descarga el instalador `.exe` si quieres una instalacion guiada.
+2. Si prefieres una copia portable, descarga el ZIP.
+3. Abre Media Flow y elige el archivo que quieres convertir.
 
 ## Requisitos
 
