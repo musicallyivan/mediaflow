@@ -2,6 +2,19 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.5.0] - 2026-05-20
+
+### Added
+
+- Conversion por lotes seleccionando varios archivos a la vez.
+- Guardado automatico de preferencias de tema, modo, formato, calidad y carpeta de salida.
+- Vista de informacion del archivo con `ffprobe` cuando esta disponible.
+- Esquinas de ventana redondeadas en Windows compatible y barra de progreso redondeada.
+
+### Fixed
+
+- Actualizador `.exe` mas robusto: ahora lanza un script independiente, espera a que la app se cierre, registra el resultado y vuelve a abrir Media Flow si la instalacion termina correctamente.
+
 ## [1.4.6] - 2026-05-19
 
 ### Changed

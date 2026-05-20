@@ -9,6 +9,7 @@ import tempfile
 import threading
 import urllib.error
 import urllib.request
+import ctypes
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Optional
@@ -16,7 +17,7 @@ import tkinter as tk
 
 
 APP_TITLE = "Media Flow"
-APP_VERSION = "1.4.6"
+APP_VERSION = "1.5.0"
 GITHUB_REPO = os.environ.get("MEDIA_FLOW_GITHUB_REPO", "musicallyivan/mediaflow")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
@@ -76,6 +77,11 @@ def resource_path(name: str) -> Path:
     return app_dir() / name
 
 
+def config_path() -> Path:
+    base = Path(os.environ.get("LOCALAPPDATA") or Path.home())
+    return base / "Media Flow" / "settings.json"
+
+
 def is_msix_package() -> bool:
     return resource_path("msix-package.txt").exists()
 
@@ -113,6 +119,29 @@ def find_ffmpeg() -> Optional[str]:
     if winget_packages.exists():
         candidates.extend(winget_packages.glob("Gyan.FFmpeg*/*/bin/ffmpeg.exe"))
 
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+    return None
+
+
+def find_ffprobe() -> Optional[str]:
+    ffmpeg = find_ffmpeg()
+    if ffmpeg:
+        candidate = Path(ffmpeg).with_name("ffprobe.exe" if sys.platform == "win32" else "ffprobe")
+        if candidate.exists():
+            return str(candidate)
+
+    found = shutil.which("ffprobe")
+    if found:
+        return found
+
+    base = app_dir()
+    candidates = [
+        base / "ffprobe.exe",
+        base / "ffmpeg" / "bin" / "ffprobe.exe",
+        base / "bin" / "ffprobe.exe",
+    ]
     for candidate in candidates:
         if candidate.exists():
             return str(candidate)
@@ -210,29 +239,52 @@ def download_file(url: str, destination: Path) -> None:
         shutil.copyfileobj(response, output)
 
 
+def apply_window_corner_preference(window: tk.Tk) -> None:
+    if sys.platform != "win32":
+        return
+    try:
+        hwnd = ctypes.windll.user32.GetParent(window.winfo_id()) or window.winfo_id()
+        preference = ctypes.c_int(2)
+        ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 33, ctypes.byref(preference), ctypes.sizeof(preference))
+    except (AttributeError, OSError, tk.TclError):
+        pass
+
+
 def launch_installer_after_exit(installer_path: Path) -> None:
     if sys.platform != "win32":
         raise RuntimeError("La instalacion automatica solo esta disponible en Windows.")
 
-    command = [
-        "powershell",
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-WindowStyle",
-        "Hidden",
-        "-Command",
-        (
-            "$installer = $args[0]; "
-            "$pidToWait = [int]$args[1]; "
-            "Wait-Process -Id $pidToWait -ErrorAction SilentlyContinue; "
-            "Start-Process -FilePath $installer "
-            "-ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CLOSEAPPLICATIONS' "
-            "-Wait"
+    updater_dir = Path(tempfile.gettempdir()) / "media-flow-updates"
+    updater_dir.mkdir(parents=True, exist_ok=True)
+    script_path = updater_dir / "run-update.cmd"
+    log_path = updater_dir / "update.log"
+    app_exe = Path(sys.executable).resolve() if getattr(sys, "frozen", False) else Path(sys.argv[0]).resolve()
+    script_path.write_text(
+        "\n".join(
+            [
+                "@echo off",
+                "setlocal",
+                f"set \"INSTALLER={installer_path}\"",
+                f"set \"APP_EXE={app_exe}\"",
+                f"set \"LOG={log_path}\"",
+                "echo [%date% %time%] Waiting for Media Flow to close>\"%LOG%\"",
+                f":waitloop",
+                f"tasklist /FI \"PID eq {os.getpid()}\" 2>NUL | find \"{os.getpid()}\" >NUL",
+                "if not errorlevel 1 (",
+                "  timeout /t 1 /nobreak >NUL",
+                "  goto waitloop",
+                ")",
+                "echo [%date% %time%] Starting installer>>\"%LOG%\"",
+                "start \"\" /wait \"%INSTALLER%\" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS",
+                "set \"RESULT=%ERRORLEVEL%\"",
+                "echo [%date% %time%] Installer exit code %RESULT%>>\"%LOG%\"",
+                "if \"%RESULT%\"==\"0\" start \"\" \"%APP_EXE%\"",
+                "exit /b %RESULT%",
+            ]
         ),
-        str(installer_path),
-        str(os.getpid()),
-    ]
+        encoding="utf-8",
+    )
+    command = ["cmd.exe", "/c", "start", "", "/min", str(script_path)]
     subprocess.Popen(
         command,
         stdin=subprocess.DEVNULL,
@@ -258,6 +310,64 @@ def unique_output_path(output_dir: Path, stem: str, extension: str) -> Path:
     raise FileExistsError("No se pudo crear un nombre de salida unico.")
 
 
+def format_duration(seconds: Any) -> str:
+    try:
+        total = int(float(seconds))
+    except (TypeError, ValueError):
+        return ""
+    hours, remainder = divmod(total, 3600)
+    minutes, secs = divmod(remainder, 60)
+    if hours:
+        return f"{hours}:{minutes:02d}:{secs:02d}"
+    return f"{minutes}:{secs:02d}"
+
+
+def format_size(bytes_value: Any) -> str:
+    try:
+        size = float(bytes_value)
+    except (TypeError, ValueError):
+        return ""
+    units = ("B", "KB", "MB", "GB")
+    index = 0
+    while size >= 1024 and index < len(units) - 1:
+        size /= 1024
+        index += 1
+    if index == 0:
+        return f"{int(size)} {units[index]}"
+    return f"{size:.1f} {units[index]}"
+
+
+def rounded_rectangle(canvas: tk.Canvas, x1: int, y1: int, x2: int, y2: int, radius: int, **kwargs: Any) -> None:
+    radius = max(0, min(radius, (x2 - x1) // 2, (y2 - y1) // 2))
+    points = [
+        x1 + radius,
+        y1,
+        x2 - radius,
+        y1,
+        x2,
+        y1,
+        x2,
+        y1 + radius,
+        x2,
+        y2 - radius,
+        x2,
+        y2,
+        x2 - radius,
+        y2,
+        x1 + radius,
+        y2,
+        x1,
+        y2,
+        x1,
+        y2 - radius,
+        x1,
+        y1 + radius,
+        x1,
+        y1,
+    ]
+    canvas.create_polygon(points, smooth=True, splinesteps=12, **kwargs)
+
+
 class MediaConverterApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
@@ -265,16 +375,19 @@ class MediaConverterApp(tk.Tk):
         self.geometry("860x680")
         self.minsize(760, 620)
 
-        self.theme_name = tk.StringVar(value="light")
-        self.mode = tk.StringVar(value="Audio")
+        self.settings = self._load_settings()
+        self.theme_name = tk.StringVar(value=self.settings.get("theme", "light"))
+        self.mode = tk.StringVar(value=self.settings.get("mode", "Audio"))
         self.input_file = tk.StringVar()
-        self.output_dir = tk.StringVar(value=str(default_output_dir()))
-        self.output_format = tk.StringVar(value="MP3")
-        self.audio_quality = tk.StringVar(value="192 kbps")
-        self.video_quality = tk.StringVar(value="Equilibrada")
-        self.cloud_target = tk.StringVar(value="Carpeta local")
+        self.output_dir = tk.StringVar(value=self.settings.get("output_dir", str(default_output_dir())))
+        self.output_format = tk.StringVar(value=self.settings.get("output_format", "MP3"))
+        self.audio_quality = tk.StringVar(value=self.settings.get("audio_quality", "192 kbps"))
+        self.video_quality = tk.StringVar(value=self.settings.get("video_quality", "Equilibrada"))
+        self.cloud_target = tk.StringVar(value=self.settings.get("cloud_target", "Carpeta local"))
         self.status = tk.StringVar(value="Elige un archivo para empezar.")
         self.progress_text = tk.StringVar(value="")
+        self.media_info = tk.StringVar(value="Sin archivo seleccionado.")
+        self.input_files: list[Path] = []
         self.cloud_folders = detect_cloud_folders()
         self.messages: queue.Queue[tuple[str, Any]] = queue.Queue()
         self.worker: Optional[threading.Thread] = None
@@ -288,13 +401,16 @@ class MediaConverterApp(tk.Tk):
 
         self._set_window_icon()
         self._build_ui()
+        apply_window_corner_preference(self)
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self._attach_setting_traces()
         self.after(100, self._poll_messages)
         self.after(120, self._animate_status_dot)
         self.after(1500, lambda: self._check_for_updates(silent=True))
 
     @property
     def palette(self) -> dict[str, str]:
-        return THEMES[self.theme_name.get()]
+        return THEMES.get(self.theme_name.get(), THEMES["light"])
 
     def _build_ui(self) -> None:
         self.style = ttk.Style(self)
@@ -315,7 +431,51 @@ class MediaConverterApp(tk.Tk):
         self._build_output_card()
         self._build_action_area()
         self._apply_theme()
-        self._mode_changed("Audio")
+        self._mode_changed(self.mode.get(), preserve_format=True)
+
+    def _load_settings(self) -> dict[str, str]:
+        try:
+            path = config_path()
+            if path.exists():
+                data = json.loads(path.read_text(encoding="utf-8"))
+                if isinstance(data, dict):
+                    return {str(key): str(value) for key, value in data.items()}
+        except (OSError, json.JSONDecodeError):
+            pass
+        return {}
+
+    def _attach_setting_traces(self) -> None:
+        for variable in (
+            self.theme_name,
+            self.mode,
+            self.output_dir,
+            self.output_format,
+            self.audio_quality,
+            self.video_quality,
+            self.cloud_target,
+        ):
+            variable.trace_add("write", lambda *_args: self._save_settings())
+
+    def _save_settings(self) -> None:
+        data = {
+            "theme": self.theme_name.get(),
+            "mode": self.mode.get(),
+            "output_dir": self.output_dir.get(),
+            "output_format": self.output_format.get(),
+            "audio_quality": self.audio_quality.get(),
+            "video_quality": self.video_quality.get(),
+            "cloud_target": self.cloud_target.get(),
+        }
+        try:
+            path = config_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        except OSError:
+            pass
+
+    def _on_close(self) -> None:
+        self._save_settings()
+        self.destroy()
 
     def _set_window_icon(self) -> None:
         icon_path = resource_path("icon-300.png")
@@ -371,18 +531,21 @@ class MediaConverterApp(tk.Tk):
         self.content_card.grid(row=2, column=0, sticky="ew")
         self.content_card.columnconfigure(0, weight=1)
 
-        ttk.Label(self.content_card, text="Archivo de entrada", style="Section.TLabel").grid(row=0, column=0, sticky="w")
-        ttk.Label(self.content_card, text="Selecciona un archivo local compatible.", style="CardMuted.TLabel").grid(row=1, column=0, sticky="w", pady=(2, 8))
+        ttk.Label(self.content_card, text="Archivos de entrada", style="Section.TLabel").grid(row=0, column=0, sticky="w")
+        ttk.Label(self.content_card, text="Selecciona uno o varios archivos locales compatibles.", style="CardMuted.TLabel").grid(row=1, column=0, sticky="w", pady=(2, 8))
 
         file_row = ttk.Frame(self.content_card, style="Card.TFrame")
-        file_row.grid(row=2, column=0, sticky="ew", pady=(0, 18))
+        file_row.grid(row=2, column=0, sticky="ew", pady=(0, 8))
         file_row.columnconfigure(0, weight=1)
         self.file_entry = ttk.Entry(file_row, textvariable=self.input_file)
         self.file_entry.grid(row=0, column=0, sticky="ew")
-        ttk.Button(file_row, text="Elegir archivo", command=self._choose_input_file, style="Secondary.TButton").grid(row=0, column=1, padx=(10, 0))
+        ttk.Button(file_row, text="Elegir archivos", command=self._choose_input_file, style="Secondary.TButton").grid(row=0, column=1, padx=(10, 0))
+
+        self.info_label = ttk.Label(self.content_card, textvariable=self.media_info, style="CardMuted.TLabel", wraplength=760)
+        self.info_label.grid(row=3, column=0, sticky="w", pady=(0, 18))
 
         options = ttk.Frame(self.content_card, style="Card.TFrame")
-        options.grid(row=3, column=0, sticky="ew")
+        options.grid(row=4, column=0, sticky="ew")
         for column in range(3):
             options.columnconfigure(column, weight=1, uniform="options")
 
@@ -495,9 +658,9 @@ class MediaConverterApp(tk.Tk):
         palette = self.palette
         self.logo.delete("all")
         self.logo.create_oval(2, 2, 46, 46, fill=palette["accent_soft"], outline=palette["accent"])
-        self.logo.create_rectangle(15, 14, 33, 20, fill=palette["accent"], outline="")
-        self.logo.create_rectangle(12, 24, 36, 30, fill=palette["accent_hover"], outline="")
-        self.logo.create_rectangle(18, 34, 30, 39, fill=palette["accent"], outline="")
+        rounded_rectangle(self.logo, 15, 14, 33, 20, 3, fill=palette["accent"], outline="")
+        rounded_rectangle(self.logo, 12, 24, 36, 30, 3, fill=palette["accent_hover"], outline="")
+        rounded_rectangle(self.logo, 18, 34, 30, 39, 3, fill=palette["accent"], outline="")
 
     def _update_mode_buttons(self) -> None:
         palette = self.palette
@@ -511,17 +674,21 @@ class MediaConverterApp(tk.Tk):
                 activeforeground="#ffffff" if is_selected else palette["text"],
             )
 
-    def _mode_changed(self, mode: str) -> None:
+    def _mode_changed(self, mode: str, preserve_format: bool = False) -> None:
+        if mode not in ("Audio", "Video", "Imagen"):
+            mode = "Audio"
         self.mode.set(mode)
         if mode == "Audio":
             self.format_combo.configure(values=AUDIO_FORMATS)
-            self.output_format.set("MP3")
+            if not preserve_format or self.output_format.get() not in AUDIO_FORMATS:
+                self.output_format.set("MP3")
             self.audio_quality_combo.configure(state="readonly")
             self.visual_quality_combo.configure(state="disabled")
             self.status.set("Elige un archivo de audio o video para extraer o convertir audio.")
         elif mode == "Video":
             self.format_combo.configure(values=VIDEO_FORMATS)
-            self.output_format.set("MP4")
+            if not preserve_format or self.output_format.get() not in VIDEO_FORMATS:
+                self.output_format.set("MP4")
             self.audio_quality_combo.configure(state="readonly")
             self.visual_quality_combo.configure(state="readonly", values=("Alta", "Equilibrada", "Comprimida"))
             if self.video_quality.get() not in ("Alta", "Equilibrada", "Comprimida"):
@@ -529,7 +696,8 @@ class MediaConverterApp(tk.Tk):
             self.status.set("Elige un archivo de video para convertirlo a otro contenedor o codec.")
         else:
             self.format_combo.configure(values=IMAGE_FORMATS)
-            self.output_format.set("PNG")
+            if not preserve_format or self.output_format.get() not in IMAGE_FORMATS:
+                self.output_format.set("PNG")
             self.audio_quality_combo.configure(state="disabled")
             self.visual_quality_combo.configure(state="readonly", values=("100", "90", "80", "70"))
             if self.video_quality.get() not in ("100", "90", "80", "70"):
@@ -551,10 +719,16 @@ class MediaConverterApp(tk.Tk):
         else:
             filetypes = (("Imagen", IMAGE_EXTENSIONS), ("Todos los archivos", "*.*"))
 
-        selected = filedialog.askopenfilename(initialdir=str(default_output_dir()), title="Elegir archivo", filetypes=filetypes)
+        selected = filedialog.askopenfilenames(initialdir=str(default_output_dir()), title="Elegir archivos", filetypes=filetypes)
         if selected:
-            self.input_file.set(selected)
-            self.progress_text.set(Path(selected).name)
+            self.input_files = [Path(value) for value in selected]
+            if len(self.input_files) == 1:
+                self.input_file.set(str(self.input_files[0]))
+                self.progress_text.set(self.input_files[0].name)
+            else:
+                self.input_file.set(f"{len(self.input_files)} archivos seleccionados")
+                self.progress_text.set(", ".join(path.name for path in self.input_files[:3]))
+            self._probe_selection()
 
     def _choose_folder(self) -> None:
         selected = filedialog.askdirectory(initialdir=self.output_dir.get() or str(Path.home()))
@@ -566,6 +740,86 @@ class MediaConverterApp(tk.Tk):
         selected = self.cloud_target.get()
         if selected in self.cloud_folders:
             self.output_dir.set(str(self.cloud_folders[selected]))
+
+    def _probe_selection(self) -> None:
+        files = list(self.input_files)
+        if not files:
+            self.media_info.set("Sin archivo seleccionado.")
+            return
+        self.media_info.set("Leyendo informacion del archivo...")
+        threading.Thread(target=self._probe_files, args=(files,), daemon=True).start()
+
+    def _probe_files(self, files: list[Path]) -> None:
+        ffprobe = find_ffprobe()
+        if not ffprobe:
+            text = f"{len(files)} archivo(s) seleccionado(s). No encuentro ffprobe para mostrar detalles."
+            self.messages.put(("media_info", text))
+            return
+        try:
+            first = files[0]
+            command = [
+                ffprobe,
+                "-v",
+                "error",
+                "-print_format",
+                "json",
+                "-show_format",
+                "-show_streams",
+                str(first),
+            ]
+            process = subprocess.run(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+                timeout=12,
+                check=False,
+            )
+            if process.returncode != 0:
+                raise RuntimeError(process.stderr.strip() or "ffprobe no pudo leer el archivo.")
+            data = json.loads(process.stdout)
+            text = self._format_media_info(first, files, data)
+        except Exception as exc:
+            text = f"{len(files)} archivo(s) seleccionado(s). No se pudieron leer los detalles: {exc}"
+        self.messages.put(("media_info", text))
+
+    def _format_media_info(self, first: Path, files: list[Path], data: dict[str, Any]) -> str:
+        streams = data.get("streams") if isinstance(data.get("streams"), list) else []
+        fmt = data.get("format") if isinstance(data.get("format"), dict) else {}
+        video = next((stream for stream in streams if stream.get("codec_type") == "video"), None)
+        audio = next((stream for stream in streams if stream.get("codec_type") == "audio"), None)
+        parts = []
+        if len(files) > 1:
+            parts.append(f"{len(files)} archivos")
+            parts.append(f"primero: {first.name}")
+        else:
+            parts.append(first.name)
+        duration = format_duration(fmt.get("duration"))
+        size = format_size(fmt.get("size") or first.stat().st_size)
+        if duration:
+            parts.append(f"duracion {duration}")
+        if size:
+            parts.append(f"tamano {size}")
+        if video:
+            resolution = ""
+            if video.get("width") and video.get("height"):
+                resolution = f"{video.get('width')}x{video.get('height')}"
+            codec = str(video.get("codec_name") or "").upper()
+            parts.append("video " + " ".join(value for value in (codec, resolution) if value))
+        if audio:
+            codec = str(audio.get("codec_name") or "").upper()
+            channels = audio.get("channels")
+            sample_rate = audio.get("sample_rate")
+            audio_parts = [codec]
+            if channels:
+                audio_parts.append(f"{channels} canales")
+            if sample_rate:
+                audio_parts.append(f"{sample_rate} Hz")
+            parts.append("audio " + " ".join(audio_parts))
+        return " - ".join(part for part in parts if part)
 
     def _set_busy(self, value: bool) -> None:
         self.busy = value
@@ -583,11 +837,11 @@ class MediaConverterApp(tk.Tk):
         canvas.delete("all")
         width = max(canvas.winfo_width(), 1)
         height = max(canvas.winfo_height(), 12)
-        canvas.create_rectangle(0, 0, width, height, fill=palette["surface_alt"], outline=palette["border"])
+        rounded_rectangle(canvas, 0, 0, width, height, 6, fill=palette["surface_alt"], outline=palette["border"])
         if self.busy:
             block_width = max(width // 3, 120)
             x = (self.progress_phase % (width + block_width)) - block_width
-            canvas.create_rectangle(x, 0, x + block_width, height, fill=palette["accent"], outline="")
+            rounded_rectangle(canvas, x, 0, x + block_width, height, 6, fill=palette["accent"], outline="")
 
     def _animate_progress(self) -> None:
         if not self.busy:
@@ -613,12 +867,18 @@ class MediaConverterApp(tk.Tk):
         self.after(120 if self.busy else 180, self._animate_status_dot)
 
     def _start_conversion(self) -> None:
-        input_file = Path(self.input_file.get().strip()).expanduser()
+        input_files = list(self.input_files)
+        if not input_files and self.input_file.get().strip():
+            input_files = [Path(self.input_file.get().strip()).expanduser()]
         output_dir = Path(self.output_dir.get().strip()).expanduser()
         output_format = self.output_format.get()
 
-        if not input_file.exists() or not input_file.is_file():
-            messagebox.showwarning(APP_TITLE, "Elige primero un archivo valido.")
+        if not input_files:
+            messagebox.showwarning(APP_TITLE, "Elige primero uno o varios archivos validos.")
+            return
+        invalid_files = [path for path in input_files if not path.exists() or not path.is_file()]
+        if invalid_files:
+            messagebox.showwarning(APP_TITLE, f"No se encontro este archivo:\n{invalid_files[0]}")
             return
         if not output_dir.exists() or not output_dir.is_dir():
             messagebox.showwarning(APP_TITLE, "La carpeta de salida no existe.")
@@ -635,11 +895,14 @@ class MediaConverterApp(tk.Tk):
             return
 
         self._set_busy(True)
-        self.status.set(f"Convirtiendo a {output_format}...")
-        self.progress_text.set("Preparando archivo de salida.")
+        if len(input_files) == 1:
+            self.status.set(f"Convirtiendo a {output_format}...")
+        else:
+            self.status.set(f"Convirtiendo {len(input_files)} archivos a {output_format}...")
+        self.progress_text.set("Preparando salida.")
         self.worker = threading.Thread(
-            target=self._convert,
-            args=(self.mode.get(), input_file, output_dir, ffmpeg, output_format),
+            target=self._convert_batch,
+            args=(self.mode.get(), input_files, output_dir, ffmpeg, output_format),
             daemon=True,
         )
         self.worker.start()
@@ -677,26 +940,44 @@ class MediaConverterApp(tk.Tk):
             if not silent:
                 self.messages.put(("update_error", f"No se pudo comprobar si hay actualizaciones.\n\n{exc}"))
 
+    def _convert_batch(self, mode: str, input_files: list[Path], output_dir: Path, ffmpeg: str, output_format: str) -> None:
+        completed: list[Path] = []
+        try:
+            total = len(input_files)
+            for index, input_file in enumerate(input_files, start=1):
+                self.messages.put(("progress", f"{index}/{total} - Preparando {input_file.name}"))
+                completed.append(self._convert_one(mode, input_file, output_dir, ffmpeg, output_format, index, total))
+            self.messages.put(("done", completed))
+        except Exception as exc:
+            text = str(exc)
+            if "ffmpeg" in text.lower():
+                text = "ffmpeg no pudo convertir este archivo. Comprueba que el archivo no este danado y que el formato sea compatible."
+            self.messages.put(("error", text))
+
+    def _convert_one(self, mode: str, input_file: Path, output_dir: Path, ffmpeg: str, output_format: str, index: int, total: int) -> Path:
+        extension = "jpg" if output_format == "JPG" else output_format.lower()
+        output_file = unique_output_path(output_dir, f"{input_file.stem} convertido", extension)
+        command = self._build_ffmpeg_command(mode, ffmpeg, input_file, output_file, output_format)
+
+        self.messages.put(("progress", f"{index}/{total} - Creando {output_file.name}"))
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+        )
+        _, stderr = process.communicate()
+        if process.returncode != 0:
+            detail = stderr.strip().splitlines()[-1] if stderr.strip() else "ffmpeg no pudo convertir el archivo."
+            raise RuntimeError(f"{input_file.name}: {detail}")
+        return output_file
+
     def _convert(self, mode: str, input_file: Path, output_dir: Path, ffmpeg: str, output_format: str) -> None:
         try:
-            extension = "jpg" if output_format == "JPG" else output_format.lower()
-            output_file = unique_output_path(output_dir, f"{input_file.stem} convertido", extension)
-            command = self._build_ffmpeg_command(mode, ffmpeg, input_file, output_file, output_format)
-
-            self.messages.put(("progress", f"Creando {output_file.name}"))
-            process = subprocess.Popen(
-                command,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
-            )
-            _, stderr = process.communicate()
-            if process.returncode != 0:
-                detail = stderr.strip().splitlines()[-1] if stderr.strip() else "ffmpeg no pudo convertir el archivo."
-                raise RuntimeError(detail)
+            output_file = self._convert_one(mode, input_file, output_dir, ffmpeg, output_format, 1, 1)
             self.messages.put(("done", output_file))
         except Exception as exc:
             text = str(exc)
@@ -737,12 +1018,20 @@ class MediaConverterApp(tk.Tk):
                 kind, text = self.messages.get_nowait()
                 if kind == "progress":
                     self.progress_text.set(text)
+                elif kind == "media_info":
+                    self.media_info.set(text)
                 elif kind == "done":
-                    output_file = Path(text)
+                    output_files = text if isinstance(text, list) else [Path(text)]
                     self._set_busy(False)
                     self.status.set("Conversion completada.")
-                    self.progress_text.set(str(output_file))
-                    messagebox.showinfo(APP_TITLE, f"Listo:\n{output_file}")
+                    if len(output_files) == 1:
+                        output_file = Path(output_files[0])
+                        self.progress_text.set(str(output_file))
+                        messagebox.showinfo(APP_TITLE, f"Listo:\n{output_file}")
+                    else:
+                        folder = Path(output_files[0]).parent
+                        self.progress_text.set(f"{len(output_files)} archivos creados en {folder}")
+                        messagebox.showinfo(APP_TITLE, f"Listo: {len(output_files)} archivos convertidos.\n\nCarpeta:\n{folder}")
                 elif kind == "error":
                     self._set_busy(False)
                     self.status.set("No se pudo convertir el archivo.")

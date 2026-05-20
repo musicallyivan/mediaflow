@@ -1,6 +1,6 @@
 # Media Flow
 
-Version actual: `1.4.6`
+Version actual: `1.5.0`
 
 Media Flow es una app local para Windows que convierte archivos de audio, video e imagen usando `ffmpeg`.
 
@@ -9,7 +9,10 @@ Media Flow es una app local para Windows que convierte archivos de audio, video 
 - Conversion de audio a `MP3`, `M4A`, `WAV`, `FLAC` y `OGG`.
 - Conversion de video a `MP4`, `MOV`, `WEBM` y `MKV`.
 - Conversion de imagen a `PNG`, `JPG`, `WEBP` y `BMP`.
+- Conversion por lotes de varios archivos con el mismo formato y calidad.
 - Calidad configurable para audio, video e imagen.
+- Informacion del archivo seleccionado con duracion, tamano, codecs y resolucion cuando `ffprobe` esta disponible.
+- Preferencias guardadas automaticamente: tema, modo, formato, calidad y carpeta de salida.
 - Modo claro y oscuro.
 - Barra de progreso e indicador de estado animados.
 - Actualizaciones automaticas desde GitHub Releases.
@@ -33,7 +36,7 @@ La app no descarga contenido de servicios de terceros. Convierte archivos locale
 
 1. Abre Media Flow.
 2. Elige `Audio`, `Video` o `Imagen`.
-3. Selecciona un archivo local.
+3. Selecciona uno o varios archivos locales.
 4. Elige el formato y la calidad.
 5. Elige la carpeta de salida o una carpeta sincronizada disponible.
 6. Pulsa `Convertir`.
