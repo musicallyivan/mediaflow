@@ -103,7 +103,8 @@ function createFFmpegInstance() {
 
   return createFFmpeg({
     log: true,
-    corePath: "https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js",
+    mainName: "main",
+    corePath: "https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js",
     progress: ({ ratio }) => {
       if (ratio > 0) {
         setStatus("Convirtiendo...", ratio * 100);
@@ -183,6 +184,8 @@ async function convertFile(event) {
 
   convertButton.disabled = true;
   downloadResult.hidden = true;
+  downloadResult.removeAttribute("href");
+  downloadResult.removeAttribute("download");
 
   if (lastDownloadUrl) {
     URL.revokeObjectURL(lastDownloadUrl);
@@ -218,7 +221,8 @@ async function convertFile(event) {
     ffmpeg.FS("unlink", outputName);
   } catch (error) {
     console.error(error);
-    setStatus("No se pudo cargar o convertir. Recarga la pagina, prueba otro archivo o usa la app de escritorio.", 0);
+    const errorName = error?.message ? ` (${error.message})` : "";
+    setStatus(`No se pudo cargar o convertir${errorName}. Usa la app de escritorio si sigue fallando.`, 0);
   } finally {
     convertButton.disabled = false;
   }

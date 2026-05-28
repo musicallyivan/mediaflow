@@ -172,6 +172,10 @@ progress::-webkit-progress-value {
   color: var(--accent-strong);
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .converter-notes {
   align-self: start;
   padding: 24px;
