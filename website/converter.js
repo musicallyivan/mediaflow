@@ -1,6 +1,3 @@
-import { FFmpeg } from "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
-import { fetchFile, toBlobURL } from "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js";
-
 const formatsByMode = {
   audio: ["mp3", "m4a", "wav", "flac", "ogg"],
   video: ["mp4", "webm", "mov", "mkv"],
@@ -36,7 +33,7 @@ const statusText = document.querySelector("#statusText");
 const progressText = document.querySelector("#progressText");
 const progressBar = document.querySelector("#progressBar");
 
-const ffmpeg = new FFmpeg();
+let ffmpeg = null;
 let ffmpegLoaded = false;
 let lastDownloadUrl = null;
 
@@ -85,31 +82,44 @@ function updateSelectedFile() {
   selectedFile.textContent = `${file.name} · ${formatBytes(file.size)}`;
 }
 
+function withTimeout(promise, timeoutMs, message) {
+  let timeoutId;
+
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => {
+    window.clearTimeout(timeoutId);
+  });
+}
+
+function createFFmpegInstance() {
+  const { createFFmpeg } = window.FFmpeg || {};
+
+  if (!createFFmpeg) {
+    throw new Error("FFmpeg library was not loaded.");
+  }
+
+  return createFFmpeg({
+    log: true,
+    corePath: "https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js",
+    progress: ({ ratio }) => {
+      if (ratio > 0) {
+        setStatus("Convirtiendo...", ratio * 100);
+      }
+    },
+  });
+}
+
 async function loadFFmpeg() {
   if (ffmpegLoaded) {
     return;
   }
 
-  setStatus("Cargando motor de conversion...", 5);
-  const ffmpegURL = "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm";
-  const baseURL = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
-
-  ffmpeg.on("progress", ({ progress }) => {
-    setStatus("Convirtiendo...", progress * 100);
-  });
-
-  ffmpeg.on("log", ({ message }) => {
-    if (message.toLowerCase().includes("error")) {
-      console.debug(message);
-    }
-  });
-
-  await ffmpeg.load({
-    classWorkerURL: await toBlobURL(`${ffmpegURL}/worker.js`, "text/javascript"),
-    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
-  });
-
+  setStatus("Cargando motor de conversion. La primera vez puede tardar un poco...", 5);
+  ffmpeg = createFFmpegInstance();
+  await withTimeout(ffmpeg.load(), 90000, "FFmpeg took too long to load.");
   ffmpegLoaded = true;
   setStatus("Motor listo.", 10);
 }
@@ -187,14 +197,15 @@ async function convertFile(event) {
     const inputName = `input-${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
     const outputName = getOutputName(file.name, format);
     const args = buildArgs(inputName, outputName, mode, format, qualitySelect.value);
+    const { fetchFile } = window.FFmpeg;
 
     setStatus("Preparando archivo...", 12);
-    await ffmpeg.writeFile(inputName, await fetchFile(file));
+    ffmpeg.FS("writeFile", inputName, await fetchFile(file));
 
     setStatus("Convirtiendo...", 15);
-    await ffmpeg.exec(args);
+    await ffmpeg.run(...args);
 
-    const data = await ffmpeg.readFile(outputName);
+    const data = ffmpeg.FS("readFile", outputName);
     const blob = new Blob([data.buffer], { type: mimeByFormat[format] || "application/octet-stream" });
     lastDownloadUrl = URL.createObjectURL(blob);
 
@@ -203,11 +214,11 @@ async function convertFile(event) {
     downloadResult.hidden = false;
     setStatus("Conversion completada.", 100);
 
-    await ffmpeg.deleteFile(inputName);
-    await ffmpeg.deleteFile(outputName);
+    ffmpeg.FS("unlink", inputName);
+    ffmpeg.FS("unlink", outputName);
   } catch (error) {
     console.error(error);
-    setStatus("No se pudo convertir este archivo. Prueba otro formato o usa la app de escritorio.", 0);
+    setStatus("No se pudo cargar o convertir. Recarga la pagina, prueba otro archivo o usa la app de escritorio.", 0);
   } finally {
     convertButton.disabled = false;
   }
