@@ -50,6 +50,11 @@ public class MainActivity extends Activity {
     private TextView statusLabel;
     private ProgressBar progressBar;
     private Button convertButton;
+    private Button openButton;
+    private Button shareButton;
+    private Button convertAnotherButton;
+    private Uri lastOutputUri;
+    private String lastOutputMimeType;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +112,27 @@ public class MainActivity extends Activity {
         convertButton.setOnClickListener(v -> convertSelectedFile());
         root.addView(convertButton);
 
+        LinearLayout resultActions = new LinearLayout(this);
+        resultActions.setOrientation(LinearLayout.HORIZONTAL);
+        resultActions.setGravity(Gravity.START);
+        resultActions.setPadding(0, dp(12), 0, 0);
+        root.addView(resultActions);
+
+        openButton = secondaryButton("Abrir");
+        openButton.setOnClickListener(v -> openLastOutput());
+        openButton.setVisibility(View.GONE);
+        resultActions.addView(openButton);
+
+        shareButton = secondaryButton("Compartir");
+        shareButton.setOnClickListener(v -> shareLastOutput());
+        shareButton.setVisibility(View.GONE);
+        resultActions.addView(shareButton);
+
+        convertAnotherButton = secondaryButton("Convertir otro");
+        convertAnotherButton.setOnClickListener(v -> resetForAnotherConversion());
+        convertAnotherButton.setVisibility(View.GONE);
+        resultActions.addView(convertAnotherButton);
+
         progressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progressBar.setIndeterminate(false);
         progressBar.setMax(100);
@@ -132,6 +158,16 @@ public class MainActivity extends Activity {
         button.setAllCaps(false);
         button.setBackgroundColor(Color.rgb(23, 122, 115));
         button.setPadding(dp(14), dp(10), dp(14), dp(10));
+        return button;
+    }
+
+    private Button secondaryButton(String text) {
+        Button button = new Button(this);
+        button.setText(text);
+        button.setTextColor(Color.rgb(15, 97, 91));
+        button.setTextSize(14);
+        button.setAllCaps(false);
+        button.setPadding(dp(10), dp(8), dp(10), dp(8));
         return button;
     }
 
@@ -189,6 +225,9 @@ public class MainActivity extends Activity {
         }
 
         convertButton.setEnabled(false);
+        hideResultActions();
+        lastOutputUri = null;
+        lastOutputMimeType = null;
         progressBar.setIndeterminate(true);
         statusLabel.setText("Preparando archivo...");
 
@@ -206,10 +245,14 @@ public class MainActivity extends Activity {
                     if (ReturnCode.isSuccess(code)) {
                         try {
                             Uri saved = saveToDownloads(output, outputName, format);
+                            String mimeType = mimeType(format);
                             runOnUiThread(() -> {
+                                lastOutputUri = saved;
+                                lastOutputMimeType = mimeType;
                                 progressBar.setIndeterminate(false);
                                 progressBar.setProgress(100);
-                                statusLabel.setText("Conversion completada: " + saved);
+                                statusLabel.setText("Conversion completada. Guardado en Descargas/MediaFlow.");
+                                showResultActions();
                                 convertButton.setEnabled(true);
                             });
                         } catch (Exception error) {
@@ -223,6 +266,56 @@ public class MainActivity extends Activity {
                 showFailure(error);
             }
         }).start();
+    }
+
+    private void showResultActions() {
+        openButton.setVisibility(View.VISIBLE);
+        shareButton.setVisibility(View.VISIBLE);
+        convertAnotherButton.setVisibility(View.VISIBLE);
+    }
+
+    private void hideResultActions() {
+        openButton.setVisibility(View.GONE);
+        shareButton.setVisibility(View.GONE);
+        convertAnotherButton.setVisibility(View.GONE);
+    }
+
+    private void openLastOutput() {
+        if (lastOutputUri == null) {
+            Toast.makeText(this, "No hay resultado para abrir.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(lastOutputUri, lastOutputMimeType);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(Intent.createChooser(intent, "Abrir con"));
+    }
+
+    private void shareLastOutput() {
+        if (lastOutputUri == null) {
+            Toast.makeText(this, "No hay resultado para compartir.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType(lastOutputMimeType);
+        intent.putExtra(Intent.EXTRA_STREAM, lastOutputUri);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(Intent.createChooser(intent, "Compartir archivo"));
+    }
+
+    private void resetForAnotherConversion() {
+        selectedUri = null;
+        selectedName = null;
+        lastOutputUri = null;
+        lastOutputMimeType = null;
+        fileLabel.setText("Ningun archivo seleccionado.");
+        statusLabel.setText("Listo.");
+        progressBar.setIndeterminate(false);
+        progressBar.setProgress(0);
+        hideResultActions();
+        convertButton.setEnabled(true);
     }
 
     private String buildCommand(File input, File output, String format) {
