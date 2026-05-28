@@ -29,6 +29,7 @@ const qualitySelect = document.querySelector("#qualitySelect");
 const form = document.querySelector("#converterForm");
 const convertButton = document.querySelector("#convertButton");
 const downloadResult = document.querySelector("#downloadResult");
+const convertAnotherButton = document.querySelector("#convertAnotherButton");
 const statusText = document.querySelector("#statusText");
 const progressText = document.querySelector("#progressText");
 const progressBar = document.querySelector("#progressBar");
@@ -194,6 +195,7 @@ async function convertFile(event) {
 
   convertButton.disabled = true;
   downloadResult.hidden = true;
+  convertAnotherButton.hidden = true;
   downloadResult.removeAttribute("href");
   downloadResult.removeAttribute("download");
 
@@ -225,6 +227,7 @@ async function convertFile(event) {
     downloadResult.href = lastDownloadUrl;
     downloadResult.download = outputName;
     downloadResult.hidden = false;
+    convertAnotherButton.hidden = false;
     setStatus("Conversion completada.", 100);
 
     ffmpeg.FS("unlink", inputName);
@@ -260,5 +263,8 @@ dropZone.addEventListener("drop", (event) => {
 modeSelect.addEventListener("change", updateFormats);
 fileInput.addEventListener("change", updateSelectedFile);
 form.addEventListener("submit", convertFile);
+convertAnotherButton.addEventListener("click", () => {
+  window.location.reload();
+});
 
 updateFormats();

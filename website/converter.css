@@ -162,6 +162,11 @@ progress::-webkit-progress-value {
   cursor: pointer;
 }
 
+.converter-actions .secondary {
+  color: var(--accent-strong);
+  background: var(--white);
+}
+
 .converter-actions button:disabled {
   cursor: wait;
   opacity: 0.65;
