@@ -32,6 +32,14 @@ La app no descarga contenido de servicios de terceros. Convierte archivos locale
 1. Windows 10 o Windows 11.
 2. `ffmpeg` incluido en la version empaquetada o instalado en el sistema.
 
+## Version Android
+
+Hay una primera version nativa para Android en `android-app/`. No usa WebView:
+selecciona archivos con el selector de Android, convierte localmente con
+FFmpegKit y guarda los resultados en `Descargas/MediaFlow`.
+
+Abre `android-app/` con Android Studio para compilarla.
+
 ## Uso
 
 1. Abre Media Flow.
