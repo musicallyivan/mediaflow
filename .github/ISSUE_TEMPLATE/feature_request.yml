@@ -1,0 +1,70 @@
+name: Feature request
+description: Suggest an improvement for Media Flow
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. Please explain the use case, not only the solution.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked that this feature has not already been requested.
+          required: true
+        - label: This request keeps Media Flow focused on local file conversion.
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Audio conversion
+        - Video conversion
+        - Image conversion
+        - Batch conversion
+        - File information
+        - Output folders
+        - User interface
+        - Installer or updates
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to do, and what is currently difficult or missing?
+      placeholder: "I want to..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the change you would like to see.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Optional. Mention any workaround or other approach you considered.
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Add screenshots, examples, or related details if useful.
+    validations:
+      required: false

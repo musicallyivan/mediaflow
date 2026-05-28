@@ -1,0 +1,112 @@
+name: Bug report
+description: Report a problem with Media Flow
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Please include enough detail to reproduce it.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked that this issue is not already reported.
+          required: true
+        - label: I am using the latest available version of Media Flow.
+          required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: Media Flow version
+      description: You can find this in the app or in the release you installed.
+      placeholder: "1.5.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install_type
+    attributes:
+      label: Installation type
+      options:
+        - Installer .exe
+        - Portable ZIP
+        - MSIX / App Installer
+        - Running from source
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Affected conversion mode
+      options:
+        - Audio
+        - Video
+        - Image
+        - Batch conversion
+        - App startup
+        - Installer or updater
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem clearly.
+      placeholder: "When I try to convert..., the app..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the exact steps needed to reproduce the issue.
+      placeholder: |
+        1. Open Media Flow
+        2. Select Video
+        3. Choose a file
+        4. Click Convert
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: files
+    attributes:
+      label: File details
+      description: Include format, size, codec, duration, or resolution when relevant. Do not upload private files.
+      placeholder: "Input: .mp4, 120 MB, 1920x1080, H.264"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Paste any error messages or attach screenshots if useful.
+      render: text
+    validations:
+      required: false
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 23H2"
+    validations:
+      required: false
