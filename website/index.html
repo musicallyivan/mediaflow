@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Media Flow | Convertidor multimedia local para Windows</title>
+    <meta
+      name="description"
+      content="Media Flow convierte archivos locales de audio, video e imagen en Windows usando ffmpeg. Sin cuentas, sin subidas y sin complicaciones."
+    >
+    <link rel="icon" href="assets/icon-300.png">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Media Flow">
+        <img src="assets/icon-300.png" alt="" width="36" height="36">
+        <span>Media Flow</span>
+      </a>
+      <nav class="nav-links" aria-label="Principal">
+        <a href="#formatos">Formatos</a>
+        <a href="#capturas">Capturas</a>
+        <a href="#privacidad">Privacidad</a>
+        <a href="#descargar">Descargar</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Convertidor local para Windows</p>
+          <h1>Media Flow</h1>
+          <p class="hero-text">
+            Convierte audio, video e imagen a formatos comunes desde una app
+            rapida, clara y pensada para archivos locales.
+          </p>
+          <div class="hero-actions" aria-label="Acciones principales">
+            <a class="button primary" href="https://github.com/musicallyivan/mediaflow/releases/latest">
+              Descargar
+            </a>
+            <a class="button secondary" href="https://github.com/musicallyivan/mediaflow">
+              Ver en GitHub
+            </a>
+          </div>
+          <ul class="trust-list" aria-label="Caracteristicas clave">
+            <li>Sin inicio de sesion</li>
+            <li>Sin subir tus archivos</li>
+            <li>Con ffmpeg</li>
+          </ul>
+        </div>
+
+        <div class="hero-media" aria-label="Vista previa de Media Flow">
+          <img src="assets/box-art-1080.png" alt="Media Flow en Windows" class="box-art">
+          <img src="assets/screenshot-dark.png" alt="Interfaz de Media Flow en modo oscuro" class="hero-shot">
+        </div>
+      </section>
+
+      <section class="section formats" id="formatos">
+        <div class="section-heading">
+          <p class="eyebrow">Formatos</p>
+          <h2>Una sola app para conversiones habituales</h2>
+        </div>
+        <div class="format-grid">
+          <article class="format-card">
+            <span class="format-icon">A</span>
+            <h3>Audio</h3>
+            <p>Convierte a MP3, M4A, WAV, FLAC y OGG con calidad configurable.</p>
+          </article>
+          <article class="format-card">
+            <span class="format-icon">V</span>
+            <h3>Video</h3>
+            <p>Exporta videos a MP4, MOV, WEBM y MKV para uso personal o profesional.</p>
+          </article>
+          <article class="format-card">
+            <span class="format-icon">I</span>
+            <h3>Imagen</h3>
+            <p>Cambia imagenes entre PNG, JPG, WEBP y BMP sin salir de la app.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section workflow">
+        <div class="workflow-copy">
+          <p class="eyebrow">Flujo rapido</p>
+          <h2>Selecciona, ajusta y convierte</h2>
+          <p>
+            Media Flow guarda tus preferencias, muestra informacion del archivo
+            cuando `ffprobe` esta disponible y permite convertir varios archivos
+            con el mismo formato y calidad.
+          </p>
+        </div>
+        <ol class="steps">
+          <li>
+            <span>1</span>
+            <p>Elige Audio, Video o Imagen.</p>
+          </li>
+          <li>
+            <span>2</span>
+            <p>Selecciona uno o varios archivos locales.</p>
+          </li>
+          <li>
+            <span>3</span>
+            <p>Define formato, calidad y carpeta de salida.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="section screenshots" id="capturas">
+        <div class="section-heading">
+          <p class="eyebrow">Capturas</p>
+          <h2>Interfaz clara en modo claro y oscuro</h2>
+        </div>
+        <div class="screen-tabs" role="tablist" aria-label="Capturas de Media Flow">
+          <button class="tab is-active" type="button" data-shot="assets/screenshot-light.png" aria-selected="true">
+            Modo claro
+          </button>
+          <button class="tab" type="button" data-shot="assets/screenshot-dark.png" aria-selected="false">
+            Modo oscuro
+          </button>
+          <button class="tab" type="button" data-shot="assets/screenshot-convert.png" aria-selected="false">
+            Conversion
+          </button>
+        </div>
+        <div class="screen-frame">
+          <img id="screenPreview" src="assets/screenshot-light.png" alt="Captura de Media Flow">
+        </div>
+      </section>
+
+      <section class="section privacy" id="privacidad">
+        <div>
+          <p class="eyebrow">Privacidad</p>
+          <h2>Tus archivos se procesan localmente</h2>
+        </div>
+        <div class="privacy-grid">
+          <p>
+            Media Flow no requiere cuentas, no lee credenciales del navegador y
+            no sube archivos a servidores propios.
+          </p>
+          <p>
+            Si guardas en OneDrive, Google Drive o iCloud Drive, la app escribe
+            en la carpeta local sincronizada y el cliente oficial se encarga del
+            resto.
+          </p>
+        </div>
+      </section>
+
+      <section class="download" id="descargar">
+        <div class="download-copy">
+          <p class="eyebrow">Descarga</p>
+          <h2>Instala Media Flow desde GitHub Releases</h2>
+          <p>
+            Descarga el instalador para Windows o usa la version portable si
+            prefieres una carpeta sin instalacion.
+          </p>
+        </div>
+        <div class="download-actions">
+          <a class="button primary" href="https://github.com/musicallyivan/mediaflow/releases/latest">
+            Ultima version
+          </a>
+          <a class="button secondary" href="https://github.com/musicallyivan/mediaflow/blob/main/README.md">
+            Leer README
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Media Flow</span>
+      <a href="https://github.com/musicallyivan/mediaflow">GitHub</a>
+      <a href="https://github.com/musicallyivan/mediaflow/security">Seguridad</a>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
