@@ -21,12 +21,11 @@ android {
 }
 
 dependencies {
-    def localFfmpegKit = file("libs/ffmpeg-kit-full.aar")
+    def localFfmpegKit = file("libs/ffmpeg-kit-16kb.aar")
 
     if (localFfmpegKit.exists()) {
         implementation files(localFfmpegKit)
     } else {
-        implementation "com.arthenica:ffmpeg-kit-full:6.0-2"
-        implementation "com.arthenica:smart-exception-java9:0.2.1"
+        implementation "com.moizhassan.ffmpeg:ffmpeg-kit-16kb:6.0.0"
     }
 }
