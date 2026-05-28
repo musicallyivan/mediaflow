@@ -10,13 +10,15 @@ selection, local cache processing, and FFmpeg conversion through FFmpegKit.
 - Android Studio
 - JDK 17
 - Android SDK 35
-- FFmpegKit dependency from Maven or a local `app/libs/ffmpeg-kit-full.aar`
+- FFmpegKit dependency from the configured Maven repositories or a local
+  `app/libs/ffmpeg-kit-full.aar`
 
 ## Open in Android Studio
 
 1. Open the `android-app` folder.
 2. Let Gradle sync.
-3. If FFmpegKit cannot be resolved from Maven, place a compatible AAR at:
+3. If FFmpegKit cannot be resolved from the configured Maven repositories,
+   place a compatible AAR at:
 
    ```text
    app/libs/ffmpeg-kit-full.aar

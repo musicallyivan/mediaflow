@@ -27,5 +27,6 @@ dependencies {
         implementation files(localFfmpegKit)
     } else {
         implementation "com.arthenica:ffmpeg-kit-full:6.0-2"
+        implementation "com.arthenica:smart-exception-java9:0.2.1"
     }
 }
