@@ -104,7 +104,7 @@ function createFFmpegInstance() {
   return createFFmpeg({
     log: true,
     mainName: "main",
-    corePath: "https://unpkg.com/@ffmpeg/core-st@0.11.1/dist/ffmpeg-core.js",
+    corePath: new URL("vendor/ffmpeg/ffmpeg-core.js", window.location.href).href,
     progress: ({ ratio }) => {
       if (ratio > 0) {
         setStatus("Convirtiendo...", ratio * 100);
@@ -113,12 +113,22 @@ function createFFmpegInstance() {
   });
 }
 
+async function ensureCoreIsReachable() {
+  const wasmURL = new URL("vendor/ffmpeg/ffmpeg-core.wasm", window.location.href);
+  const response = await fetch(wasmURL, { method: "HEAD", cache: "no-store" });
+
+  if (!response.ok) {
+    throw new Error(`No se pudo descargar ffmpeg-core.wasm (${response.status})`);
+  }
+}
+
 async function loadFFmpeg() {
   if (ffmpegLoaded) {
     return;
   }
 
   setStatus("Cargando motor de conversion. La primera vez puede tardar un poco...", 5);
+  await ensureCoreIsReachable();
   ffmpeg = createFFmpegInstance();
   await withTimeout(ffmpeg.load(), 90000, "FFmpeg took too long to load.");
   ffmpegLoaded = true;
