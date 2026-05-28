@@ -11,7 +11,7 @@
     <link rel="icon" href="assets/icon-300.png">
     <link rel="stylesheet" href="styles.css">
   </head>
-  <body>
+  <body data-store-product-id="">
     <header class="site-header">
       <a class="brand" href="#top" aria-label="Media Flow">
         <img src="assets/icon-300.png" alt="" width="36" height="36">
@@ -144,13 +144,44 @@
         </div>
       </section>
 
-      <section class="download" id="descargar">
+      <section class="store-download" id="descargar">
         <div class="download-copy">
           <p class="eyebrow">Descarga</p>
-          <h2>Instala Media Flow desde GitHub Releases</h2>
+          <h2>Descarga Media Flow para Windows</h2>
           <p>
-            Descarga el instalador para Windows o usa la version portable si
-            prefieres una carpeta sin instalacion.
+            Instala la app desde Microsoft Store cuando la ficha este publicada
+            o descarga la ultima version desde GitHub Releases.
+          </p>
+        </div>
+        <div class="store-panel">
+          <div class="store-badge-wrap" hidden>
+            <ms-store-badge
+              id="microsoftStoreBadge"
+              productname="Media Flow"
+              window-mode="direct"
+              language="es"
+              theme="dark"
+              animation="on"
+            ></ms-store-badge>
+          </div>
+          <p class="store-placeholder" id="storePlaceholder">
+            Microsoft Store se activara aqui cuando la ficha publica tenga Store ID.
+          </p>
+          <div class="download-actions">
+            <a class="button secondary" href="https://github.com/musicallyivan/mediaflow/releases/latest">
+              Descargar desde GitHub
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section class="download">
+        <div class="download-copy">
+          <p class="eyebrow">Codigo abierto</p>
+          <h2>Revisa el proyecto o descarga la version portable</h2>
+          <p>
+            El repositorio incluye instalador, paquete portable, documentacion
+            de privacidad y el historial de versiones publicadas.
           </p>
         </div>
         <div class="download-actions">
@@ -170,6 +201,7 @@
       <a href="https://github.com/musicallyivan/mediaflow/security">Seguridad</a>
     </footer>
 
+    <script type="module" src="https://get.microsoft.com/badge/ms-store-badge.bundled.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

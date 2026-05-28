@@ -1,5 +1,9 @@
 const tabs = document.querySelectorAll(".tab");
 const preview = document.querySelector("#screenPreview");
+const storeProductId = document.body.dataset.storeProductId?.trim();
+const storeBadge = document.querySelector("#microsoftStoreBadge");
+const storeBadgeWrap = document.querySelector(".store-badge-wrap");
+const storePlaceholder = document.querySelector("#storePlaceholder");
 
 tabs.forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -15,3 +19,9 @@ tabs.forEach((tab) => {
     preview.src = nextShot;
   });
 });
+
+if (storeProductId && storeBadge && storeBadgeWrap && storePlaceholder) {
+  storeBadge.setAttribute("productid", storeProductId);
+  storeBadgeWrap.hidden = false;
+  storePlaceholder.hidden = true;
+}

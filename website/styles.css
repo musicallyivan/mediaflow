@@ -374,6 +374,7 @@ a {
   background: rgba(255, 255, 255, 0.06);
 }
 
+.store-download,
 .download {
   display: flex;
   align-items: center;
@@ -383,12 +384,45 @@ a {
   background: var(--white);
 }
 
+.store-download {
+  color: var(--white);
+  background: var(--night-2);
+}
+
 .download-copy {
   max-width: 760px;
 }
 
 .download-copy p {
   margin-top: 16px;
+}
+
+.store-download .download-copy p {
+  color: #d8dee8;
+}
+
+.store-panel {
+  display: grid;
+  justify-items: start;
+  min-width: min(100%, 340px);
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+}
+
+.store-badge-wrap {
+  min-height: 58px;
+}
+
+ms-store-badge::part(img) {
+  max-width: 240px;
+}
+
+.store-placeholder {
+  margin: 0;
+  color: #d8dee8;
+  font-size: 15px;
 }
 
 .site-footer {
@@ -444,6 +478,7 @@ a {
     grid-template-columns: 1fr;
   }
 
+  .store-download,
   .download {
     align-items: flex-start;
     flex-direction: column;
