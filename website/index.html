@@ -3,207 +3,269 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Media Flow | Convertidor multimedia local para Windows</title>
+    <title>Media Flow Pro | Convertidor multimedia local y acelerado por GPU para Windows</title>
     <meta
       name="description"
-      content="Media Flow convierte archivos locales de audio, video e imagen en Windows usando ffmpeg. Sin cuentas, sin subidas y sin complicaciones."
+      content="Media Flow Pro es una app local para Windows que convierte, recorta, comprime y une archivos de audio, video e imagen con aceleración por GPU. Sin cuentas y sin subidas a servidores."
     >
     <link rel="icon" href="assets/icon-300.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body data-store-product-id="9MT8D4FGWRQ4">
     <header class="site-header">
       <a class="brand" href="#top" aria-label="Media Flow">
         <img src="assets/icon-300.png" alt="" width="36" height="36">
-        <span>Media Flow</span>
+        <span>Media Flow <small class="version-badge">v1.6.2 PRO</small></span>
       </a>
       <nav class="nav-links" aria-label="Principal">
+        <a href="#funciones">Funciones</a>
         <a href="#formatos">Formatos</a>
         <a href="converter.html">Convertidor online</a>
         <a href="#capturas">Capturas</a>
         <a href="privacy.html">Privacidad</a>
-        <a href="#descargar">Descargar</a>
+        <a href="#descargar" class="nav-download-btn">Descargar</a>
       </nav>
     </header>
 
     <main id="top">
+      <!-- Hero Section -->
       <section class="hero">
         <div class="hero-copy">
-          <p class="eyebrow">Convertidor local para Windows</p>
-          <h1>Media Flow</h1>
+          <div class="hero-eyebrow-wrap">
+            <span class="pulse-dot"></span>
+            <span class="eyebrow">Versión 1.6.2 | Aceleración por GPU activada</span>
+          </div>
+          <h1>Media Flow <span class="gradient-text">Pro</span></h1>
           <p class="hero-text">
-            Convierte audio, video e imagen a formatos comunes desde una app
-            rapida, clara y pensada para archivos locales.
+            Convierte, recorta, comprime y une tus archivos de audio, video e imagen en Windows a máxima velocidad. 100% privado y procesado localmente en tu equipo.
           </p>
           <div class="hero-actions" aria-label="Acciones principales">
-            <a class="button primary" href="converter.html">
-              Convertir online
+            <a class="button primary glow" href="https://github.com/musicallyivan/mediaflow/releases/latest">
+              <span>⚡ Descargar para Windows</span>
             </a>
-            <a class="button primary" href="https://github.com/musicallyivan/mediaflow/releases/latest">
-              Descargar
+            <a class="button glass" href="converter.html">
+              🌐 Convertir online
             </a>
-            <a class="button secondary" href="https://github.com/musicallyivan/mediaflow">
+            <a class="button secondary" href="https://github.com/musicallyivan/mediaflow" target="_blank" rel="noopener">
               Ver en GitHub
             </a>
           </div>
-          <ul class="trust-list" aria-label="Caracteristicas clave">
-            <li>Sin inicio de sesion</li>
-            <li>Sin subir tus archivos</li>
-            <li>Con ffmpeg</li>
+          <ul class="trust-list" aria-label="Características clave">
+            <li><span>🚀</span> GPU NVENC / AMF / QSV</li>
+            <li><span>🔒</span> 100% Procesado Local</li>
+            <li><span>✂️</span> Recorte y Compresión</li>
+            <li><span>📦</span> Sin Inicio de Sesión</li>
           </ul>
         </div>
 
-        <div class="hero-media" aria-label="Vista previa de Media Flow">
-          <img src="assets/box-art-1080.png" alt="Media Flow en Windows" class="box-art">
-          <img src="assets/screenshot-dark.png" alt="Interfaz de Media Flow en modo oscuro" class="hero-shot">
+        <div class="hero-media" aria-label="Vista previa de Media Flow Pro">
+          <div class="glass-preview-card">
+            <img src="assets/box-art-1080.png" alt="Media Flow Pro en Windows" class="box-art">
+            <img src="assets/screenshot-dark.png" alt="Interfaz de Media Flow Pro en modo oscuro" class="hero-shot">
+          </div>
         </div>
       </section>
 
+      <!-- Grid de Funciones Destacadas (Glassmorphism) -->
+      <section class="section features" id="funciones">
+        <div class="section-heading">
+          <p class="eyebrow">Potencia y Control</p>
+          <h2>Todo lo que necesitas para procesar tus medios</h2>
+          <p class="section-desc">Diseñado para la máxima velocidad y simplicidad sin complicaciones de la nube.</p>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature-card glass-card">
+            <div class="feature-icon">🚀</div>
+            <h3>Aceleración por GPU</h3>
+            <p>Detección automática de codificación por tarjeta gráfica (NVIDIA NVENC, AMD AMF e Intel QSV) para conversiones de video ultra rápidas.</p>
+          </article>
+
+          <article class="feature-card glass-card">
+            <div class="feature-icon">✂️</div>
+            <h3>Recorte de Tiempo (Trim)</h3>
+            <p>Especifica el punto de inicio y fin (en segundos o <code>hh:mm:ss</code>) para extraer fragmentos exactos de tus clips.</p>
+          </article>
+
+          <article class="feature-card glass-card">
+            <div class="feature-icon">📦</div>
+            <h3>Compresión a Tamaño Objetivo</h3>
+            <p>Define el tamaño máximo en MB (ej. 25 MB para Discord o 10 MB para Email) y calcula el bitrate idóneo automáticamente.</p>
+          </article>
+
+          <article class="feature-card glass-card">
+            <div class="feature-icon">🛠️</div>
+            <h3>Extracción y Silenciado</h3>
+            <p>Extrae la pista de audio a MP3 de cualquier video, silencia archivos de video o extrae pistas de subtítulos en formato <code>.srt</code>.</p>
+          </article>
+
+          <article class="feature-card glass-card">
+            <div class="feature-icon">🔗</div>
+            <h3>Unir / Concatenar Archivos</h3>
+            <p>Fusiona múltiples clips de video o pistas de audio en un solo archivo de salida continuo en segundos.</p>
+          </article>
+
+          <article class="feature-card glass-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Preajustes Rápidos (Presets)</h3>
+            <p>Perfiles optimizados de un solo clic para WhatsApp, TikTok, Reels, Shorts, Web y calidad máxima Lossless.</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- Formatos Soportados -->
       <section class="section formats" id="formatos">
         <div class="section-heading">
-          <p class="eyebrow">Formatos</p>
-          <h2>Una sola app para conversiones habituales</h2>
+          <p class="eyebrow">Compatibilidad Total</p>
+          <h2>Soporte masivo de códecs y contenedores</h2>
         </div>
         <div class="format-grid">
-          <article class="format-card">
-            <span class="format-icon">A</span>
-            <h3>Audio</h3>
-            <p>Convierte a MP3, M4A, WAV, FLAC y OGG con calidad configurable.</p>
+          <article class="format-card glass-card">
+            <div class="format-header">
+              <span class="format-badge audio">Audio</span>
+              <h3>Formatos de Audio</h3>
+            </div>
+            <p>Exporta e interconvierte tus canciones, audios y voces:</p>
+            <div class="tag-cloud">
+              <span class="tag">MP3</span>
+              <span class="tag">M4A</span>
+              <span class="tag">WAV</span>
+              <span class="tag">FLAC</span>
+              <span class="tag">OGG</span>
+              <span class="tag">OPUS</span>
+              <span class="tag">AAC</span>
+              <span class="tag">ALAC</span>
+              <span class="tag">AIFF</span>
+            </div>
           </article>
-          <article class="format-card">
-            <span class="format-icon">V</span>
-            <h3>Video</h3>
-            <p>Exporta videos a MP4, MOV, WEBM y MKV para uso personal o profesional.</p>
+
+          <article class="format-card glass-card">
+            <div class="format-header">
+              <span class="format-badge video">Video</span>
+              <h3>Formatos de Video</h3>
+            </div>
+            <p>Genera clips optimizados para cualquier pantalla o plataforma:</p>
+            <div class="tag-cloud">
+              <span class="tag">MP4</span>
+              <span class="tag">MOV</span>
+              <span class="tag">WEBM</span>
+              <span class="tag">MKV</span>
+              <span class="tag">H.265 (HEVC)</span>
+              <span class="tag">AV1</span>
+              <span class="tag">GIF Animado</span>
+              <span class="tag">AVI</span>
+            </div>
           </article>
-          <article class="format-card">
-            <span class="format-icon">I</span>
-            <h3>Imagen</h3>
-            <p>Cambia imagenes entre PNG, JPG, WEBP y BMP sin salir de la app.</p>
+
+          <article class="format-card glass-card">
+            <div class="format-header">
+              <span class="format-badge image">Imagen</span>
+              <h3>Formatos de Imagen</h3>
+            </div>
+            <p>Adapta fotografías, ilustraciones y gráficos web:</p>
+            <div class="tag-cloud">
+              <span class="tag">PNG</span>
+              <span class="tag">JPG</span>
+              <span class="tag">WEBP</span>
+              <span class="tag">BMP</span>
+              <span class="tag">AVIF</span>
+              <span class="tag">ICO</span>
+              <span class="tag">TIFF</span>
+            </div>
           </article>
         </div>
       </section>
 
-      <section class="section workflow">
-        <div class="workflow-copy">
-          <p class="eyebrow">Flujo rapido</p>
-          <h2>Selecciona, ajusta y convierte</h2>
-          <p>
-            Media Flow guarda tus preferencias, muestra informacion del archivo
-            cuando `ffprobe` esta disponible y permite convertir varios archivos
-            con el mismo formato y calidad.
-          </p>
-        </div>
-        <ol class="steps">
-          <li>
-            <span>1</span>
-            <p>Elige Audio, Video o Imagen.</p>
-          </li>
-          <li>
-            <span>2</span>
-            <p>Selecciona uno o varios archivos locales.</p>
-          </li>
-          <li>
-            <span>3</span>
-            <p>Define formato, calidad y carpeta de salida.</p>
-          </li>
-        </ol>
-      </section>
-
+      <!-- Capturas de Pantalla -->
       <section class="section screenshots" id="capturas">
         <div class="section-heading">
-          <p class="eyebrow">Capturas</p>
-          <h2>Interfaz clara en modo claro y oscuro</h2>
+          <p class="eyebrow">Interfaz Glassmorphic</p>
+          <h2>Diseño moderno en modo claro y oscuro</h2>
         </div>
         <div class="screen-tabs" role="tablist" aria-label="Capturas de Media Flow">
-          <button class="tab is-active" type="button" data-shot="assets/screenshot-light.png" aria-selected="true">
-            Modo claro
+          <button class="tab is-active" type="button" data-shot="assets/screenshot-dark.png" aria-selected="true">
+            Modo Oscuro (Obsidian Glass)
           </button>
-          <button class="tab" type="button" data-shot="assets/screenshot-dark.png" aria-selected="false">
-            Modo oscuro
+          <button class="tab" type="button" data-shot="assets/screenshot-light.png" aria-selected="false">
+            Modo Claro
           </button>
           <button class="tab" type="button" data-shot="assets/screenshot-convert.png" aria-selected="false">
-            Conversion
+            Procesado en Cola
           </button>
         </div>
-        <div class="screen-frame">
-          <img id="screenPreview" src="assets/screenshot-light.png" alt="Captura de Media Flow">
+        <div class="screen-frame glass-card">
+          <img id="screenPreview" src="assets/screenshot-dark.png" alt="Captura de Media Flow Pro">
         </div>
       </section>
 
+      <!-- Privacidad Garantizada -->
       <section class="section privacy" id="privacidad">
-        <div>
-          <p class="eyebrow">Privacidad</p>
-          <h2>Tus archivos se procesan localmente</h2>
-        </div>
-        <div class="privacy-grid">
-          <p>
-            Media Flow no requiere cuentas, no lee credenciales del navegador y
-            no sube archivos a servidores propios.
-          </p>
-          <p>
-            Si guardas en OneDrive, Google Drive o iCloud Drive, la app escribe
-            en la carpeta local sincronizada y el cliente oficial se encarga del
-            resto.
-          </p>
+        <div class="privacy-container glass-card">
+          <div class="privacy-copy">
+            <p class="eyebrow">100% Privado por Diseño</p>
+            <h2>Tus archivos no salen de tu equipo</h2>
+            <p>
+              Media Flow procesa todos tus archivos localmente en tu ordenador mediante FFmpeg. No requiere crear cuentas, no recopila analíticas ni sube tu contenido a servidores externos.
+            </p>
+            <p>
+              Si seleccionas guardar en carpetas sincronizadas de OneDrive, Google Drive o iCloud Drive, el archivo se guarda localmente en tu disco duro y tu cliente oficial instalado se encarga del resto.
+            </p>
+            <a href="privacy.html" class="button secondary">Leer Política de Privacidad Completa →</a>
+          </div>
         </div>
       </section>
 
+      <!-- Sección de Descarga -->
       <section class="store-download" id="descargar">
-        <div class="download-copy">
-          <p class="eyebrow">Descarga</p>
-          <h2>Descarga Media Flow para Windows</h2>
-          <p>
-            Instala la app desde Microsoft Store cuando la ficha este publicada
-            o descarga la ultima version desde GitHub Releases.
-          </p>
-        </div>
-        <div class="store-panel">
-          <div class="store-badge-wrap" hidden>
-            <ms-store-badge
-              id="microsoftStoreBadge"
-              productname="Media Flow"
-              window-mode="direct"
-              language="es"
-              theme="dark"
-              animation="on"
-            ></ms-store-badge>
+        <div class="download-container glass-card">
+          <div class="download-copy">
+            <p class="eyebrow">Descarga Gratuita</p>
+            <h2>Consigue Media Flow Pro para Windows</h2>
+            <p>
+              Instala la aplicación oficial desde Microsoft Store o descarga el instalador independiente directamente desde GitHub.
+            </p>
           </div>
-          <p class="store-placeholder" id="storePlaceholder">
-            Microsoft Store se activara aqui cuando la ficha publica tenga Store ID.
-          </p>
-          <div class="download-actions">
-            <a class="button secondary" href="https://github.com/musicallyivan/mediaflow/releases/latest">
-              Descargar desde GitHub
-            </a>
+          <div class="store-panel">
+            <div class="store-badge-wrap" hidden>
+              <ms-store-badge
+                id="microsoftStoreBadge"
+                productname="Media Flow"
+                window-mode="direct"
+                language="es"
+                theme="dark"
+                animation="on"
+              ></ms-store-badge>
+            </div>
+            <div class="download-actions">
+              <a class="button primary glow" href="https://github.com/musicallyivan/mediaflow/releases/latest">
+                <span>⚡ Descargar Instalador (.exe)</span>
+              </a>
+              <a class="button secondary" href="https://github.com/musicallyivan/mediaflow/releases/latest">
+                Descargar Copia Portable (.zip)
+              </a>
+            </div>
           </div>
-        </div>
-      </section>
-
-      <section class="download">
-        <div class="download-copy">
-          <p class="eyebrow">Codigo abierto</p>
-          <h2>Revisa el proyecto o descarga la version portable</h2>
-          <p>
-            El repositorio incluye instalador, paquete portable, documentacion
-            de privacidad y el historial de versiones publicadas.
-          </p>
-        </div>
-        <div class="download-actions">
-          <a class="button primary" href="https://github.com/musicallyivan/mediaflow/releases/latest">
-            Ultima version
-          </a>
-          <a class="button secondary" href="https://github.com/musicallyivan/mediaflow/blob/main/README.md">
-            Leer README
-          </a>
         </div>
       </section>
     </main>
 
     <footer class="site-footer">
-      <span>Media Flow</span>
-      <a href="privacy.html">Privacidad</a>
-      <a href="https://github.com/musicallyivan/mediaflow">GitHub</a>
-      <a href="https://github.com/musicallyivan/mediaflow/security">Seguridad</a>
+      <div class="footer-content">
+        <div class="footer-brand">
+          <img src="assets/icon-300.png" alt="" width="28" height="28">
+          <span>Media Flow Pro v1.6.2</span>
+        </div>
+        <div class="footer-links">
+          <a href="#top">Inicio</a>
+          <a href="converter.html">Convertidor Online</a>
+          <a href="privacy.html">Privacidad</a>
+          <a href="https://github.com/musicallyivan/mediaflow" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/musicallyivan/mediaflow/releases" target="_blank" rel="noopener">Releases</a>
+        </div>
+      </div>
     </footer>
 
     <script type="module" src="https://get.microsoft.com/badge/ms-store-badge.bundled.js"></script>

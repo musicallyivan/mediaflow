@@ -1,7 +1,7 @@
 const formatsByMode = {
-  audio: ["mp3", "m4a", "wav", "flac", "ogg"],
-  video: ["mp4", "webm", "mov", "mkv"],
-  image: ["png", "jpg", "webp", "bmp"],
+  audio: ["mp3", "m4a", "wav", "flac", "ogg", "opus", "aac"],
+  video: ["mp4", "webm", "mov", "mkv", "gif", "avi"],
+  image: ["png", "jpg", "webp", "bmp", "tiff"],
 };
 
 const mimeByFormat = {
@@ -10,14 +10,19 @@ const mimeByFormat = {
   wav: "audio/wav",
   flac: "audio/flac",
   ogg: "audio/ogg",
+  opus: "audio/opus",
+  aac: "audio/aac",
   mp4: "video/mp4",
   webm: "video/webm",
   mov: "video/quicktime",
   mkv: "video/x-matroska",
+  gif: "image/gif",
+  avi: "video/x-msvideo",
   png: "image/png",
   jpg: "image/jpeg",
   webp: "image/webp",
   bmp: "image/bmp",
+  tiff: "image/tiff",
 };
 
 const fileInput = document.querySelector("#fileInput");
