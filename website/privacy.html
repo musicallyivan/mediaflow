@@ -3,77 +3,88 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Política de Privacidad | Media Flow</title>
+    <title>Política de Privacidad | Media Flow Pro</title>
     <meta
       name="description"
-      content="Política de Privacidad oficial de Media Flow. Procesamiento 100% local, sin subidas de archivos, sin cuentas y sin recopilación de datos personales."
+      content="Política de Privacidad oficial de Media Flow Pro. Procesamiento 100% local, sin subidas de archivos, sin cuentas y sin recopilación de datos personales."
     >
     <link rel="icon" href="assets/icon-300.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <style>
       .policy-wrapper {
-        max-width: 860px;
+        max-width: 900px;
         margin: 0 auto;
-        padding: clamp(40px, 6vw, 72px) 24px;
+        padding: clamp(40px, 6vw, 72px) 20px;
       }
       .policy-card {
-        background: var(--panel);
-        border: 1px solid var(--line);
-        border-radius: 16px;
-        padding: clamp(24px, 4vw, 48px);
-        box-shadow: var(--shadow);
+        padding: clamp(28px, 5vw, 56px);
       }
       .policy-title {
-        font-size: clamp(28px, 4vw, 38px);
+        font-size: clamp(30px, 4vw, 42px);
         font-weight: 800;
         color: var(--ink);
-        margin: 0 0 8px;
+        margin: 0 0 10px;
         letter-spacing: -0.02em;
       }
       .policy-date {
         display: inline-block;
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--muted);
-        background: var(--soft);
-        padding: 4px 12px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--accent-glow);
+        background: var(--bg-surface-alt);
+        border: 1px solid var(--glass-border-light);
+        padding: 5px 14px;
         border-radius: 20px;
-        margin-bottom: 32px;
+        margin-bottom: 28px;
+      }
+      .highlight-box {
+        background: var(--accent-soft);
+        border: 1px solid var(--glass-border-light);
+        border-left: 4px solid var(--accent-cyan);
+        border-radius: var(--radius-md);
+        padding: 20px 24px;
+        margin: 24px 0 36px;
+      }
+      .highlight-box p {
+        margin: 0;
+        color: #ffffff !important;
+        font-weight: 700;
+        font-size: 16px;
+        line-height: 1.6;
       }
       .policy-section {
         margin-bottom: 36px;
       }
       .policy-section h2 {
-        font-size: 20px;
-        font-weight: 750;
+        font-size: 22px;
+        font-weight: 800;
         color: var(--ink);
-        margin: 0 0 12px;
-        border-bottom: 2px solid var(--soft);
-        padding-bottom: 8px;
+        margin: 0 0 14px;
+        border-bottom: 1px solid var(--glass-border);
+        padding-bottom: 10px;
       }
       .policy-section p, .policy-section ul {
-        color: var(--ink);
-        font-size: 15px;
+        color: var(--ink-muted);
+        font-size: 16px;
         line-height: 1.7;
-        margin: 0 0 12px;
+        margin: 0 0 14px;
       }
       .policy-section ul {
-        padding-left: 20px;
+        padding-left: 24px;
       }
       .policy-section li {
-        margin-bottom: 8px;
+        margin-bottom: 10px;
       }
-      .highlight-box {
-        background: #eef7f6;
-        border-left: 4px solid var(--accent);
-        border-radius: 8px;
-        padding: 16px 20px;
-        margin: 20px 0;
+      .policy-section a {
+        color: var(--accent-cyan);
+        font-weight: 700;
+        text-decoration: none;
       }
-      .highlight-box p {
-        margin: 0;
-        color: var(--accent-strong);
-        font-weight: 600;
+      .policy-section a:hover {
+        text-decoration: underline;
       }
     </style>
   </head>
@@ -81,18 +92,19 @@
     <header class="site-header">
       <a class="brand" href="index.html" aria-label="Media Flow">
         <img src="assets/icon-300.png" alt="" width="36" height="36">
-        <span>Media Flow</span>
+        <span>Media Flow <small class="version-badge">v1.6.2 PRO</small></span>
       </a>
       <nav class="nav-links" aria-label="Navegación">
         <a href="index.html">Inicio</a>
+        <a href="index.html#funciones">Funciones</a>
         <a href="converter.html">Convertidor online</a>
-        <a href="privacy.html" class="active" style="color: var(--accent-strong);">Privacidad</a>
-        <a href="https://github.com/musicallyivan/mediaflow">GitHub</a>
+        <a href="privacy.html" style="color: var(--accent-cyan);">Privacidad</a>
+        <a href="index.html#descargar" class="nav-download-btn">Descargar</a>
       </nav>
     </header>
 
     <main class="policy-wrapper">
-      <article class="policy-card">
+      <article class="policy-card glass-card">
         <h1 class="policy-title">Política de Privacidad</h1>
         <span class="policy-date">Última actualización: 21 de agosto de 2026</span>
 
@@ -103,14 +115,14 @@
         <section class="policy-section">
           <h2>1. Principio Fundamental de Privacidad</h2>
           <p>
-            Media Flow está diseñada como una herramienta totalmente local orientada al respeto de la privacidad del usuario. La aplicación no requiere la creación de cuentas de usuario, no solicita inicio de sesión ni requiere suscripciones para acceder a sus funciones.
+            Media Flow está diseñada como una herramienta totalmente local orientada al respeto absoluto de la privacidad del usuario. La aplicación no requiere la creación de cuentas de usuario, no solicita inicio de sesión ni requiere suscripciones para acceder a sus funciones.
           </p>
         </section>
 
         <section class="policy-section">
           <h2>2. Procesamiento de Archivos y Metadatos</h2>
           <p>
-            Todos los archivos multimedia (audio, video e imagen) seleccionados para su conversión, recorte o compresión son procesados localmente mediante bibliotecas integradas (como <code>FFmpeg</code>) en la memoria y almacenamiento de tu dispositivo.
+            Todos los archivos multimedia (audio, video e imagen) seleccionados para su conversión, recorte, compresión o unión son procesados localmente mediante bibliotecas integradas (como <code>FFmpeg</code>) en la memoria y almacenamiento de tu dispositivo.
           </p>
           <ul>
             <li>Tus archivos nunca se transmiten ni se cargan en servidores de Media Flow ni de terceros.</li>
@@ -153,7 +165,7 @@
             Si tienes dudas o preguntas sobre esta Política de Privacidad, puedes consultar el código fuente o comunicarte a través del repositorio oficial del proyecto en GitHub:
           </p>
           <p>
-            <a href="https://github.com/musicallyivan/mediaflow" target="_blank" rel="noopener" style="color: var(--accent-strong); font-weight: 600;">
+            <a href="https://github.com/musicallyivan/mediaflow" target="_blank" rel="noopener">
               https://github.com/musicallyivan/mediaflow
             </a>
           </p>
@@ -162,10 +174,19 @@
     </main>
 
     <footer class="site-footer">
-      <span>Media Flow</span>
-      <a href="index.html">Inicio</a>
-      <a href="privacy.html">Privacidad</a>
-      <a href="https://github.com/musicallyivan/mediaflow">GitHub</a>
+      <div class="footer-content">
+        <div class="footer-brand">
+          <img src="assets/icon-300.png" alt="" width="28" height="28">
+          <span>Media Flow Pro v1.6.2</span>
+        </div>
+        <div class="footer-links">
+          <a href="index.html">Inicio</a>
+          <a href="converter.html">Convertidor Online</a>
+          <a href="privacy.html">Privacidad</a>
+          <a href="https://github.com/musicallyivan/mediaflow" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://github.com/musicallyivan/mediaflow/releases" target="_blank" rel="noopener">Releases</a>
+        </div>
+      </div>
     </footer>
   </body>
 </html>
