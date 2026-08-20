@@ -806,6 +806,11 @@ class MediaConverterApp(tk.Tk):
         ttk.Label(status_row, textvariable=self.progress_text, style="Muted.TLabel", wraplength=720).grid(row=1, column=1, columnspan=2, sticky="w", pady=(3, 0))
 
     def _configure_style(self) -> None:
+        try:
+            self.style.theme_use("clam")
+        except Exception:
+            pass
+
         p = self.palette
         self.configure(bg=p["window"])
         self.style.configure("App.TFrame", background=p["window"])
@@ -825,16 +830,66 @@ class MediaConverterApp(tk.Tk):
         self.style.map("TCombobox", fieldbackground=[("readonly", p["input_bg"])], foreground=[("readonly", p["text"])])
         self.style.configure("TSpinbox", fieldbackground=p["input_bg"], foreground=p["text"], bordercolor=p["card_border"], padding=6)
 
-        # Buttons
-        self.style.configure("Primary.TButton", background=p["accent"], foreground="#ffffff", font=("Segoe UI", 11, "bold"), padding=11, borderwidth=0)
-        self.style.map("Primary.TButton", background=[("active", p["accent_hover"]), ("disabled", p["card_border"])])
-        self.style.configure("Secondary.TButton", background=p["button_bg"], foreground=p["text"], font=("Segoe UI", 9, "bold"), padding=7, borderwidth=0)
-        self.style.map("Secondary.TButton", background=[("active", p["button_hover"])])
+        # Primary Action Button (Convertir)
+        self.style.configure(
+            "Primary.TButton",
+            background=p["accent"],
+            foreground="#ffffff",
+            font=("Segoe UI", 11, "bold"),
+            padding=11,
+            borderwidth=0,
+            relief="flat",
+        )
+        self.style.map(
+            "Primary.TButton",
+            background=[("active", p["accent_hover"]), ("disabled", p["card_border"])],
+            foreground=[("active", "#ffffff"), ("disabled", p["text_muted"])],
+        )
 
-        # Notebook tabs
-        self.style.configure("TNotebook", background=p["window"], borderwidth=0)
-        self.style.configure("TNotebook.Tab", background=p["surface_alt"], foreground=p["text_muted"], padding=(14, 7), font=("Segoe UI", 10, "bold"), borderwidth=0)
-        self.style.map("TNotebook.Tab", background=[("selected", p["surface"])], foreground=[("selected", p["accent_glow"])])
+        # Secondary Action Buttons (+ Agregar, Limpiar, Buscar actualizaciones, Modo oscuro, 📁)
+        self.style.configure(
+            "Secondary.TButton",
+            background=p["button_bg"],
+            foreground=p["text"],
+            font=("Segoe UI", 9, "bold"),
+            padding=7,
+            borderwidth=1,
+            bordercolor=p["card_border"],
+            lightcolor=p["card_border"],
+            darkcolor=p["card_border"],
+            relief="flat",
+        )
+        self.style.map(
+            "Secondary.TButton",
+            background=[("active", p["button_hover"])],
+            foreground=[("active", p["text"])],
+        )
+
+        # Notebook Tabs (Convertidor / Ajustes Avanzados / Historial)
+        self.style.configure(
+            "TNotebook",
+            background=p["window"],
+            borderwidth=0,
+            tabmargins=[2, 5, 2, 0],
+        )
+        self.style.configure(
+            "TNotebook.Tab",
+            background=p["surface_alt"],
+            foreground=p["text"],
+            padding=(16, 8),
+            font=("Segoe UI", 10, "bold"),
+            borderwidth=1,
+            bordercolor=p["card_border"],
+            lightcolor=p["card_border"],
+            darkcolor=p["card_border"],
+            relief="flat",
+        )
+        self.style.map(
+            "TNotebook.Tab",
+            background=[("selected", p["surface"]), ("active", p["button_hover"])],
+            foreground=[("selected", p["accent_glow"]), ("active", p["text"])],
+            bordercolor=[("selected", p["accent"])],
+        )
 
         # Treeview Glass Table
         self.style.configure("Treeview", background=p["surface"], foreground=p["text"], fieldbackground=p["surface"], rowheight=28, borderwidth=0)
@@ -888,9 +943,11 @@ class MediaConverterApp(tk.Tk):
             is_selected = mode == selected
             button.configure(
                 bg=p["accent"] if is_selected else p["surface_alt"],
-                fg="#ffffff" if is_selected else p["text_muted"],
+                fg="#ffffff" if is_selected else p["text"],
                 activebackground=p["accent_hover"] if is_selected else p["button_hover"],
                 activeforeground="#ffffff" if is_selected else p["text"],
+                relief="flat",
+                borderwidth=0,
             )
 
     def _mode_changed(self, mode: str) -> None:
