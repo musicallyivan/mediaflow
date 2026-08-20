@@ -1,3 +1,5 @@
+import concurrent.futures
+import ctypes
 import json
 import os
 import queue
@@ -7,62 +9,78 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import urllib.error
 import urllib.request
-import ctypes
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
 from typing import Any, Optional
 import tkinter as tk
-
+from tkinter import filedialog, messagebox, ttk
 
 APP_TITLE = "Media Flow"
-APP_VERSION = "1.5.0"
+APP_VERSION = "1.6.0"
 GITHUB_REPO = os.environ.get("MEDIA_FLOW_GITHUB_REPO", "musicallyivan/mediaflow")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
-AUDIO_FORMATS = ("MP3", "M4A", "WAV", "FLAC", "OGG")
-VIDEO_FORMATS = ("MP4", "MOV", "WEBM", "MKV")
-IMAGE_FORMATS = ("PNG", "JPG", "WEBP", "BMP")
+AUDIO_FORMATS = ("MP3", "M4A", "WAV", "FLAC", "OGG", "OPUS", "AAC", "ALAC", "AIFF")
+VIDEO_FORMATS = ("MP4", "MOV", "WEBM", "MKV", "GIF", "AVI", "AV1", "H265")
+IMAGE_FORMATS = ("PNG", "JPG", "WEBP", "BMP", "AVIF", "ICO", "TIFF")
+EXTRACTION_MODES = ("Extraer Audio", "Silenciar Video (Quitar Audio)", "Extraer Subtítulos (SRT)")
+CONCAT_MODES = ("Unir Archivos de Audio", "Unir Archivos de Video")
 
-AUDIO_EXTENSIONS = "*.mp3 *.wav *.m4a *.aac *.flac *.ogg *.wma"
-VIDEO_EXTENSIONS = "*.mp4 *.mov *.mkv *.avi *.webm *.wmv *.m4v"
-IMAGE_EXTENSIONS = "*.png *.jpg *.jpeg *.webp *.bmp *.tiff *.gif"
+AUDIO_EXTENSIONS = "*.mp3 *.wav *.m4a *.aac *.flac *.ogg *.opus *.wma *.aiff *.m4b"
+VIDEO_EXTENSIONS = "*.mp4 *.mov *.mkv *.avi *.webm *.wmv *.m4v *.flv *.ogv *.3gp"
+IMAGE_EXTENSIONS = "*.png *.jpg *.jpeg *.webp *.bmp *.tiff *.gif *.avif *.heic *.ico"
+
+PRESETS = {
+    "Personalizado": {},
+    "Optimizado para Web": {"video_format": "MP4", "video_quality": "Equilibrada", "res": "1080p", "fps": "30", "audio_quality": "160 kbps"},
+    "WhatsApp / Redes (Ligero)": {"video_format": "MP4", "video_quality": "Comprimida", "res": "720p", "fps": "30", "audio_quality": "128 kbps"},
+    "Calidad Máxima (Lossless)": {"video_format": "MKV", "video_quality": "Alta", "res": "Original", "fps": "Original", "audio_quality": "320 kbps"},
+    "TikTok / Reels / Shorts": {"video_format": "MP4", "video_quality": "Alta", "res": "1080p", "fps": "60", "audio_quality": "192 kbps"},
+    "Audio Alta Fidelidad": {"audio_format": "FLAC", "audio_quality": "320 kbps"},
+}
 
 THEMES = {
     "light": {
-        "window": "#eef2f7",
+        "window": "#f8fafc",
         "surface": "#ffffff",
-        "surface_alt": "#f6f8fb",
-        "text": "#111827",
-        "muted": "#667085",
-        "border": "#d8dee8",
-        "accent": "#2563eb",
-        "accent_hover": "#1d4ed8",
-        "accent_soft": "#dbeafe",
-        "success": "#16a34a",
-        "danger": "#dc2626",
-        "input": "#ffffff",
-        "button": "#e8edf3",
-        "button_hover": "#dbe3ec",
-        "shadow": "#d9e0ea",
+        "surface_alt": "#f1f5f9",
+        "card_border": "#e2e8f0",
+        "text": "#0f172a",
+        "text_muted": "#64748b",
+        "accent": "#4f46e5",
+        "accent_hover": "#4338ca",
+        "accent_soft": "#e0e7ff",
+        "success": "#10b981",
+        "danger": "#ef4444",
+        "warning": "#f59e0b",
+        "input_bg": "#ffffff",
+        "button_bg": "#f1f5f9",
+        "button_hover": "#e2e8f0",
+        "badge_bg": "#e0e7ff",
+        "badge_fg": "#3730a3",
+        "shadow": "#cbd5e1",
     },
     "dark": {
         "window": "#0f172a",
-        "surface": "#172033",
-        "surface_alt": "#111a2d",
-        "text": "#eef2ff",
-        "muted": "#a7b1c2",
-        "border": "#2d3b52",
-        "accent": "#60a5fa",
-        "accent_hover": "#3b82f6",
-        "accent_soft": "#1e3a5f",
-        "success": "#22c55e",
+        "surface": "#1e293b",
+        "surface_alt": "#111827",
+        "card_border": "#334155",
+        "text": "#f8fafc",
+        "text_muted": "#94a3b8",
+        "accent": "#6366f1",
+        "accent_hover": "#4f46e5",
+        "accent_soft": "#312e81",
+        "success": "#10b981",
         "danger": "#f87171",
-        "input": "#0f172a",
-        "button": "#23314a",
-        "button_hover": "#2e3f5d",
-        "shadow": "#0a1020",
+        "warning": "#fbbf24",
+        "input_bg": "#0f172a",
+        "button_bg": "#334155",
+        "button_hover": "#475569",
+        "badge_bg": "#312e81",
+        "badge_fg": "#c7d2fe",
+        "shadow": "#020617",
     },
 }
 
@@ -87,7 +105,7 @@ def is_msix_package() -> bool:
 
 
 def default_output_dir() -> Path:
-    for candidate in (Path.home() / "Music", Path.home() / "Videos", Path.home() / "Pictures", Path.home() / "Downloads"):
+    for candidate in (Path.home() / "Videos", Path.home() / "Music", Path.home() / "Pictures", Path.home() / "Downloads"):
         if candidate.exists():
             return candidate
     return Path.home()
@@ -148,9 +166,56 @@ def find_ffprobe() -> Optional[str]:
     return None
 
 
+def detect_gpu_encoders(ffmpeg_path: str) -> dict[str, bool]:
+    encoders = {"nvenc": False, "amf": False, "qsv": False}
+    try:
+        process = subprocess.run(
+            [ffmpeg_path, "-encoders"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="ignore",
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+            timeout=5,
+        )
+        output = process.stdout.lower()
+        if "h264_nvenc" in output or "hevc_nvenc" in output:
+            encoders["nvenc"] = True
+        if "h264_amf" in output or "hevc_amf" in output:
+            encoders["amf"] = True
+        if "h264_qsv" in output or "hevc_qsv" in output:
+            encoders["qsv"] = True
+    except Exception:
+        pass
+    return encoders
+
+
+def send_windows_toast(title: str, message: str) -> None:
+    if sys.platform != "win32":
+        return
+    try:
+        ps_code = f"""
+        [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null
+        $notification = New-Object System.Windows.Forms.NotifyIcon
+        $notification.Icon = [System.Drawing.SystemIcons]::Information
+        $notification.BalloonTipTitle = '{title}'
+        $notification.BalloonTipText = '{message}'
+        $notification.Visible = $True
+        $notification.ShowBalloonTip(5000)
+        Start-Sleep -s 6
+        $notification.Dispose()
+        """
+        subprocess.Popen(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_code],
+            creationflags=subprocess.CREATE_NO_WINDOW,
+        )
+    except Exception:
+        pass
+
+
 def detect_cloud_folders() -> dict[str, Path]:
     folders: dict[str, Path] = {}
-
     for env_name in ("OneDrive", "OneDriveConsumer", "OneDriveCommercial"):
         value = os.environ.get(env_name)
         if value and Path(value).exists():
@@ -264,21 +329,21 @@ def launch_installer_after_exit(installer_path: Path) -> None:
             [
                 "@echo off",
                 "setlocal",
-                f"set \"INSTALLER={installer_path}\"",
-                f"set \"APP_EXE={app_exe}\"",
-                f"set \"LOG={log_path}\"",
-                "echo [%date% %time%] Waiting for Media Flow to close>\"%LOG%\"",
-                f":waitloop",
-                f"tasklist /FI \"PID eq {os.getpid()}\" 2>NUL | find \"{os.getpid()}\" >NUL",
+                f'set "INSTALLER={installer_path}"',
+                f'set "APP_EXE={app_exe}"',
+                f'set "LOG={log_path}"',
+                'echo [%date% %time%] Waiting for Media Flow to close>"%LOG%"',
+                ":waitloop",
+                f'tasklist /FI "PID eq {os.getpid()}" 2>NUL | find "{os.getpid()}" >NUL',
                 "if not errorlevel 1 (",
                 "  timeout /t 1 /nobreak >NUL",
                 "  goto waitloop",
                 ")",
-                "echo [%date% %time%] Starting installer>>\"%LOG%\"",
-                "start \"\" /wait \"%INSTALLER%\" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS",
-                "set \"RESULT=%ERRORLEVEL%\"",
-                "echo [%date% %time%] Installer exit code %RESULT%>>\"%LOG%\"",
-                "if \"%RESULT%\"==\"0\" start \"\" \"%APP_EXE%\"",
+                'echo [%date% %time%] Starting installer>>"%LOG%"',
+                'start "" /wait "%INSTALLER%" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS',
+                'set "RESULT=%ERRORLEVEL%"',
+                'echo [%date% %time%] Installer exit code %RESULT%>>"%LOG%"',
+                'if "%RESULT%"=="0" start "" "%APP_EXE%"',
                 "exit /b %RESULT%",
             ]
         ),
@@ -320,6 +385,23 @@ def format_duration(seconds: Any) -> str:
     if hours:
         return f"{hours}:{minutes:02d}:{secs:02d}"
     return f"{minutes}:{secs:02d}"
+
+
+def parse_duration_to_seconds(time_str: str) -> Optional[float]:
+    time_str = time_str.strip()
+    if not time_str:
+        return None
+    try:
+        parts = list(map(float, time_str.split(":")))
+        if len(parts) == 1:
+            return parts[0]
+        elif len(parts) == 2:
+            return parts[0] * 60 + parts[1]
+        elif len(parts) == 3:
+            return parts[0] * 3600 + parts[1] * 60 + parts[2]
+    except ValueError:
+        pass
+    return None
 
 
 def format_size(bytes_value: Any) -> str:
@@ -371,280 +453,385 @@ def rounded_rectangle(canvas: tk.Canvas, x1: int, y1: int, x2: int, y2: int, rad
 class MediaConverterApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title(f"{APP_TITLE} v{APP_VERSION}")
-        self.geometry("860x680")
-        self.minsize(760, 620)
+        self.title(f"{APP_TITLE} Pro v{APP_VERSION}")
+        self.geometry("980x780")
+        self.minsize(880, 680)
 
+        apply_window_corner_preference(self)
         self.settings = self._load_settings()
-        self.theme_name = tk.StringVar(value=self.settings.get("theme", "light"))
+
+        # Variables
+        self.theme_name = tk.StringVar(value=self.settings.get("theme", "dark"))
         self.mode = tk.StringVar(value=self.settings.get("mode", "Audio"))
-        self.input_file = tk.StringVar()
+        self.preset = tk.StringVar(value=self.settings.get("preset", "Personalizado"))
         self.output_dir = tk.StringVar(value=self.settings.get("output_dir", str(default_output_dir())))
         self.output_format = tk.StringVar(value=self.settings.get("output_format", "MP3"))
         self.audio_quality = tk.StringVar(value=self.settings.get("audio_quality", "192 kbps"))
         self.video_quality = tk.StringVar(value=self.settings.get("video_quality", "Equilibrada"))
+        self.video_res = tk.StringVar(value=self.settings.get("video_res", "Original"))
+        self.video_fps = tk.StringVar(value=self.settings.get("video_fps", "Original"))
         self.cloud_target = tk.StringVar(value=self.settings.get("cloud_target", "Carpeta local"))
-        self.status = tk.StringVar(value="Elige un archivo para empezar.")
+        
+        self.start_trim = tk.StringVar(value="")
+        self.end_trim = tk.StringVar(value="")
+        self.target_size_mb = tk.StringVar(value="")
+        self.use_gpu = tk.BooleanVar(value=self.settings.get("use_gpu", True))
+        self.parallel_threads = tk.IntVar(value=self.settings.get("parallel_threads", 2))
+        self.enable_toast = tk.BooleanVar(value=self.settings.get("enable_toast", True))
+
+        self.status = tk.StringVar(value="Listo. Arrastra o selecciona tus archivos para empezar.")
         self.progress_text = tk.StringVar(value="")
-        self.media_info = tk.StringVar(value="Sin archivo seleccionado.")
+        self.media_info = tk.StringVar(value="Sin archivos seleccionados.")
+        
         self.input_files: list[Path] = []
+        self.conversion_history: list[dict[str, Any]] = self.settings.get("history", [])
         self.cloud_folders = detect_cloud_folders()
+        self.gpu_encoders = {"nvenc": False, "amf": False, "qsv": False}
         self.messages: queue.Queue[tuple[str, Any]] = queue.Queue()
+
+        self.busy = False
+        self.progress_phase = 0
+        self.pulse_phase = 0
         self.worker: Optional[threading.Thread] = None
         self.update_worker: Optional[threading.Thread] = None
         self.mode_buttons: dict[str, tk.Button] = {}
         self.canvases: list[tk.Canvas] = []
-        self.busy = False
-        self.progress_phase = 0
-        self.pulse_phase = 0
-        self._icon_image: Optional[tk.PhotoImage] = None
 
-        self._set_window_icon()
+        self.style = ttk.Style()
         self._build_ui()
-        apply_window_corner_preference(self)
-        self.protocol("WM_DELETE_WINDOW", self._on_close)
-        self._attach_setting_traces()
-        self.after(100, self._poll_messages)
-        self.after(120, self._animate_status_dot)
-        self.after(1500, lambda: self._check_for_updates(silent=True))
+        self._apply_theme()
+        self._detect_gpu_async()
+        self._poll_messages()
 
     @property
     def palette(self) -> dict[str, str]:
-        return THEMES.get(self.theme_name.get(), THEMES["light"])
+        return THEMES.get(self.theme_name.get(), THEMES["dark"])
+
+    def _load_settings(self) -> dict[str, Any]:
+        path = config_path()
+        if path.exists():
+            try:
+                return json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        return {}
+
+    def _save_settings(self) -> None:
+        path = config_path()
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            data = {
+                "theme": self.theme_name.get(),
+                "mode": self.mode.get(),
+                "preset": self.preset.get(),
+                "output_dir": self.output_dir.get(),
+                "output_format": self.output_format.get(),
+                "audio_quality": self.audio_quality.get(),
+                "video_quality": self.video_quality.get(),
+                "video_res": self.video_res.get(),
+                "video_fps": self.video_fps.get(),
+                "cloud_target": self.cloud_target.get(),
+                "use_gpu": self.use_gpu.get(),
+                "parallel_threads": self.parallel_threads.get(),
+                "enable_toast": self.enable_toast.get(),
+                "history": self.conversion_history[-20:],
+            }
+            path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
+
+    def _detect_gpu_async(self) -> None:
+        def worker() -> None:
+            ffmpeg = find_ffmpeg()
+            if ffmpeg:
+                res = detect_gpu_encoders(ffmpeg)
+                self.messages.put(("gpu_detected", res))
+        threading.Thread(target=worker, daemon=True).start()
 
     def _build_ui(self) -> None:
-        self.style = ttk.Style(self)
-        self.style.theme_use("clam")
-        self._configure_style()
-
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
-
-        self.main = ttk.Frame(self, style="App.TFrame", padding=24)
-        self.main.grid(row=0, column=0, sticky="nsew")
+        self.main = ttk.Frame(self, style="App.TFrame", padding=16)
+        self.main.pack(fill="both", expand=True)
         self.main.columnconfigure(0, weight=1)
-        self.main.rowconfigure(3, weight=1)
 
         self._build_header()
         self._build_mode_selector()
-        self._build_conversion_card()
-        self._build_output_card()
+
+        # Notebook tabs for main content & options
+        self.notebook = ttk.Notebook(self.main)
+        self.notebook.grid(row=2, column=0, sticky="nsew", pady=(10, 10))
+        self.main.rowconfigure(2, weight=1)
+
+        self.tab_convert = ttk.Frame(self.notebook, style="App.TFrame", padding=10)
+        self.tab_advanced = ttk.Frame(self.notebook, style="App.TFrame", padding=10)
+        self.tab_history = ttk.Frame(self.notebook, style="App.TFrame", padding=10)
+
+        self.notebook.add(self.tab_convert, text=" ⚡ Convertidor ")
+        self.notebook.add(self.tab_advanced, text=" ⚙️ Ajustes Avanzados ")
+        self.notebook.add(self.tab_history, text=" 📜 Historial ")
+
+        self._build_convert_tab()
+        self._build_advanced_tab()
+        self._build_history_tab()
+
         self._build_action_area()
-        self._apply_theme()
-        self._mode_changed(self.mode.get(), preserve_format=True)
-
-    def _load_settings(self) -> dict[str, str]:
-        try:
-            path = config_path()
-            if path.exists():
-                data = json.loads(path.read_text(encoding="utf-8"))
-                if isinstance(data, dict):
-                    return {str(key): str(value) for key, value in data.items()}
-        except (OSError, json.JSONDecodeError):
-            pass
-        return {}
-
-    def _attach_setting_traces(self) -> None:
-        for variable in (
-            self.theme_name,
-            self.mode,
-            self.output_dir,
-            self.output_format,
-            self.audio_quality,
-            self.video_quality,
-            self.cloud_target,
-        ):
-            variable.trace_add("write", lambda *_args: self._save_settings())
-
-    def _save_settings(self) -> None:
-        data = {
-            "theme": self.theme_name.get(),
-            "mode": self.mode.get(),
-            "output_dir": self.output_dir.get(),
-            "output_format": self.output_format.get(),
-            "audio_quality": self.audio_quality.get(),
-            "video_quality": self.video_quality.get(),
-            "cloud_target": self.cloud_target.get(),
-        }
-        try:
-            path = config_path()
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-        except OSError:
-            pass
-
-    def _on_close(self) -> None:
-        self._save_settings()
-        self.destroy()
-
-    def _set_window_icon(self) -> None:
-        icon_path = resource_path("icon-300.png")
-        if not icon_path.exists():
-            return
-        try:
-            self._icon_image = tk.PhotoImage(file=str(icon_path))
-            self.iconphoto(True, self._icon_image)
-        except tk.TclError:
-            pass
 
     def _build_header(self) -> None:
         header = ttk.Frame(self.main, style="App.TFrame")
-        header.grid(row=0, column=0, sticky="ew")
+        header.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         header.columnconfigure(1, weight=1)
 
-        self.logo = tk.Canvas(header, width=48, height=48, highlightthickness=0)
-        self.logo.grid(row=0, column=0, rowspan=2, sticky="w", padx=(0, 14))
+        self.logo = tk.Canvas(header, width=42, height=42, highlightthickness=0)
+        self.logo.grid(row=0, column=0, rowspan=2, padx=(0, 12), sticky="w")
         self.canvases.append(self.logo)
 
-        ttk.Label(header, text=APP_TITLE, style="Title.TLabel").grid(row=0, column=1, sticky="w")
+        title_frame = ttk.Frame(header, style="App.TFrame")
+        title_frame.grid(row=0, column=1, sticky="w")
+        ttk.Label(title_frame, text=APP_TITLE, style="Title.TLabel").pack(side="left")
+        ttk.Label(title_frame, text=" PRO", style="ProBadge.TLabel").pack(side="left", padx=6)
+
         ttk.Label(
             header,
-            text="Convierte audio, video e imagenes. Guarda localmente o en carpetas sincronizadas.",
+            text="Procesador multimedia de alto rendimiento local.",
             style="Muted.TLabel",
-        ).grid(row=1, column=1, sticky="w", pady=(4, 0))
+        ).grid(row=1, column=1, sticky="w", pady=(2, 0))
 
-        header_actions = ttk.Frame(header, style="App.TFrame")
-        header_actions.grid(row=0, column=2, rowspan=2, sticky="e")
-        self.theme_button = ttk.Button(header_actions, text="Modo oscuro", command=self._toggle_theme, style="Secondary.TButton")
-        self.theme_button.grid(row=0, column=0, padx=(0, 8))
-        ttk.Button(header_actions, text="Buscar actualizaciones", command=self._check_for_updates, style="Secondary.TButton").grid(row=0, column=1)
+        actions = ttk.Frame(header, style="App.TFrame")
+        actions.grid(row=0, column=2, rowspan=2, sticky="e")
+        
+        self.gpu_label = ttk.Label(actions, text="GPU: Buscando...", style="Badge.TLabel")
+        self.gpu_label.grid(row=0, column=0, padx=(0, 8))
+
+        self.theme_button = ttk.Button(actions, text="🌙 Modo Oscuro", command=self._toggle_theme, style="Secondary.TButton")
+        self.theme_button.grid(row=0, column=1, padx=(0, 8))
+        ttk.Button(actions, text="🔄 Actualizar", command=self._check_for_updates, style="Secondary.TButton").grid(row=0, column=2)
 
     def _build_mode_selector(self) -> None:
-        self.mode_card = ttk.Frame(self.main, style="Card.TFrame", padding=8)
-        self.mode_card.grid(row=1, column=0, sticky="ew", pady=(22, 16))
-        for index, mode in enumerate(("Audio", "Video", "Imagen")):
+        self.mode_card = ttk.Frame(self.main, style="Card.TFrame", padding=6)
+        self.mode_card.grid(row=1, column=0, sticky="ew", pady=(0, 10))
+        modes = ("Audio", "Video", "Imagen", "Extracción", "Unir (Concat)")
+        for index, mode_name in enumerate(modes):
             self.mode_card.columnconfigure(index, weight=1, uniform="mode")
             button = tk.Button(
                 self.mode_card,
-                text=mode,
+                text=mode_name,
                 relief="flat",
                 borderwidth=0,
-                font=("Segoe UI", 11, "bold"),
-                command=lambda value=mode: self._mode_changed(value),
+                font=("Segoe UI", 10, "bold"),
+                command=lambda v=mode_name: self._mode_changed(v),
                 cursor="hand2",
             )
-            button.grid(row=0, column=index, sticky="ew", padx=4, ipady=10)
-            self.mode_buttons[mode] = button
+            button.grid(row=0, column=index, sticky="ew", padx=3, ipady=8)
+            self.mode_buttons[mode_name] = button
 
-    def _build_conversion_card(self) -> None:
-        self.content_card = ttk.Frame(self.main, style="Card.TFrame", padding=20)
-        self.content_card.grid(row=2, column=0, sticky="ew")
-        self.content_card.columnconfigure(0, weight=1)
+    def _build_convert_tab(self) -> None:
+        self.tab_convert.columnconfigure(0, weight=3)
+        self.tab_convert.columnconfigure(1, weight=2)
+        self.tab_convert.rowconfigure(0, weight=1)
 
-        ttk.Label(self.content_card, text="Archivos de entrada", style="Section.TLabel").grid(row=0, column=0, sticky="w")
-        ttk.Label(self.content_card, text="Selecciona uno o varios archivos locales compatibles.", style="CardMuted.TLabel").grid(row=1, column=0, sticky="w", pady=(2, 8))
+        # Left Column: Files list / Treeview
+        files_card = ttk.Frame(self.tab_convert, style="Card.TFrame", padding=14)
+        files_card.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
+        files_card.columnconfigure(0, weight=1)
+        files_card.rowconfigure(2, weight=1)
 
-        file_row = ttk.Frame(self.content_card, style="Card.TFrame")
-        file_row.grid(row=2, column=0, sticky="ew", pady=(0, 8))
-        file_row.columnconfigure(0, weight=1)
-        self.file_entry = ttk.Entry(file_row, textvariable=self.input_file)
-        self.file_entry.grid(row=0, column=0, sticky="ew")
-        ttk.Button(file_row, text="Elegir archivos", command=self._choose_input_file, style="Secondary.TButton").grid(row=0, column=1, padx=(10, 0))
+        header_files = ttk.Frame(files_card, style="Card.TFrame")
+        header_files.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        header_files.columnconfigure(0, weight=1)
 
-        self.info_label = ttk.Label(self.content_card, textvariable=self.media_info, style="CardMuted.TLabel", wraplength=760)
-        self.info_label.grid(row=3, column=0, sticky="w", pady=(0, 18))
+        ttk.Label(header_files, text="Archivos en Cola", style="Section.TLabel").grid(row=0, column=0, sticky="w")
 
-        options = ttk.Frame(self.content_card, style="Card.TFrame")
-        options.grid(row=4, column=0, sticky="ew")
-        for column in range(3):
-            options.columnconfigure(column, weight=1, uniform="options")
+        btn_box = ttk.Frame(header_files, style="Card.TFrame")
+        btn_box.grid(row=0, column=1, sticky="e")
+        ttk.Button(btn_box, text="+ Agregar", command=self._choose_input_file, style="Secondary.TButton").pack(side="left", padx=2)
+        ttk.Button(btn_box, text="Limpiar", command=self._clear_files, style="Secondary.TButton").pack(side="left", padx=2)
 
-        ttk.Label(options, text="Formato", style="Section.TLabel").grid(row=0, column=0, sticky="w")
-        self.format_combo = ttk.Combobox(options, textvariable=self.output_format, values=AUDIO_FORMATS, state="readonly")
-        self.format_combo.grid(row=1, column=0, sticky="ew", pady=(6, 0), padx=(0, 10))
-        self.format_combo.bind("<<ComboboxSelected>>", lambda _event: self._update_convert_button_text())
+        # Treeview list
+        columns = ("name", "size", "status")
+        self.file_tree = ttk.Treeview(files_card, columns=columns, show="headings", height=8, selectmode="extended")
+        self.file_tree.heading("name", text="Nombre del Archivo")
+        self.file_tree.heading("size", text="Tamaño")
+        self.file_tree.heading("status", text="Estado")
+        self.file_tree.column("name", width=260, stretch=True)
+        self.file_tree.column("size", width=90, anchor="e")
+        self.file_tree.column("status", width=120, anchor="center")
+        self.file_tree.grid(row=2, column=0, sticky="nsew")
 
-        ttk.Label(options, text="Calidad de audio", style="Section.TLabel").grid(row=0, column=1, sticky="w")
-        self.audio_quality_combo = ttk.Combobox(
-            options,
-            textvariable=self.audio_quality,
-            values=("128 kbps", "192 kbps", "256 kbps", "320 kbps"),
-            state="readonly",
-        )
-        self.audio_quality_combo.grid(row=1, column=1, sticky="ew", pady=(6, 0), padx=(0, 10))
+        tree_scroll = ttk.Scrollbar(files_card, orient="vertical", command=self.file_tree.yview)
+        self.file_tree.configure(yscrollcommand=tree_scroll.set)
+        tree_scroll.grid(row=2, column=1, sticky="ns")
 
-        ttk.Label(options, text="Calidad visual", style="Section.TLabel").grid(row=0, column=2, sticky="w")
-        self.visual_quality_combo = ttk.Combobox(
-            options,
-            textvariable=self.video_quality,
-            values=("Alta", "Equilibrada", "Comprimida"),
-            state="readonly",
-        )
-        self.visual_quality_combo.grid(row=1, column=2, sticky="ew", pady=(6, 0))
+        self.info_label = ttk.Label(files_card, textvariable=self.media_info, style="CardMuted.TLabel", wraplength=450)
+        self.info_label.grid(row=3, column=0, columnspan=2, sticky="w", pady=(8, 0))
 
-    def _build_output_card(self) -> None:
-        self.output_card = ttk.Frame(self.main, style="Card.TFrame", padding=20)
-        self.output_card.grid(row=3, column=0, sticky="nsew", pady=(16, 0))
-        self.output_card.columnconfigure(0, weight=1)
+        # Right Column: Conversion & Output Controls
+        ctrl_card = ttk.Frame(self.tab_convert, style="Card.TFrame", padding=14)
+        ctrl_card.grid(row=0, column=1, sticky="nsew")
+        ctrl_card.columnconfigure(0, weight=1)
 
-        ttk.Label(self.output_card, text="Destino", style="Section.TLabel").grid(row=0, column=0, sticky="w")
-        cloud_text = "Las carpetas sincronizadas aparecen aqui si el cliente oficial esta instalado."
-        ttk.Label(self.output_card, text=cloud_text, style="CardMuted.TLabel").grid(row=1, column=0, sticky="w", pady=(2, 8))
+        # Preajustes
+        ttk.Label(ctrl_card, text="Perfil / Preajuste Rápido", style="Section.TLabel").grid(row=0, column=0, sticky="w")
+        self.preset_combo = ttk.Combobox(ctrl_card, textvariable=self.preset, values=list(PRESETS.keys()), state="readonly")
+        self.preset_combo.grid(row=1, column=0, sticky="ew", pady=(4, 12))
+        self.preset_combo.bind("<<ComboboxSelected>>", self._on_preset_selected)
 
-        destination_row = ttk.Frame(self.output_card, style="Card.TFrame")
-        destination_row.grid(row=2, column=0, sticky="ew")
-        destination_row.columnconfigure(1, weight=1)
+        # Format & Quality
+        fmt_frame = ttk.Frame(ctrl_card, style="Card.TFrame")
+        fmt_frame.grid(row=2, column=0, sticky="ew", pady=(0, 12))
+        fmt_frame.columnconfigure(0, weight=1)
+        fmt_frame.columnconfigure(1, weight=1)
+
+        ttk.Label(fmt_frame, text="Formato Salida", style="Section.TLabel").grid(row=0, column=0, sticky="w")
+        self.format_combo = ttk.Combobox(fmt_frame, textvariable=self.output_format, values=AUDIO_FORMATS, state="readonly")
+        self.format_combo.grid(row=1, column=0, sticky="ew", pady=(4, 0), padx=(0, 6))
+        self.format_combo.bind("<<ComboboxSelected>>", lambda _: self._update_convert_button_text())
+
+        ttk.Label(fmt_frame, text="Calidad / Bitrate", style="Section.TLabel").grid(row=0, column=1, sticky="w")
+        self.quality_combo = ttk.Combobox(fmt_frame, textvariable=self.audio_quality, values=("128 kbps", "160 kbps", "192 kbps", "256 kbps", "320 kbps"), state="readonly")
+        self.quality_combo.grid(row=1, column=1, sticky="ew", pady=(4, 0))
+
+        # Resolution & FPS (for Video)
+        self.video_opts_frame = ttk.Frame(ctrl_card, style="Card.TFrame")
+        self.video_opts_frame.grid(row=3, column=0, sticky="ew", pady=(0, 12))
+        self.video_opts_frame.columnconfigure(0, weight=1)
+        self.video_opts_frame.columnconfigure(1, weight=1)
+
+        ttk.Label(self.video_opts_frame, text="Resolución", style="Section.TLabel").grid(row=0, column=0, sticky="w")
+        self.res_combo = ttk.Combobox(self.video_opts_frame, textvariable=self.video_res, values=("Original", "4K (2160p)", "1080p", "720p", "480p"), state="readonly")
+        self.res_combo.grid(row=1, column=0, sticky="ew", pady=(4, 0), padx=(0, 6))
+
+        ttk.Label(self.video_opts_frame, text="Framerate (FPS)", style="Section.TLabel").grid(row=0, column=1, sticky="w")
+        self.fps_combo = ttk.Combobox(self.video_opts_frame, textvariable=self.video_fps, values=("Original", "60 fps", "30 fps", "24 fps"), state="readonly")
+        self.fps_combo.grid(row=1, column=1, sticky="ew", pady=(4, 0))
+
+        # Output Destination
+        ttk.Label(ctrl_card, text="Directorio de Salida", style="Section.TLabel").grid(row=4, column=0, sticky="w")
+        dest_row = ttk.Frame(ctrl_card, style="Card.TFrame")
+        dest_row.grid(row=5, column=0, sticky="ew", pady=(4, 6))
+        dest_row.columnconfigure(0, weight=1)
+        
+        self.folder_entry = ttk.Entry(dest_row, textvariable=self.output_dir)
+        self.folder_entry.grid(row=0, column=0, sticky="ew", padx=(0, 6))
+        ttk.Button(dest_row, text="📁", width=3, command=self._choose_folder, style="Secondary.TButton").grid(row=0, column=1)
 
         cloud_values = ["Carpeta local"] + list(self.cloud_folders.keys())
-        self.cloud_combo = ttk.Combobox(destination_row, textvariable=self.cloud_target, values=cloud_values, state="readonly", width=18)
-        self.cloud_combo.grid(row=0, column=0, sticky="w", padx=(0, 10))
-        self.cloud_combo.bind("<<ComboboxSelected>>", lambda _event: self._cloud_changed())
+        self.cloud_combo = ttk.Combobox(ctrl_card, textvariable=self.cloud_target, values=cloud_values, state="readonly")
+        self.cloud_combo.grid(row=6, column=0, sticky="ew", pady=(0, 10))
+        self.cloud_combo.bind("<<ComboboxSelected>>", lambda _: self._cloud_changed())
 
-        self.folder_entry = ttk.Entry(destination_row, textvariable=self.output_dir)
-        self.folder_entry.grid(row=0, column=1, sticky="ew")
-        ttk.Button(destination_row, text="Elegir carpeta", command=self._choose_folder, style="Secondary.TButton").grid(row=0, column=2, padx=(10, 0))
+    def _build_advanced_tab(self) -> None:
+        self.tab_advanced.columnconfigure(0, weight=1)
+        self.tab_advanced.columnconfigure(1, weight=1)
 
-        detected = ", ".join(self.cloud_folders.keys()) if self.cloud_folders else "No se han detectado carpetas de nube."
-        self.cloud_status = ttk.Label(self.output_card, text=f"Detectado: {detected}", style="CardMuted.TLabel")
-        self.cloud_status.grid(row=3, column=0, sticky="w", pady=(12, 0))
+        # Card 1: Edición y Recorte
+        trim_card = ttk.Frame(self.tab_advanced, style="Card.TFrame", padding=14)
+        trim_card.grid(row=0, column=0, sticky="nsew", padx=(0, 8), pady=(0, 10))
+        trim_card.columnconfigure(0, weight=1)
+        trim_card.columnconfigure(1, weight=1)
+
+        ttk.Label(trim_card, text="✂️ Recorte de Tiempo (Trim)", style="Section.TLabel").grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
+        
+        ttk.Label(trim_card, text="Inicio (hh:mm:ss o seg):", style="CardMuted.TLabel").grid(row=1, column=0, sticky="w")
+        ttk.Entry(trim_card, textvariable=self.start_trim).grid(row=2, column=0, sticky="ew", padx=(0, 6), pady=(2, 8))
+
+        ttk.Label(trim_card, text="Fin (hh:mm:ss o seg):", style="CardMuted.TLabel").grid(row=1, column=1, sticky="w")
+        ttk.Entry(trim_card, textvariable=self.end_trim).grid(row=2, column=1, sticky="ew", pady=(2, 8))
+
+        ttk.Label(trim_card, text="📦 Compresión a Tamaño Objetivo (MB)", style="Section.TLabel").grid(row=3, column=0, columnspan=2, sticky="w", pady=(8, 4))
+        ttk.Entry(trim_card, textvariable=self.target_size_mb).grid(row=4, column=0, columnspan=2, sticky="ew")
+        ttk.Label(trim_card, text="Ejemplo: '25' para Discord, '10' para Email (Calcula bitrate automáticamente)", style="CardMuted.TLabel").grid(row=5, column=0, columnspan=2, sticky="w", pady=(2, 0))
+
+        # Card 2: Rendimiento y Hardware
+        perf_card = ttk.Frame(self.tab_advanced, style="Card.TFrame", padding=14)
+        perf_card.grid(row=0, column=1, sticky="nsew", pady=(0, 10))
+
+        ttk.Label(perf_card, text="🚀 Rendimiento y Hardware", style="Section.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 8))
+        
+        ttk.Checkbutton(perf_card, text="Usar Aceleración GPU si está disponible", variable=self.use_gpu, style="Card.TCheckbutton").grid(row=1, column=0, sticky="w", pady=4)
+        ttk.Checkbutton(perf_card, text="Notificaciones Nativas de Windows al terminar", variable=self.enable_toast, style="Card.TCheckbutton").grid(row=2, column=0, sticky="w", pady=4)
+
+        ttk.Label(perf_card, text="Hilos Paralelos por Lote:", style="CardMuted.TLabel").grid(row=3, column=0, sticky="w", pady=(8, 2))
+        ttk.Spinbox(perf_card, from_=1, to=8, textvariable=self.parallel_threads, width=10).grid(row=4, column=0, sticky="w")
+
+    def _build_history_tab(self) -> None:
+        self.tab_history.columnconfigure(0, weight=1)
+        self.tab_history.rowconfigure(1, weight=1)
+
+        top = ttk.Frame(self.tab_history, style="App.TFrame")
+        top.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        ttk.Label(top, text="Historial de Conversiones Recientes", style="Section.TLabel").pack(side="left")
+        ttk.Button(top, text="Limpiar Historial", command=self._clear_history, style="Secondary.TButton").pack(side="right")
+
+        cols = ("file", "format", "size", "time")
+        self.history_tree = ttk.Treeview(self.tab_history, columns=cols, show="headings")
+        self.history_tree.heading("file", text="Archivo Generado")
+        self.history_tree.heading("format", text="Formato")
+        self.history_tree.heading("size", text="Tamaño")
+        self.history_tree.heading("time", text="Fecha / Hora")
+        self.history_tree.column("file", width=260, stretch=True)
+        self.history_tree.column("format", width=80, anchor="center")
+        self.history_tree.column("size", width=100, anchor="e")
+        self.history_tree.column("time", width=140, anchor="center")
+        self.history_tree.grid(row=1, column=0, sticky="nsew")
+
+        self.history_tree.bind("<Double-1>", self._open_history_file)
+        self._refresh_history_tree()
 
     def _build_action_area(self) -> None:
         self.convert_button = ttk.Button(self.main, text="Convertir a MP3", command=self._start_conversion, style="Primary.TButton")
-        self.convert_button.grid(row=4, column=0, sticky="ew", pady=(18, 10), ipady=8)
+        self.convert_button.grid(row=3, column=0, sticky="ew", pady=(10, 8), ipady=10)
 
         self.progress_canvas = tk.Canvas(self.main, height=12, highlightthickness=0)
-        self.progress_canvas.grid(row=5, column=0, sticky="ew")
-        self.progress_canvas.bind("<Configure>", lambda _event: self._draw_progress_bar())
+        self.progress_canvas.grid(row=4, column=0, sticky="ew")
+        self.progress_canvas.bind("<Configure>", lambda _: self._draw_progress_bar())
         self.canvases.append(self.progress_canvas)
 
         status_row = ttk.Frame(self.main, style="App.TFrame")
-        status_row.grid(row=6, column=0, sticky="ew", pady=(14, 0))
+        status_row.grid(row=5, column=0, sticky="ew", pady=(8, 0))
         status_row.columnconfigure(1, weight=1)
 
         self.status_dot = tk.Canvas(status_row, width=18, height=18, highlightthickness=0)
         self.status_dot.grid(row=0, column=0, sticky="w", padx=(0, 8))
         self.canvases.append(self.status_dot)
+
         ttk.Label(status_row, textvariable=self.status, style="Status.TLabel", wraplength=650).grid(row=0, column=1, sticky="w")
-        ttk.Label(status_row, text=f"Version {APP_VERSION}", style="Muted.TLabel").grid(row=0, column=2, sticky="e")
-        ttk.Label(status_row, textvariable=self.progress_text, style="Muted.TLabel", wraplength=720).grid(row=1, column=1, columnspan=2, sticky="w", pady=(5, 0))
+        ttk.Label(status_row, text=f"Media Flow v{APP_VERSION}", style="Muted.TLabel").grid(row=0, column=2, sticky="e")
+        ttk.Label(status_row, textvariable=self.progress_text, style="Muted.TLabel", wraplength=720).grid(row=1, column=1, columnspan=2, sticky="w", pady=(3, 0))
 
     def _configure_style(self) -> None:
-        palette = self.palette
-        self.configure(bg=palette["window"])
-        self.style.configure("App.TFrame", background=palette["window"])
-        self.style.configure("Card.TFrame", background=palette["surface"], relief="flat")
-        self.style.configure("Title.TLabel", background=palette["window"], foreground=palette["text"], font=("Segoe UI", 24, "bold"))
-        self.style.configure("Muted.TLabel", background=palette["window"], foreground=palette["muted"], font=("Segoe UI", 9))
-        self.style.configure("CardMuted.TLabel", background=palette["surface"], foreground=palette["muted"], font=("Segoe UI", 9))
-        self.style.configure("Section.TLabel", background=palette["surface"], foreground=palette["text"], font=("Segoe UI", 10, "bold"))
-        self.style.configure("Status.TLabel", background=palette["window"], foreground=palette["text"], font=("Segoe UI", 10))
-        self.style.configure("TEntry", fieldbackground=palette["input"], foreground=palette["text"], bordercolor=palette["border"], lightcolor=palette["border"], darkcolor=palette["border"], padding=8)
-        self.style.configure("TCombobox", fieldbackground=palette["input"], foreground=palette["text"], bordercolor=palette["border"], arrowcolor=palette["text"], padding=8)
-        self.style.map("TCombobox", fieldbackground=[("readonly", palette["input"])], foreground=[("readonly", palette["text"])])
-        self.style.configure("Primary.TButton", background=palette["accent"], foreground="#ffffff", font=("Segoe UI", 11, "bold"), padding=11, borderwidth=0)
-        self.style.map("Primary.TButton", background=[("active", palette["accent_hover"]), ("disabled", palette["border"])])
-        self.style.configure("Secondary.TButton", background=palette["button"], foreground=palette["text"], padding=9, borderwidth=0)
-        self.style.map("Secondary.TButton", background=[("active", palette["button_hover"])])
+        p = self.palette
+        self.configure(bg=p["window"])
+        self.style.configure("App.TFrame", background=p["window"])
+        self.style.configure("Card.TFrame", background=p["surface"], relief="flat")
+        self.style.configure("Title.TLabel", background=p["window"], foreground=p["text"], font=("Segoe UI", 20, "bold"))
+        self.style.configure("ProBadge.TLabel", background=p["accent_soft"], foreground=p["accent"], font=("Segoe UI", 10, "bold"))
+        self.style.configure("Badge.TLabel", background=p["badge_bg"], foreground=p["badge_fg"], font=("Segoe UI", 9, "bold"), padding=(6, 2))
+        self.style.configure("Muted.TLabel", background=p["window"], foreground=p["text_muted"], font=("Segoe UI", 9))
+        self.style.configure("CardMuted.TLabel", background=p["surface"], foreground=p["text_muted"], font=("Segoe UI", 9))
+        self.style.configure("Section.TLabel", background=p["surface"], foreground=p["text"], font=("Segoe UI", 10, "bold"))
+        self.style.configure("Status.TLabel", background=p["window"], foreground=p["text"], font=("Segoe UI", 10))
+        self.style.configure("Card.TCheckbutton", background=p["surface"], foreground=p["text"], font=("Segoe UI", 10))
+
+        self.style.configure("Primary.TButton", background=p["accent"], foreground="#ffffff", font=("Segoe UI", 11, "bold"), padding=10, borderwidth=0)
+        self.style.map("Primary.TButton", background=[("active", p["accent_hover"]), ("disabled", p["card_border"])])
+        self.style.configure("Secondary.TButton", background=p["button_bg"], foreground=p["text"], padding=6, borderwidth=0)
+        self.style.map("Secondary.TButton", background=[("active", p["button_hover"])])
+
+        self.style.configure("TNotebook", background=p["window"], borderwidth=0)
+        self.style.configure("TNotebook.Tab", background=p["surface_alt"], foreground=p["text_muted"], padding=(12, 6), font=("Segoe UI", 10, "bold"))
+        self.style.map("TNotebook.Tab", background=[("selected", p["surface"])], foreground=[("selected", p["accent"])])
+
+        self.style.configure("Treeview", background=p["surface"], foreground=p["text"], fieldbackground=p["surface"], rowheight=26)
+        self.style.configure("Treeview.Heading", background=p["surface_alt"], foreground=p["text"], font=("Segoe UI", 9, "bold"))
 
     def _apply_theme(self) -> None:
         self._configure_style()
-        palette = self.palette
-        self.theme_button.configure(text="Modo claro" if self.theme_name.get() == "dark" else "Modo oscuro")
-        for canvas in self.canvases:
-            canvas.configure(bg=palette["window"])
-        self.logo.configure(bg=palette["window"])
-        self.progress_canvas.configure(bg=palette["window"])
-        self.status_dot.configure(bg=palette["window"])
+        p = self.palette
+        self.theme_button.configure(text="☀️ Modo Claro" if self.theme_name.get() == "dark" else "🌙 Modo Oscuro")
+        for c in self.canvases:
+            c.configure(bg=p["window"])
+        self.logo.configure(bg=p["window"])
+        self.progress_canvas.configure(bg=p["window"])
+        self.status_dot.configure(bg=p["window"])
         self._draw_logo()
         self._draw_progress_bar()
         self._update_mode_buttons()
@@ -653,62 +840,93 @@ class MediaConverterApp(tk.Tk):
     def _toggle_theme(self) -> None:
         self.theme_name.set("dark" if self.theme_name.get() == "light" else "light")
         self._apply_theme()
+        self._save_settings()
 
     def _draw_logo(self) -> None:
-        palette = self.palette
+        p = self.palette
         self.logo.delete("all")
-        self.logo.create_oval(2, 2, 46, 46, fill=palette["accent_soft"], outline=palette["accent"])
-        rounded_rectangle(self.logo, 15, 14, 33, 20, 3, fill=palette["accent"], outline="")
-        rounded_rectangle(self.logo, 12, 24, 36, 30, 3, fill=palette["accent_hover"], outline="")
-        rounded_rectangle(self.logo, 18, 34, 30, 39, 3, fill=palette["accent"], outline="")
+        self.logo.create_oval(2, 2, 40, 40, fill=p["accent_soft"], outline=p["accent"])
+        rounded_rectangle(self.logo, 13, 12, 29, 18, 3, fill=p["accent"], outline="")
+        rounded_rectangle(self.logo, 10, 21, 32, 27, 3, fill=p["accent_hover"], outline="")
+        rounded_rectangle(self.logo, 16, 30, 26, 35, 3, fill=p["accent"], outline="")
 
     def _update_mode_buttons(self) -> None:
-        palette = self.palette
+        p = self.palette
         selected = self.mode.get()
         for mode, button in self.mode_buttons.items():
             is_selected = mode == selected
             button.configure(
-                bg=palette["accent"] if is_selected else palette["surface_alt"],
-                fg="#ffffff" if is_selected else palette["text"],
-                activebackground=palette["accent_hover"] if is_selected else palette["button_hover"],
-                activeforeground="#ffffff" if is_selected else palette["text"],
+                bg=p["accent"] if is_selected else p["surface_alt"],
+                fg="#ffffff" if is_selected else p["text"],
+                activebackground=p["accent_hover"] if is_selected else p["button_hover"],
+                activeforeground="#ffffff" if is_selected else p["text"],
             )
 
-    def _mode_changed(self, mode: str, preserve_format: bool = False) -> None:
-        if mode not in ("Audio", "Video", "Imagen"):
-            mode = "Audio"
+    def _mode_changed(self, mode: str) -> None:
         self.mode.set(mode)
         if mode == "Audio":
             self.format_combo.configure(values=AUDIO_FORMATS)
-            if not preserve_format or self.output_format.get() not in AUDIO_FORMATS:
+            if self.output_format.get() not in AUDIO_FORMATS:
                 self.output_format.set("MP3")
-            self.audio_quality_combo.configure(state="readonly")
-            self.visual_quality_combo.configure(state="disabled")
-            self.status.set("Elige un archivo de audio o video para extraer o convertir audio.")
+            self.quality_combo.configure(values=("128 kbps", "160 kbps", "192 kbps", "256 kbps", "320 kbps"), state="readonly")
+            self.video_opts_frame.grid_remove()
         elif mode == "Video":
             self.format_combo.configure(values=VIDEO_FORMATS)
-            if not preserve_format or self.output_format.get() not in VIDEO_FORMATS:
+            if self.output_format.get() not in VIDEO_FORMATS:
                 self.output_format.set("MP4")
-            self.audio_quality_combo.configure(state="readonly")
-            self.visual_quality_combo.configure(state="readonly", values=("Alta", "Equilibrada", "Comprimida"))
-            if self.video_quality.get() not in ("Alta", "Equilibrada", "Comprimida"):
-                self.video_quality.set("Equilibrada")
-            self.status.set("Elige un archivo de video para convertirlo a otro contenedor o codec.")
-        else:
+            self.quality_combo.configure(values=("Alta", "Equilibrada", "Comprimida"), state="readonly")
+            self.video_opts_frame.grid()
+        elif mode == "Imagen":
             self.format_combo.configure(values=IMAGE_FORMATS)
-            if not preserve_format or self.output_format.get() not in IMAGE_FORMATS:
+            if self.output_format.get() not in IMAGE_FORMATS:
                 self.output_format.set("PNG")
-            self.audio_quality_combo.configure(state="disabled")
-            self.visual_quality_combo.configure(state="readonly", values=("100", "90", "80", "70"))
-            if self.video_quality.get() not in ("100", "90", "80", "70"):
-                self.video_quality.set("90")
-            self.status.set("Elige una imagen para convertirla a otro formato.")
+            self.quality_combo.configure(values=("100%", "90%", "80%", "70%"), state="readonly")
+            self.video_opts_frame.grid_remove()
+        elif mode == "Extracción":
+            self.format_combo.configure(values=EXTRACTION_MODES)
+            self.output_format.set(EXTRACTION_MODES[0])
+            self.quality_combo.configure(state="disabled")
+            self.video_opts_frame.grid_remove()
+        elif mode == "Unir (Concat)":
+            self.format_combo.configure(values=CONCAT_MODES)
+            self.output_format.set(CONCAT_MODES[0])
+            self.quality_combo.configure(state="disabled")
+            self.video_opts_frame.grid_remove()
+
         self._update_convert_button_text()
         self._update_mode_buttons()
-        self._draw_status_dot()
+
+    def _on_preset_selected(self, _event: Any) -> None:
+        name = self.preset.get()
+        opts = PRESETS.get(name, {})
+        if not opts:
+            return
+        if "video_format" in opts:
+            self._mode_changed("Video")
+            self.output_format.set(opts["video_format"])
+            if "video_quality" in opts:
+                self.video_quality.set(opts["video_quality"])
+                self.quality_combo.set(opts["video_quality"])
+            if "res" in opts:
+                self.video_res.set(opts["res"])
+            if "fps" in opts:
+                self.video_fps.set(opts["fps"])
+            if "audio_quality" in opts:
+                self.audio_quality.set(opts["audio_quality"])
+        elif "audio_format" in opts:
+            self._mode_changed("Audio")
+            self.output_format.set(opts["audio_format"])
+            if "audio_quality" in opts:
+                self.audio_quality.set(opts["audio_quality"])
+                self.quality_combo.set(opts["audio_quality"])
 
     def _update_convert_button_text(self) -> None:
-        self.convert_button.configure(text=f"Convertir a {self.output_format.get()}")
+        m = self.mode.get()
+        fmt = self.output_format.get()
+        if m in ("Extracción", "Unir (Concat)"):
+            self.convert_button.configure(text=fmt)
+        else:
+            self.convert_button.configure(text=f"Convertir a {fmt}")
 
     def _choose_input_file(self) -> None:
         mode = self.mode.get()
@@ -716,19 +934,31 @@ class MediaConverterApp(tk.Tk):
             filetypes = (("Audio y video", f"{AUDIO_EXTENSIONS} {VIDEO_EXTENSIONS}"), ("Todos los archivos", "*.*"))
         elif mode == "Video":
             filetypes = (("Video", VIDEO_EXTENSIONS), ("Todos los archivos", "*.*"))
-        else:
+        elif mode == "Imagen":
             filetypes = (("Imagen", IMAGE_EXTENSIONS), ("Todos los archivos", "*.*"))
+        else:
+            filetypes = (("Multimedia", f"{AUDIO_EXTENSIONS} {VIDEO_EXTENSIONS}"), ("Todos los archivos", "*.*"))
 
         selected = filedialog.askopenfilenames(initialdir=str(default_output_dir()), title="Elegir archivos", filetypes=filetypes)
         if selected:
-            self.input_files = [Path(value) for value in selected]
-            if len(self.input_files) == 1:
-                self.input_file.set(str(self.input_files[0]))
-                self.progress_text.set(self.input_files[0].name)
-            else:
-                self.input_file.set(f"{len(self.input_files)} archivos seleccionados")
-                self.progress_text.set(", ".join(path.name for path in self.input_files[:3]))
+            for s in selected:
+                p = Path(s)
+                if p not in self.input_files:
+                    self.input_files.append(p)
+            self._refresh_file_tree()
             self._probe_selection()
+
+    def _clear_files(self) -> None:
+        self.input_files.clear()
+        self._refresh_file_tree()
+        self.media_info.set("Sin archivos seleccionados.")
+
+    def _refresh_file_tree(self) -> None:
+        for item in self.file_tree.get_children():
+            self.file_tree.delete(item)
+        for p in self.input_files:
+            size_str = format_size(p.stat().st_size) if p.exists() else "Desconocido"
+            self.file_tree.insert("", "end", values=(p.name, size_str, "Pendiente"))
 
     def _choose_folder(self) -> None:
         selected = filedialog.askdirectory(initialdir=self.output_dir.get() or str(Path.home()))
@@ -744,16 +974,15 @@ class MediaConverterApp(tk.Tk):
     def _probe_selection(self) -> None:
         files = list(self.input_files)
         if not files:
-            self.media_info.set("Sin archivo seleccionado.")
+            self.media_info.set("Sin archivos seleccionados.")
             return
-        self.media_info.set("Leyendo informacion del archivo...")
+        self.media_info.set("Analizando metadatos...")
         threading.Thread(target=self._probe_files, args=(files,), daemon=True).start()
 
     def _probe_files(self, files: list[Path]) -> None:
         ffprobe = find_ffprobe()
         if not ffprobe:
-            text = f"{len(files)} archivo(s) seleccionado(s). No encuentro ffprobe para mostrar detalles."
-            self.messages.put(("media_info", text))
+            self.messages.put(("media_info", f"{len(files)} archivo(s) en cola."))
             return
         try:
             first = files[0]
@@ -775,51 +1004,44 @@ class MediaConverterApp(tk.Tk):
                 encoding="utf-8",
                 errors="replace",
                 creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
-                timeout=12,
-                check=False,
+                timeout=10,
             )
-            if process.returncode != 0:
-                raise RuntimeError(process.stderr.strip() or "ffprobe no pudo leer el archivo.")
-            data = json.loads(process.stdout)
-            text = self._format_media_info(first, files, data)
-        except Exception as exc:
-            text = f"{len(files)} archivo(s) seleccionado(s). No se pudieron leer los detalles: {exc}"
-        self.messages.put(("media_info", text))
+            if process.returncode == 0:
+                data = json.loads(process.stdout)
+                text = self._format_media_info(first, files, data)
+                self.messages.put(("media_info", text))
+            else:
+                self.messages.put(("media_info", f"{len(files)} archivo(s) en cola."))
+        except Exception:
+            self.messages.put(("media_info", f"{len(files)} archivo(s) en cola."))
 
     def _format_media_info(self, first: Path, files: list[Path], data: dict[str, Any]) -> str:
         streams = data.get("streams") if isinstance(data.get("streams"), list) else []
         fmt = data.get("format") if isinstance(data.get("format"), dict) else {}
-        video = next((stream for stream in streams if stream.get("codec_type") == "video"), None)
-        audio = next((stream for stream in streams if stream.get("codec_type") == "audio"), None)
+        video = next((s for s in streams if s.get("codec_type") == "video"), None)
+        audio = next((s for s in streams if s.get("codec_type") == "audio"), None)
+
         parts = []
         if len(files) > 1:
-            parts.append(f"{len(files)} archivos")
-            parts.append(f"primero: {first.name}")
+            parts.append(f"Cola: {len(files)} archivos (Primero: {first.name})")
         else:
             parts.append(first.name)
-        duration = format_duration(fmt.get("duration"))
-        size = format_size(fmt.get("size") or first.stat().st_size)
-        if duration:
-            parts.append(f"duracion {duration}")
-        if size:
-            parts.append(f"tamano {size}")
+
+        dur = format_duration(fmt.get("duration"))
+        sz = format_size(fmt.get("size") or (first.stat().st_size if first.exists() else 0))
+        if dur:
+            parts.append(f"Duración: {dur}")
+        if sz:
+            parts.append(f"Tamaño: {sz}")
         if video:
-            resolution = ""
-            if video.get("width") and video.get("height"):
-                resolution = f"{video.get('width')}x{video.get('height')}"
+            res = f"{video.get('width')}x{video.get('height')}" if video.get("width") else ""
             codec = str(video.get("codec_name") or "").upper()
-            parts.append("video " + " ".join(value for value in (codec, resolution) if value))
+            parts.append(f"Video: {codec} {res}".strip())
         if audio:
             codec = str(audio.get("codec_name") or "").upper()
-            channels = audio.get("channels")
-            sample_rate = audio.get("sample_rate")
-            audio_parts = [codec]
-            if channels:
-                audio_parts.append(f"{channels} canales")
-            if sample_rate:
-                audio_parts.append(f"{sample_rate} Hz")
-            parts.append("audio " + " ".join(audio_parts))
-        return " - ".join(part for part in parts if part)
+            parts.append(f"Audio: {codec}")
+
+        return " | ".join(parts)
 
     def _set_busy(self, value: bool) -> None:
         self.busy = value
@@ -832,16 +1054,16 @@ class MediaConverterApp(tk.Tk):
         self._draw_status_dot()
 
     def _draw_progress_bar(self) -> None:
-        palette = self.palette
+        p = self.palette
         canvas = self.progress_canvas
         canvas.delete("all")
-        width = max(canvas.winfo_width(), 1)
-        height = max(canvas.winfo_height(), 12)
-        rounded_rectangle(canvas, 0, 0, width, height, 6, fill=palette["surface_alt"], outline=palette["border"])
+        w = max(canvas.winfo_width(), 1)
+        h = max(canvas.winfo_height(), 12)
+        rounded_rectangle(canvas, 0, 0, w, h, 6, fill=p["surface_alt"], outline=p["card_border"])
         if self.busy:
-            block_width = max(width // 3, 120)
-            x = (self.progress_phase % (width + block_width)) - block_width
-            rounded_rectangle(canvas, x, 0, x + block_width, height, 6, fill=palette["accent"], outline="")
+            bw = max(w // 3, 120)
+            x = (self.progress_phase % (w + bw)) - bw
+            rounded_rectangle(canvas, x, 0, x + bw, h, 6, fill=p["accent"], outline="")
 
     def _animate_progress(self) -> None:
         if not self.busy:
@@ -851,70 +1073,239 @@ class MediaConverterApp(tk.Tk):
         self.after(35, self._animate_progress)
 
     def _draw_status_dot(self) -> None:
-        palette = self.palette
+        p = self.palette
         self.status_dot.delete("all")
-        color = palette["accent"] if self.busy else palette["success"]
+        color = p["accent"] if self.busy else p["success"]
         self.status_dot.create_oval(4, 4, 14, 14, fill=color, outline="")
-
-    def _animate_status_dot(self) -> None:
-        palette = self.palette
-        self.pulse_phase = (self.pulse_phase + 1) % 28
-        radius = 4 + abs(14 - self.pulse_phase) / 7
-        center = 9
-        color = palette["accent"] if self.busy else palette["success"]
-        self.status_dot.delete("all")
-        self.status_dot.create_oval(center - radius, center - radius, center + radius, center + radius, fill=color, outline="")
-        self.after(120 if self.busy else 180, self._animate_status_dot)
 
     def _start_conversion(self) -> None:
         input_files = list(self.input_files)
-        if not input_files and self.input_file.get().strip():
-            input_files = [Path(self.input_file.get().strip()).expanduser()]
         output_dir = Path(self.output_dir.get().strip()).expanduser()
         output_format = self.output_format.get()
+        mode = self.mode.get()
 
         if not input_files:
-            messagebox.showwarning(APP_TITLE, "Elige primero uno o varios archivos validos.")
-            return
-        invalid_files = [path for path in input_files if not path.exists() or not path.is_file()]
-        if invalid_files:
-            messagebox.showwarning(APP_TITLE, f"No se encontro este archivo:\n{invalid_files[0]}")
+            messagebox.showwarning(APP_TITLE, "Selecciona al menos un archivo para convertir.")
             return
         if not output_dir.exists() or not output_dir.is_dir():
-            messagebox.showwarning(APP_TITLE, "La carpeta de salida no existe.")
+            messagebox.showwarning(APP_TITLE, "La carpeta de salida especificada no existe.")
             return
 
         ffmpeg = find_ffmpeg()
         if not ffmpeg:
-            messagebox.showerror(
-                APP_TITLE,
-                "No encuentro ffmpeg.\n\n"
-                "Instala ffmpeg con instalar_requisitos.bat y vuelve a abrir esta ventana, "
-                "o copia ffmpeg.exe dentro de esta carpeta.",
-            )
+            messagebox.showerror(APP_TITLE, "No se encontró FFmpeg en el sistema.")
             return
 
         self._set_busy(True)
-        if len(input_files) == 1:
-            self.status.set(f"Convirtiendo a {output_format}...")
-        else:
-            self.status.set(f"Convirtiendo {len(input_files)} archivos a {output_format}...")
-        self.progress_text.set("Preparando salida.")
+        self.status.set(f"Iniciando procesado de {len(input_files)} archivo(s)...")
+        self._save_settings()
+
         self.worker = threading.Thread(
-            target=self._convert_batch,
-            args=(self.mode.get(), input_files, output_dir, ffmpeg, output_format),
+            target=self._convert_runner,
+            args=(mode, input_files, output_dir, ffmpeg, output_format),
             daemon=True,
         )
         self.worker.start()
 
+    def _convert_runner(self, mode: str, input_files: list[Path], output_dir: Path, ffmpeg: str, output_format: str) -> None:
+        completed: list[Path] = []
+        errors: list[str] = []
+        total = len(input_files)
+
+        if mode == "Unir (Concat)":
+            try:
+                self.messages.put(("progress", "Concatenando archivos seleccionados..."))
+                ext = "mp3" if "Audio" in output_format else "mp4"
+                out_path = unique_output_path(output_dir, "Medias_Unidos", ext)
+                self._concat_files(input_files, out_path, ffmpeg, "Audio" in output_format)
+                completed.append(out_path)
+            except Exception as exc:
+                errors.append(str(exc))
+        else:
+            max_workers = min(self.parallel_threads.get(), len(input_files))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {
+                    executor.submit(self._convert_one, mode, file, output_dir, ffmpeg, output_format, idx, total): file
+                    for idx, file in enumerate(input_files, 1)
+                }
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        res = future.result()
+                        completed.append(res)
+                    except Exception as exc:
+                        errors.append(str(exc))
+
+        if errors and not completed:
+            self.messages.put(("error", "\n".join(errors)))
+        else:
+            self.messages.put(("done", (completed, errors)))
+
+    def _concat_files(self, files: list[Path], output_file: Path, ffmpeg: str, is_audio: bool) -> None:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as f:
+            for file in files:
+                escaped = str(file.resolve()).replace("'", "'\\''")
+                f.write(f"file '{escaped}'\n")
+            list_path = f.name
+
+        try:
+            cmd = [ffmpeg, "-y", "-f", "concat", "-safe", "0", "-i", list_path, "-c", "copy", str(output_file)]
+            process = subprocess.run(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+            )
+            if process.returncode != 0:
+                raise RuntimeError("Falló la concatenación directa por FFmpeg.")
+        finally:
+            if os.path.exists(list_path):
+                os.remove(list_path)
+
+    def _convert_one(self, mode: str, input_file: Path, output_dir: Path, ffmpeg: str, output_format: str, index: int, total: int) -> Path:
+        self.messages.put(("progress", f"[{index}/{total}] Procesando {input_file.name}..."))
+        
+        ext_map = {"JPG": "jpg", "H265": "mp4", "AV1": "mp4", "Extraer Audio": "mp3", "Silenciar Video (Quitar Audio)": "mp4", "Extraer Subtítulos (SRT)": "srt"}
+        ext = ext_map.get(output_format, output_format.lower())
+
+        output_file = unique_output_path(output_dir, f"{input_file.stem}_converted", ext)
+        cmd = self._build_ffmpeg_command(mode, ffmpeg, input_file, output_file, output_format)
+
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
+        )
+        _, stderr = process.communicate()
+        if process.returncode != 0:
+            err_msg = stderr.strip().splitlines()[-1] if stderr.strip() else "Error desconocido de FFmpeg."
+            raise RuntimeError(f"{input_file.name}: {err_msg}")
+
+        return output_file
+
+    def _build_ffmpeg_command(self, mode: str, ffmpeg: str, input_file: Path, output_file: Path, output_format: str) -> list[str]:
+        cmd = [ffmpeg, "-y"]
+
+        # Recorte de tiempo (Trim)
+        start_sec = parse_duration_to_seconds(self.start_trim.get())
+        end_sec = parse_duration_to_seconds(self.end_trim.get())
+
+        if start_sec is not None:
+            cmd.extend(["-ss", str(start_sec)])
+        if end_sec is not None:
+            cmd.extend(["-to", str(end_sec)])
+
+        cmd.extend(["-i", str(input_file)])
+
+        # Extracción especial
+        if mode == "Extracción":
+            if output_format == "Extraer Audio":
+                return cmd + ["-vn", "-acodec", "libmp3lame", "-q:a", "2", str(output_file)]
+            elif output_format == "Silenciar Video (Quitar Audio)":
+                return cmd + ["-an", "-vcodec", "copy", str(output_file)]
+            elif output_format == "Extraer Subtítulos (SRT)":
+                return cmd + ["-map", "0:s:0?", "-c:s", "subrip", str(output_file)]
+
+        # Audio mode
+        if mode == "Audio":
+            bitrate = f"{self.quality_combo.get().split()[0]}k" if "kbps" in self.quality_combo.get() else "192k"
+            codec_map = {
+                "MP3": ["-vn", "-c:a", "libmp3lame", "-b:a", bitrate],
+                "M4A": ["-vn", "-c:a", "aac", "-b:a", bitrate],
+                "WAV": ["-vn", "-c:a", "pcm_s16le"],
+                "FLAC": ["-vn", "-c:a", "flac"],
+                "OGG": ["-vn", "-c:a", "libvorbis", "-b:a", bitrate],
+                "OPUS": ["-vn", "-c:a", "libopus", "-b:a", bitrate],
+                "AAC": ["-vn", "-c:a", "aac", "-b:a", bitrate],
+                "ALAC": ["-vn", "-c:a", "alac"],
+                "AIFF": ["-vn", "-c:a", "pcm_s16be"],
+            }
+            return cmd + codec_map.get(output_format, ["-vn"]) + [str(output_file)]
+
+        # Video mode
+        if mode == "Video":
+            filters = []
+            
+            # Resolution scaling
+            res_val = self.video_res.get()
+            scale_map = {"4K (2160p)": "3840:2160", "1080p": "1920:1080", "720p": "1280:720", "480p": "854:480"}
+            if res_val in scale_map:
+                filters.append(f"scale={scale_map[res_val]}:force_original_aspect_ratio=decrease,pad={scale_map[res_val]}:(ow-iw)/2:(oh-ih)/2")
+
+            # FPS
+            fps_val = self.video_fps.get()
+            if "60" in fps_val:
+                cmd.extend(["-r", "60"])
+            elif "30" in fps_val:
+                cmd.extend(["-r", "30"])
+            elif "24" in fps_val:
+                cmd.extend(["-r", "24"])
+
+            if filters:
+                cmd.extend(["-vf", ",".join(filters)])
+
+            # Target size calculation if set
+            target_mb = parse_duration_to_seconds(self.target_size_mb.get())
+            if target_mb and target_mb > 0:
+                cmd.extend(["-fs", f"{int(target_mb * 1024 * 1024)}"])
+
+            # Video encoder selection (GPU vs CPU)
+            use_gpu = self.use_gpu.get()
+            if output_format == "GIF":
+                return cmd + ["-vf", "fps=15,scale=480:-1:flags=lanczos", str(output_file)]
+            elif output_format == "H265":
+                vcodec = "hevc_nvenc" if (use_gpu and self.gpu_encoders["nvenc"]) else "libx265"
+                return cmd + ["-c:v", vcodec, "-c:a", "aac", str(output_file)]
+            elif output_format == "WEBM":
+                return cmd + ["-c:v", "libvpx-vp9", "-c:a", "libopus", str(output_file)]
+            else:
+                vcodec = "h264_nvenc" if (use_gpu and self.gpu_encoders["nvenc"]) else "libx264"
+                return cmd + ["-c:v", vcodec, "-preset", "medium", "-c:a", "aac", str(output_file)]
+
+        # Image mode
+        if mode == "Imagen":
+            return cmd + ["-frames:v", "1", str(output_file)]
+
+        return cmd + [str(output_file)]
+
+    def _add_history_entry(self, file_path: Path, format_name: str) -> None:
+        try:
+            sz = format_size(file_path.stat().st_size) if file_path.exists() else "N/A"
+            tm = time.strftime("%Y-%m-%d %H:%M:%S")
+            item = {"file": str(file_path), "format": format_name, "size": sz, "time": tm}
+            self.conversion_history.insert(0, item)
+            self._save_settings()
+            self._refresh_history_tree()
+        except Exception:
+            pass
+
+    def _refresh_history_tree(self) -> None:
+        for item in self.history_tree.get_children():
+            self.history_tree.delete(item)
+        for entry in self.conversion_history[:20]:
+            self.history_tree.insert("", "end", values=(entry.get("file", ""), entry.get("format", ""), entry.get("size", ""), entry.get("time", "")))
+
+    def _open_history_file(self, _event: Any) -> None:
+        sel = self.history_tree.selection()
+        if sel:
+            item = self.history_tree.item(sel[0])
+            path_str = item["values"][0]
+            if os.path.exists(path_str):
+                subprocess.Popen(f'explorer /select,"{path_str}"', shell=True)
+
+    def _clear_history(self) -> None:
+        self.conversion_history.clear()
+        self._save_settings()
+        self._refresh_history_tree()
+
     def _check_for_updates(self, silent: bool = False) -> None:
         if is_msix_package():
             if not silent:
-                messagebox.showinfo(APP_TITLE, "Esta instalacion se actualiza automaticamente con Windows App Installer o Microsoft Store.")
-            return
-        if "/" not in GITHUB_REPO:
-            if not silent:
-                messagebox.showinfo(APP_TITLE, "Todavia falta configurar el repositorio de GitHub en app.py.")
+                messagebox.showinfo(APP_TITLE, "Esta instalación se actualiza automáticamente desde Microsoft Store / Windows App Installer.")
             return
         if self.update_worker and self.update_worker.is_alive():
             return
@@ -935,128 +1326,63 @@ class MediaConverterApp(tk.Tk):
                 download_file(download_url, installer_path)
                 self.messages.put(("update_installing", (latest_version, installer_path)))
             elif not silent:
-                self.messages.put(("update_current", "Ya tienes la ultima version disponible."))
-        except (OSError, urllib.error.URLError, TimeoutError, ValueError, json.JSONDecodeError) as exc:
+                self.messages.put(("update_current", "Tienes la última versión instalada."))
+        except Exception as exc:
             if not silent:
-                self.messages.put(("update_error", f"No se pudo comprobar si hay actualizaciones.\n\n{exc}"))
-
-    def _convert_batch(self, mode: str, input_files: list[Path], output_dir: Path, ffmpeg: str, output_format: str) -> None:
-        completed: list[Path] = []
-        try:
-            total = len(input_files)
-            for index, input_file in enumerate(input_files, start=1):
-                self.messages.put(("progress", f"{index}/{total} - Preparando {input_file.name}"))
-                completed.append(self._convert_one(mode, input_file, output_dir, ffmpeg, output_format, index, total))
-            self.messages.put(("done", completed))
-        except Exception as exc:
-            text = str(exc)
-            if "ffmpeg" in text.lower():
-                text = "ffmpeg no pudo convertir este archivo. Comprueba que el archivo no este danado y que el formato sea compatible."
-            self.messages.put(("error", text))
-
-    def _convert_one(self, mode: str, input_file: Path, output_dir: Path, ffmpeg: str, output_format: str, index: int, total: int) -> Path:
-        extension = "jpg" if output_format == "JPG" else output_format.lower()
-        output_file = unique_output_path(output_dir, f"{input_file.stem} convertido", extension)
-        command = self._build_ffmpeg_command(mode, ffmpeg, input_file, output_file, output_format)
-
-        self.messages.put(("progress", f"{index}/{total} - Creando {output_file.name}"))
-        process = subprocess.Popen(
-            command,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
-        )
-        _, stderr = process.communicate()
-        if process.returncode != 0:
-            detail = stderr.strip().splitlines()[-1] if stderr.strip() else "ffmpeg no pudo convertir el archivo."
-            raise RuntimeError(f"{input_file.name}: {detail}")
-        return output_file
-
-    def _convert(self, mode: str, input_file: Path, output_dir: Path, ffmpeg: str, output_format: str) -> None:
-        try:
-            output_file = self._convert_one(mode, input_file, output_dir, ffmpeg, output_format, 1, 1)
-            self.messages.put(("done", output_file))
-        except Exception as exc:
-            text = str(exc)
-            if "ffmpeg" in text.lower():
-                text = "ffmpeg no pudo convertir este archivo. Comprueba que el archivo no este danado y que el formato sea compatible."
-            self.messages.put(("error", text))
-
-    def _build_ffmpeg_command(self, mode: str, ffmpeg: str, input_file: Path, output_file: Path, output_format: str) -> list[str]:
-        base = [ffmpeg, "-y", "-i", str(input_file)]
-        bitrate = f"{self.audio_quality.get().split()[0]}k"
-
-        if mode == "Audio":
-            codec_map = {
-                "MP3": ["-vn", "-codec:a", "libmp3lame", "-b:a", bitrate],
-                "M4A": ["-vn", "-codec:a", "aac", "-b:a", bitrate],
-                "WAV": ["-vn", "-codec:a", "pcm_s16le"],
-                "FLAC": ["-vn", "-codec:a", "flac"],
-                "OGG": ["-vn", "-codec:a", "libvorbis", "-b:a", bitrate],
-            }
-            return base + codec_map[output_format] + [str(output_file)]
-
-        if mode == "Video":
-            crf = {"Alta": "18", "Equilibrada": "23", "Comprimida": "28"}.get(self.video_quality.get(), "23")
-            if output_format == "WEBM":
-                return base + ["-c:v", "libvpx-vp9", "-crf", crf, "-b:v", "0", "-c:a", "libopus", "-b:a", bitrate, str(output_file)]
-            return base + ["-c:v", "libx264", "-preset", "medium", "-crf", crf, "-c:a", "aac", "-b:a", bitrate, "-movflags", "+faststart", str(output_file)]
-
-        image_quality = self.video_quality.get()
-        quality_args = []
-        if output_format in ("JPG", "WEBP"):
-            qscale = {"100": "2", "90": "4", "80": "8", "70": "12"}.get(image_quality, "4")
-            quality_args = ["-q:v", qscale]
-        return base + ["-frames:v", "1"] + quality_args + [str(output_file)]
+                self.messages.put(("update_error", f"Error comprobando actualizaciones: {exc}"))
 
     def _poll_messages(self) -> None:
         try:
             while True:
-                kind, text = self.messages.get_nowait()
-                if kind == "progress":
-                    self.progress_text.set(text)
-                elif kind == "media_info":
-                    self.media_info.set(text)
-                elif kind == "done":
-                    output_files = text if isinstance(text, list) else [Path(text)]
-                    self._set_busy(False)
-                    self.status.set("Conversion completada.")
-                    if len(output_files) == 1:
-                        output_file = Path(output_files[0])
-                        self.progress_text.set(str(output_file))
-                        messagebox.showinfo(APP_TITLE, f"Listo:\n{output_file}")
+                kind, data = self.messages.get_nowait()
+                if kind == "gpu_detected":
+                    self.gpu_encoders = data
+                    found = [k.upper() for k, v in data.items() if v]
+                    if found:
+                        self.gpu_label.configure(text=f"GPU: {', '.join(found)} ✔")
                     else:
-                        folder = Path(output_files[0]).parent
-                        self.progress_text.set(f"{len(output_files)} archivos creados en {folder}")
-                        messagebox.showinfo(APP_TITLE, f"Listo: {len(output_files)} archivos convertidos.\n\nCarpeta:\n{folder}")
+                        self.gpu_label.configure(text="GPU: CPU Fallback")
+                elif kind == "progress":
+                    self.progress_text.set(data)
+                elif kind == "media_info":
+                    self.media_info.set(data)
+                elif kind == "done":
+                    completed, errors = data
+                    self._set_busy(False)
+                    self.status.set("Proceso finalizado con éxito.")
+                    
+                    for c in completed:
+                        self._add_history_entry(c, self.output_format.get())
+                    
+                    if completed:
+                        self.progress_text.set(f"Generado(s) {len(completed)} archivo(s) en {completed[0].parent}")
+                        if self.enable_toast.get():
+                            send_windows_toast("Media Flow Pro", f"¡Conversión completada! {len(completed)} archivos guardados.")
+                        messagebox.showinfo(APP_TITLE, f"Conversión completada con éxito.\n\nCarpeta:\n{completed[0].parent}")
+                    if errors:
+                        messagebox.showwarning(APP_TITLE, f"Ocurrieron algunos errores:\n" + "\n".join(errors))
                 elif kind == "error":
                     self._set_busy(False)
-                    self.status.set("No se pudo convertir el archivo.")
-                    self.progress_text.set(text)
-                    messagebox.showerror(APP_TITLE, text)
+                    self.status.set("Error en el proceso.")
+                    self.progress_text.set(data)
+                    messagebox.showerror(APP_TITLE, data)
                 elif kind == "update_downloading":
-                    latest_version, release_name, asset_name = text
-                    self.status.set(f"Descargando actualizacion {latest_version}...")
+                    latest_version, release_name, asset_name = data
+                    self.status.set(f"Descargando versión {latest_version}...")
                     self.progress_text.set(f"{release_name} - {asset_name}")
                 elif kind == "update_installing":
-                    latest_version, installer_path = text
-                    self.status.set(f"Instalando actualizacion {latest_version}...")
-                    self.progress_text.set("Media Flow se cerrara y se volvera a instalar en segundo plano.")
+                    latest_version, installer_path = data
+                    self.status.set(f"Instalando versión {latest_version}...")
                     try:
                         launch_installer_after_exit(Path(installer_path))
                     except Exception as exc:
-                        self.status.set("No se pudo iniciar el instalador.")
-                        self.progress_text.set(str(exc))
-                        messagebox.showerror(APP_TITLE, f"No se pudo iniciar el instalador.\n\n{exc}")
+                        messagebox.showerror(APP_TITLE, f"No se pudo iniciar el instalador: {exc}")
                     else:
-                        self.after(700, self.destroy)
+                        self.after(500, self.destroy)
                 elif kind == "update_current":
-                    messagebox.showinfo(APP_TITLE, text)
+                    messagebox.showinfo(APP_TITLE, data)
                 elif kind == "update_error":
-                    messagebox.showerror(APP_TITLE, text)
+                    messagebox.showerror(APP_TITLE, data)
         except queue.Empty:
             pass
         self.after(100, self._poll_messages)

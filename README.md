@@ -1,23 +1,29 @@
-# Media Flow
+# Media Flow Pro
 
-Version actual: `1.5.0`
+Versión actual: `1.6.0`
 
-Media Flow es una app local para Windows que convierte archivos de audio, video e imagen usando `ffmpeg`.
+Media Flow es una suite completa y local para Windows que convierte, recorta, comprime y procesa archivos de audio, video e imagen con aceleración por hardware mediante `ffmpeg`.
 
-## Funciones
+## Funciones Destacadas
 
-- Conversion de audio a `MP3`, `M4A`, `WAV`, `FLAC` y `OGG`.
-- Conversion de video a `MP4`, `MOV`, `WEBM` y `MKV`.
-- Conversion de imagen a `PNG`, `JPG`, `WEBP` y `BMP`.
-- Conversion por lotes de varios archivos con el mismo formato y calidad.
-- Calidad configurable para audio, video e imagen.
-- Informacion del archivo seleccionado con duracion, tamano, codecs y resolucion cuando `ffprobe` esta disponible.
-- Preferencias guardadas automaticamente: tema, modo, formato, calidad y carpeta de salida.
-- Modo claro y oscuro.
-- Barra de progreso e indicador de estado animados.
-- Actualizaciones automaticas desde GitHub Releases.
-- Paquete MSIX generado en cada release para Microsoft Store o App Installer.
-- Salida a carpeta local o a carpetas sincronizadas de OneDrive, Google Drive o iCloud Drive cuando ya estan instaladas en el equipo.
+- **Conversión de audio:** `MP3`, `M4A`, `WAV`, `FLAC`, `OGG`, `OPUS`, `AAC`, `ALAC`, `AIFF`.
+- **Conversión de video:** `MP4`, `MOV`, `WEBM`, `MKV`, `GIF`, `AVI`, `AV1`, `H.265 (HEVC)`.
+- **Conversión de imagen:** `PNG`, `JPG`, `WEBP`, `BMP`, `AVIF`, `ICO`, `TIFF`.
+- **Modos Especiales:**
+  - Extraer audio de videos a MP3.
+  - Silenciar videos (eliminar pista de audio).
+  - Extraer subtítulos en `.srt`.
+  - Unir/Concatenar múltiples archivos de audio o video en uno solo.
+- **Aceleración por Hardware (GPU):** Codificación acelerada automática con NVIDIA NVENC, AMD AMF o Intel QSV.
+- **Procesamiento Multihilo por Lotes:** Procesar múltiples archivos en paralelo acelerando las conversiones en lotes masivos.
+- **Recorte de Tiempo (Trim):** Especifica tiempo de inicio y fin (`hh:mm:ss`).
+- **Compresión a Tamaño Objetivo:** Especifica un tamaño máximo en MB (ej. 25 MB para Discord) y ajusta bitrate automáticamente.
+- **Preajustes Rápidos (Presets):** Configuración lista para usar (Optimizado para Web, WhatsApp/Redes, TikTok/Reels, Lossless).
+- **Redimensión y FPS:** Escala resoluciones (4K, 1080p, 720p, 480p) y tasas de refresco (60fps, 30fps, 24fps).
+- **Notificaciones Nativas de Windows:** Alertas globales al finalizar conversiones en segundo plano.
+- **Historial de Conversiones:** Registro reciente con apertura rápida de archivo o carpeta en Explorer.
+- **Tema Claro y Oscuro:** Interfaz moderna rediseñada con tarjetas pulidas y esquinas redondeadas.
+- **Sincronización con Nube:** Salida directa a carpetas locales de OneDrive, Google Drive o iCloud Drive.
 
 La app no descarga contenido de servicios de terceros. Convierte archivos locales que ya tengas derecho a usar.
 

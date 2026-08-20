@@ -2,6 +2,26 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.6.0] - 2026-08-20
+
+### Added
+
+- Rediseño completo de la interfaz de usuario estilo **Media Flow Pro** con pestañas de navegación (`Convertidor`, `Ajustes Avanzados`, `Historial`).
+- Soporte para **Aceleración por Hardware (GPU)** detectando automáticamente encoders `NVENC` (NVIDIA), `AMF` (AMD) o `QSV` (Intel).
+- **Extensión de formatos compatibles**:
+  - Audio: OPUS, AAC, ALAC, AIFF.
+  - Video: GIF animado, AVI, AV1, H.265 (HEVC).
+  - Imagen: AVIF, ICO, TIFF.
+- **Herramientas de Recorte de Tiempo (Trim)** indicando segundo o formato `hh:mm:ss` de inicio y fin.
+- **Compresión a Tamaño Objetivo (Target MB)** para calcular bitrate exacto según límites de plataformas como Discord o Email.
+- **Modos Especiales**: Extracción de audio independiente, silenciado de videos (remover audio) y extracción de subtítulos `.srt`.
+- **Modo Concatenar (Unir)** para fusionar varios audios o videos en un archivo único.
+- **Preajustes Rápidos (Presets)** para WhatsApp, Web, TikTok/Reels y Audio Hi-Fi.
+- **Procesamiento Multihilo por Lotes**: Conversión paralela configurable hasta 8 hilos en CPU multinúcleo.
+- **Notificaciones Nativas de Windows (Toast notifications)** al finalizar conversiones en segundo plano.
+- **Historial de Conversiones Recientes** con opción para abrir la ubicación del archivo o carpeta creada en Windows Explorer.
+- **Tabla / Lista de Cola Interactiva** con vista detallada de tamaño, nombre y estado individual por archivo.
+
 ## [1.5.0] - 2026-05-20
 
 ### Added
