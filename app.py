@@ -43,44 +43,52 @@ PRESETS = {
 
 THEMES = {
     "light": {
-        "window": "#f8fafc",
+        "window": "#f1f5f9",
         "surface": "#ffffff",
-        "surface_alt": "#f1f5f9",
-        "card_border": "#e2e8f0",
+        "surface_alt": "#e2e8f0",
+        "card_border": "#cbd5e1",
+        "glass_highlight": "#ffffff",
         "text": "#0f172a",
         "text_muted": "#64748b",
         "accent": "#4f46e5",
         "accent_hover": "#4338ca",
         "accent_soft": "#e0e7ff",
+        "accent_glow": "#6366f1",
         "success": "#10b981",
         "danger": "#ef4444",
         "warning": "#f59e0b",
         "input_bg": "#ffffff",
-        "button_bg": "#f1f5f9",
-        "button_hover": "#e2e8f0",
+        "button_bg": "#e2e8f0",
+        "button_hover": "#cbd5e1",
         "badge_bg": "#e0e7ff",
         "badge_fg": "#3730a3",
         "shadow": "#cbd5e1",
+        "tree_even": "#ffffff",
+        "tree_odd": "#f8fafc",
     },
     "dark": {
-        "window": "#0f172a",
-        "surface": "#1e293b",
-        "surface_alt": "#111827",
-        "card_border": "#334155",
+        "window": "#090d16",
+        "surface": "#131c2e",
+        "surface_alt": "#1a263e",
+        "card_border": "#253554",
+        "glass_highlight": "#2d4066",
         "text": "#f8fafc",
         "text_muted": "#94a3b8",
         "accent": "#6366f1",
         "accent_hover": "#4f46e5",
-        "accent_soft": "#312e81",
+        "accent_soft": "#1e1b4b",
+        "accent_glow": "#818cf8",
         "success": "#10b981",
         "danger": "#f87171",
         "warning": "#fbbf24",
-        "input_bg": "#0f172a",
-        "button_bg": "#334155",
-        "button_hover": "#475569",
-        "badge_bg": "#312e81",
-        "badge_fg": "#c7d2fe",
-        "shadow": "#020617",
+        "input_bg": "#0a1120",
+        "button_bg": "#1e2a42",
+        "button_hover": "#2c3d5f",
+        "badge_bg": "#1b243b",
+        "badge_fg": "#a5b4fc",
+        "shadow": "#030712",
+        "tree_even": "#131c2e",
+        "tree_odd": "#0d1424",
     },
 }
 
@@ -803,25 +811,42 @@ class MediaConverterApp(tk.Tk):
         self.style.configure("App.TFrame", background=p["window"])
         self.style.configure("Card.TFrame", background=p["surface"], relief="flat")
         self.style.configure("Title.TLabel", background=p["window"], foreground=p["text"], font=("Segoe UI", 20, "bold"))
-        self.style.configure("ProBadge.TLabel", background=p["accent_soft"], foreground=p["accent"], font=("Segoe UI", 10, "bold"))
-        self.style.configure("Badge.TLabel", background=p["badge_bg"], foreground=p["badge_fg"], font=("Segoe UI", 9, "bold"), padding=(6, 2))
+        self.style.configure("ProBadge.TLabel", background=p["accent_soft"], foreground=p["accent_glow"], font=("Segoe UI", 10, "bold"), padding=(6, 2))
+        self.style.configure("Badge.TLabel", background=p["badge_bg"], foreground=p["badge_fg"], font=("Segoe UI", 9, "bold"), padding=(8, 3))
         self.style.configure("Muted.TLabel", background=p["window"], foreground=p["text_muted"], font=("Segoe UI", 9))
         self.style.configure("CardMuted.TLabel", background=p["surface"], foreground=p["text_muted"], font=("Segoe UI", 9))
         self.style.configure("Section.TLabel", background=p["surface"], foreground=p["text"], font=("Segoe UI", 10, "bold"))
         self.style.configure("Status.TLabel", background=p["window"], foreground=p["text"], font=("Segoe UI", 10))
         self.style.configure("Card.TCheckbutton", background=p["surface"], foreground=p["text"], font=("Segoe UI", 10))
 
-        self.style.configure("Primary.TButton", background=p["accent"], foreground="#ffffff", font=("Segoe UI", 11, "bold"), padding=10, borderwidth=0)
+        # Entry & Combobox glass styling
+        self.style.configure("TEntry", fieldbackground=p["input_bg"], foreground=p["text"], bordercolor=p["card_border"], lightcolor=p["card_border"], darkcolor=p["card_border"], padding=8)
+        self.style.configure("TCombobox", fieldbackground=p["input_bg"], foreground=p["text"], bordercolor=p["card_border"], arrowcolor=p["text"], padding=8)
+        self.style.map("TCombobox", fieldbackground=[("readonly", p["input_bg"])], foreground=[("readonly", p["text"])])
+        self.style.configure("TSpinbox", fieldbackground=p["input_bg"], foreground=p["text"], bordercolor=p["card_border"], padding=6)
+
+        # Buttons
+        self.style.configure("Primary.TButton", background=p["accent"], foreground="#ffffff", font=("Segoe UI", 11, "bold"), padding=11, borderwidth=0)
         self.style.map("Primary.TButton", background=[("active", p["accent_hover"]), ("disabled", p["card_border"])])
-        self.style.configure("Secondary.TButton", background=p["button_bg"], foreground=p["text"], padding=6, borderwidth=0)
+        self.style.configure("Secondary.TButton", background=p["button_bg"], foreground=p["text"], font=("Segoe UI", 9, "bold"), padding=7, borderwidth=0)
         self.style.map("Secondary.TButton", background=[("active", p["button_hover"])])
 
+        # Notebook tabs
         self.style.configure("TNotebook", background=p["window"], borderwidth=0)
-        self.style.configure("TNotebook.Tab", background=p["surface_alt"], foreground=p["text_muted"], padding=(12, 6), font=("Segoe UI", 10, "bold"))
-        self.style.map("TNotebook.Tab", background=[("selected", p["surface"])], foreground=[("selected", p["accent"])])
+        self.style.configure("TNotebook.Tab", background=p["surface_alt"], foreground=p["text_muted"], padding=(14, 7), font=("Segoe UI", 10, "bold"), borderwidth=0)
+        self.style.map("TNotebook.Tab", background=[("selected", p["surface"])], foreground=[("selected", p["accent_glow"])])
 
-        self.style.configure("Treeview", background=p["surface"], foreground=p["text"], fieldbackground=p["surface"], rowheight=26)
-        self.style.configure("Treeview.Heading", background=p["surface_alt"], foreground=p["text"], font=("Segoe UI", 9, "bold"))
+        # Treeview Glass Table
+        self.style.configure("Treeview", background=p["surface"], foreground=p["text"], fieldbackground=p["surface"], rowheight=28, borderwidth=0)
+        self.style.configure("Treeview.Heading", background=p["surface_alt"], foreground=p["text"], font=("Segoe UI", 9, "bold"), borderwidth=0)
+        self.style.map("Treeview", background=[("selected", p["accent_soft"])], foreground=[("selected", "#ffffff")])
+
+        if hasattr(self, "file_tree"):
+            self.file_tree.tag_configure("even", background=p["tree_even"], foreground=p["text"])
+            self.file_tree.tag_configure("odd", background=p["tree_odd"], foreground=p["text"])
+        if hasattr(self, "history_tree"):
+            self.history_tree.tag_configure("even", background=p["tree_even"], foreground=p["text"])
+            self.history_tree.tag_configure("odd", background=p["tree_odd"], foreground=p["text"])
 
     def _apply_theme(self) -> None:
         self._configure_style()
@@ -836,6 +861,8 @@ class MediaConverterApp(tk.Tk):
         self._draw_progress_bar()
         self._update_mode_buttons()
         self._draw_status_dot()
+        self._refresh_file_tree()
+        self._refresh_history_tree()
 
     def _toggle_theme(self) -> None:
         self.theme_name.set("dark" if self.theme_name.get() == "light" else "light")
@@ -845,10 +872,14 @@ class MediaConverterApp(tk.Tk):
     def _draw_logo(self) -> None:
         p = self.palette
         self.logo.delete("all")
-        self.logo.create_oval(2, 2, 40, 40, fill=p["accent_soft"], outline=p["accent"])
-        rounded_rectangle(self.logo, 13, 12, 29, 18, 3, fill=p["accent"], outline="")
-        rounded_rectangle(self.logo, 10, 21, 32, 27, 3, fill=p["accent_hover"], outline="")
-        rounded_rectangle(self.logo, 16, 30, 26, 35, 3, fill=p["accent"], outline="")
+        # Glass sphere badge background
+        self.logo.create_oval(1, 1, 41, 41, fill=p["accent_soft"], outline=p["card_border"])
+        self.logo.create_oval(3, 3, 39, 39, fill="", outline=p["glass_highlight"], width=1)
+        
+        # Glowing inner bars
+        rounded_rectangle(self.logo, 12, 11, 30, 17, 3, fill=p["accent_glow"], outline="")
+        rounded_rectangle(self.logo, 9, 20, 33, 26, 3, fill=p["accent"], outline="")
+        rounded_rectangle(self.logo, 15, 29, 27, 34, 3, fill=p["accent_glow"], outline="")
 
     def _update_mode_buttons(self) -> None:
         p = self.palette
@@ -857,7 +888,7 @@ class MediaConverterApp(tk.Tk):
             is_selected = mode == selected
             button.configure(
                 bg=p["accent"] if is_selected else p["surface_alt"],
-                fg="#ffffff" if is_selected else p["text"],
+                fg="#ffffff" if is_selected else p["text_muted"],
                 activebackground=p["accent_hover"] if is_selected else p["button_hover"],
                 activeforeground="#ffffff" if is_selected else p["text"],
             )
@@ -956,9 +987,10 @@ class MediaConverterApp(tk.Tk):
     def _refresh_file_tree(self) -> None:
         for item in self.file_tree.get_children():
             self.file_tree.delete(item)
-        for p in self.input_files:
+        for idx, p in enumerate(self.input_files):
             size_str = format_size(p.stat().st_size) if p.exists() else "Desconocido"
-            self.file_tree.insert("", "end", values=(p.name, size_str, "Pendiente"))
+            tag = "even" if idx % 2 == 0 else "odd"
+            self.file_tree.insert("", "end", values=(p.name, size_str, "Pendiente"), tags=(tag,))
 
     def _choose_folder(self) -> None:
         selected = filedialog.askdirectory(initialdir=self.output_dir.get() or str(Path.home()))
@@ -1059,11 +1091,15 @@ class MediaConverterApp(tk.Tk):
         canvas.delete("all")
         w = max(canvas.winfo_width(), 1)
         h = max(canvas.winfo_height(), 12)
+        # Frosted glass track
         rounded_rectangle(canvas, 0, 0, w, h, 6, fill=p["surface_alt"], outline=p["card_border"])
+        rounded_rectangle(canvas, 1, 1, w - 1, h - 1, 5, fill="", outline=p["glass_highlight"])
         if self.busy:
             bw = max(w // 3, 120)
             x = (self.progress_phase % (w + bw)) - bw
-            rounded_rectangle(canvas, x, 0, x + bw, h, 6, fill=p["accent"], outline="")
+            rounded_rectangle(canvas, x, 1, x + bw, h - 1, 5, fill=p["accent"], outline="")
+            if x + bw > 0 and x + bw < w:
+                canvas.create_oval(x + bw - 6, 2, x + bw, h - 2, fill=p["accent_glow"], outline="")
 
     def _animate_progress(self) -> None:
         if not self.busy:
@@ -1075,8 +1111,12 @@ class MediaConverterApp(tk.Tk):
     def _draw_status_dot(self) -> None:
         p = self.palette
         self.status_dot.delete("all")
-        color = p["accent"] if self.busy else p["success"]
-        self.status_dot.create_oval(4, 4, 14, 14, fill=color, outline="")
+        if self.busy:
+            self.status_dot.create_oval(1, 1, 17, 17, fill=p["accent_soft"], outline=p["accent_glow"])
+            self.status_dot.create_oval(5, 5, 13, 13, fill=p["accent_glow"], outline="")
+        else:
+            self.status_dot.create_oval(2, 2, 16, 16, fill="#064e3b" if self.theme_name.get() == "dark" else "#d1fae5", outline="")
+            self.status_dot.create_oval(5, 5, 13, 13, fill=p["success"], outline="")
 
     def _start_conversion(self) -> None:
         input_files = list(self.input_files)
@@ -1286,8 +1326,9 @@ class MediaConverterApp(tk.Tk):
     def _refresh_history_tree(self) -> None:
         for item in self.history_tree.get_children():
             self.history_tree.delete(item)
-        for entry in self.conversion_history[:20]:
-            self.history_tree.insert("", "end", values=(entry.get("file", ""), entry.get("format", ""), entry.get("size", ""), entry.get("time", "")))
+        for idx, entry in enumerate(self.conversion_history[:20]):
+            tag = "even" if idx % 2 == 0 else "odd"
+            self.history_tree.insert("", "end", values=(entry.get("file", ""), entry.get("format", ""), entry.get("size", ""), entry.get("time", "")), tags=(tag,))
 
     def _open_history_file(self, _event: Any) -> None:
         sel = self.history_tree.selection()
