@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Política de Privacidad | Media Flow</title>
+    <meta
+      name="description"
+      content="Política de Privacidad oficial de Media Flow. Procesamiento 100% local, sin subidas de archivos, sin cuentas y sin recopilación de datos personales."
+    >
+    <link rel="icon" href="assets/icon-300.png">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+      .policy-wrapper {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: clamp(40px, 6vw, 72px) 24px;
+      }
+      .policy-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: clamp(24px, 4vw, 48px);
+        box-shadow: var(--shadow);
+      }
+      .policy-title {
+        font-size: clamp(28px, 4vw, 38px);
+        font-weight: 800;
+        color: var(--ink);
+        margin: 0 0 8px;
+        letter-spacing: -0.02em;
+      }
+      .policy-date {
+        display: inline-block;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--muted);
+        background: var(--soft);
+        padding: 4px 12px;
+        border-radius: 20px;
+        margin-bottom: 32px;
+      }
+      .policy-section {
+        margin-bottom: 36px;
+      }
+      .policy-section h2 {
+        font-size: 20px;
+        font-weight: 750;
+        color: var(--ink);
+        margin: 0 0 12px;
+        border-bottom: 2px solid var(--soft);
+        padding-bottom: 8px;
+      }
+      .policy-section p, .policy-section ul {
+        color: var(--ink);
+        font-size: 15px;
+        line-height: 1.7;
+        margin: 0 0 12px;
+      }
+      .policy-section ul {
+        padding-left: 20px;
+      }
+      .policy-section li {
+        margin-bottom: 8px;
+      }
+      .highlight-box {
+        background: #eef7f6;
+        border-left: 4px solid var(--accent);
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin: 20px 0;
+      }
+      .highlight-box p {
+        margin: 0;
+        color: var(--accent-strong);
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="Media Flow">
+        <img src="assets/icon-300.png" alt="" width="36" height="36">
+        <span>Media Flow</span>
+      </a>
+      <nav class="nav-links" aria-label="Navegación">
+        <a href="index.html">Inicio</a>
+        <a href="converter.html">Convertidor online</a>
+        <a href="privacy.html" class="active" style="color: var(--accent-strong);">Privacidad</a>
+        <a href="https://github.com/musicallyivan/mediaflow">GitHub</a>
+      </nav>
+    </header>
+
+    <main class="policy-wrapper">
+      <article class="policy-card">
+        <h1 class="policy-title">Política de Privacidad</h1>
+        <span class="policy-date">Última actualización: 21 de agosto de 2026</span>
+
+        <div class="highlight-box">
+          <p>🔒 Resumen: Media Flow procesa todos tus archivos 100% localmente en tu equipo. No recopilamos, no almacenamos ni vendemos información personal, ni enviamos tus archivos a ningún servidor externo.</p>
+        </div>
+
+        <section class="policy-section">
+          <h2>1. Principio Fundamental de Privacidad</h2>
+          <p>
+            Media Flow está diseñada como una herramienta totalmente local orientada al respeto de la privacidad del usuario. La aplicación no requiere la creación de cuentas de usuario, no solicita inicio de sesión ni requiere suscripciones para acceder a sus funciones.
+          </p>
+        </section>
+
+        <section class="policy-section">
+          <h2>2. Procesamiento de Archivos y Metadatos</h2>
+          <p>
+            Todos los archivos multimedia (audio, video e imagen) seleccionados para su conversión, recorte o compresión son procesados localmente mediante bibliotecas integradas (como <code>FFmpeg</code>) en la memoria y almacenamiento de tu dispositivo.
+          </p>
+          <ul>
+            <li>Tus archivos nunca se transmiten ni se cargan en servidores de Media Flow ni de terceros.</li>
+            <li>La lectura de metadatos (duración, resolución, códecs) realizada por <code>ffprobe</code> se ejecuta de forma estrictamente local.</li>
+          </ul>
+        </section>
+
+        <section class="policy-section">
+          <h2>3. Almacenamiento y Sincronización en la Nube</h2>
+          <p>
+            Media Flow guarda los archivos convertidos en el directorio local que tú elijas. Si seleccionas guardar en una carpeta vinculada a un servicio de almacenamiento en la nube (como OneDrive, Google Drive o iCloud Drive):
+          </p>
+          <ul>
+            <li>El archivo se guarda en la carpeta física de tu disco duro local.</li>
+            <li>La posterior sincronización en la nube la realiza de forma transparente el cliente oficial instalado en tu equipo, estando sujeta exclusivamente a los términos de privacidad de dicho proveedor.</li>
+          </ul>
+        </section>
+
+        <section class="policy-section">
+          <h2>4. Conexiones a Internet y Actualizaciones</h2>
+          <p>
+            La versión descargable independiente de Media Flow puede realizar consultas a la API pública de GitHub (<code>api.github.com</code>) únicamente para comprobar si existen nuevas versiones publicadas.
+          </p>
+          <ul>
+            <li>Esta comprobación no transmite ningún tipo de información personal, archivos ni identificadores únicos de dispositivo.</li>
+            <li>Las instalaciones de Media Flow realizadas desde la <strong>Microsoft Store</strong> delegan la gestión de actualizaciones a la propia tienda de Microsoft y no realizan consultas adicionales.</li>
+          </ul>
+        </section>
+
+        <section class="policy-section">
+          <h2>5. Cookies y Rastreadores</h2>
+          <p>
+            Media Flow no utiliza cookies de seguimiento, herramientas de analítica web ni SDKs de publicidad. No se realiza ningún perfilado ni seguimiento de uso de los usuarios.
+          </p>
+        </section>
+
+        <section class="policy-section">
+          <h2>6. Contacto y Soporte</h2>
+          <p>
+            Si tienes dudas o preguntas sobre esta Política de Privacidad, puedes consultar el código fuente o comunicarte a través del repositorio oficial del proyecto en GitHub:
+          </p>
+          <p>
+            <a href="https://github.com/musicallyivan/mediaflow" target="_blank" rel="noopener" style="color: var(--accent-strong); font-weight: 600;">
+              https://github.com/musicallyivan/mediaflow
+            </a>
+          </p>
+        </section>
+      </article>
+    </main>
+
+    <footer class="site-footer">
+      <span>Media Flow</span>
+      <a href="index.html">Inicio</a>
+      <a href="privacy.html">Privacidad</a>
+      <a href="https://github.com/musicallyivan/mediaflow">GitHub</a>
+    </footer>
+  </body>
+</html>
