@@ -1,6 +1,6 @@
 # Media Flow Pro
 
-Versión actual: `1.6.0`
+Versión actual: `1.6.1`
 
 Media Flow es una suite completa y local para Windows que convierte, recorta, comprime y procesa archivos de audio, video e imagen con aceleración por hardware mediante `ffmpeg`.
 

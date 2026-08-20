@@ -2,6 +2,12 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.6.1] - 2026-08-20
+
+### Changed
+
+- **Rediseño Glassmorphism Premium**: Renovado completo del modo oscuro y claro con tarjetas de profundidad en tono *Obsidian Midnight*, bordes translúcidos de vidrio, resplandor en acentos *Electric Indigo*, barras de progreso frosted glass e indicadores pulsantes con aureola neon.
+
 ## [1.6.0] - 2026-08-20
 
 ### Added
