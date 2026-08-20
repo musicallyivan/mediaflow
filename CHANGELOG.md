@@ -2,6 +2,12 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.6.2] - 2026-08-20
+
+### Fixed
+
+- **Corrección de Contraste y Legibilidad de Botones**: Forzado del motor de renderizado `clam` en Windows y mapeo dinámico de color de texto (`foreground`) en `ttk.Button`, `ttk.Notebook.Tab` y selectores de modo para garantizar legibilidad perfecta del texto en blanco en modo claro y oscuro.
+
 ## [1.6.1] - 2026-08-20
 
 ### Changed
