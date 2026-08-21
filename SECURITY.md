@@ -7,7 +7,8 @@ receiving fixes once a new version is published.
 
 | Version | Supported |
 | --- | --- |
-| 1.6.x | ✅ |
+| 1.7.x | ✅ |
+| 1.6.2 | ✅ |
 | < 1.6 | ✖️ |
 
 ## Reporting a Vulnerability

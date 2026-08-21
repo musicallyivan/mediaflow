@@ -12,18 +12,29 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import webbrowser
 from pathlib import Path
 from typing import Any, Optional
-import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+
+import customtkinter as ctk
+from tkinter import filedialog, messagebox
 
 APP_TITLE = "Media Flow"
-APP_VERSION = "1.6.2"
+APP_VERSION = "1.7.0"
 GITHUB_REPO = os.environ.get("MEDIA_FLOW_GITHUB_REPO", "musicallyivan/mediaflow")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+STRIPE_CHECKOUT_URL = os.environ.get("MEDIA_FLOW_STRIPE_URL", "https://buy.stripe.com/4gM00l2uV0aXe6k1eIgEg00")
+MS_STORE_PRODUCT_ID = os.environ.get("MEDIA_FLOW_STORE_ID", "9N6VZZ3HDFHJ")
+MS_STORE_URL = f"https://apps.microsoft.com/detail/{MS_STORE_PRODUCT_ID}"
 
-AUDIO_FORMATS = ("MP3", "M4A", "WAV", "FLAC", "OGG", "OPUS", "AAC", "ALAC", "AIFF")
-VIDEO_FORMATS = ("MP4", "MOV", "WEBM", "MKV", "GIF", "AVI", "AV1", "H265")
+AUDIO_FORMATS_FREE = ("MP3", "M4A", "WAV", "OGG", "AAC")
+AUDIO_FORMATS_PRO = ("FLAC", "OPUS", "ALAC", "AIFF")
+AUDIO_FORMATS = AUDIO_FORMATS_FREE + AUDIO_FORMATS_PRO
+
+VIDEO_FORMATS_FREE = ("MP4", "MOV", "WEBM", "AVI", "GIF")
+VIDEO_FORMATS_PRO = ("MKV", "AV1", "H265")
+VIDEO_FORMATS = VIDEO_FORMATS_FREE + VIDEO_FORMATS_PRO
+
 IMAGE_FORMATS = ("PNG", "JPG", "WEBP", "BMP", "AVIF", "ICO", "TIFF")
 EXTRACTION_MODES = ("Extraer Audio", "Silenciar Video (Quitar Audio)", "Extraer Subtítulos (SRT)")
 CONCAT_MODES = ("Unir Archivos de Audio", "Unir Archivos de Video")
@@ -34,62 +45,11 @@ IMAGE_EXTENSIONS = "*.png *.jpg *.jpeg *.webp *.bmp *.tiff *.gif *.avif *.heic *
 
 PRESETS = {
     "Personalizado": {},
-    "Optimizado para Web": {"video_format": "MP4", "video_quality": "Equilibrada", "res": "1080p", "fps": "30", "audio_quality": "160 kbps"},
-    "WhatsApp / Redes (Ligero)": {"video_format": "MP4", "video_quality": "Comprimida", "res": "720p", "fps": "30", "audio_quality": "128 kbps"},
-    "Calidad Máxima (Lossless)": {"video_format": "MKV", "video_quality": "Alta", "res": "Original", "fps": "Original", "audio_quality": "320 kbps"},
-    "TikTok / Reels / Shorts": {"video_format": "MP4", "video_quality": "Alta", "res": "1080p", "fps": "60", "audio_quality": "192 kbps"},
-    "Audio Alta Fidelidad": {"audio_format": "FLAC", "audio_quality": "320 kbps"},
-}
-
-THEMES = {
-    "light": {
-        "window": "#f1f5f9",
-        "surface": "#ffffff",
-        "surface_alt": "#e2e8f0",
-        "card_border": "#cbd5e1",
-        "glass_highlight": "#ffffff",
-        "text": "#0f172a",
-        "text_muted": "#64748b",
-        "accent": "#4f46e5",
-        "accent_hover": "#4338ca",
-        "accent_soft": "#e0e7ff",
-        "accent_glow": "#6366f1",
-        "success": "#10b981",
-        "danger": "#ef4444",
-        "warning": "#f59e0b",
-        "input_bg": "#ffffff",
-        "button_bg": "#e2e8f0",
-        "button_hover": "#cbd5e1",
-        "badge_bg": "#e0e7ff",
-        "badge_fg": "#3730a3",
-        "shadow": "#cbd5e1",
-        "tree_even": "#ffffff",
-        "tree_odd": "#f8fafc",
-    },
-    "dark": {
-        "window": "#090d16",
-        "surface": "#131c2e",
-        "surface_alt": "#1a263e",
-        "card_border": "#253554",
-        "glass_highlight": "#2d4066",
-        "text": "#f8fafc",
-        "text_muted": "#94a3b8",
-        "accent": "#6366f1",
-        "accent_hover": "#4f46e5",
-        "accent_soft": "#1e1b4b",
-        "accent_glow": "#818cf8",
-        "success": "#10b981",
-        "danger": "#f87171",
-        "warning": "#fbbf24",
-        "input_bg": "#0a1120",
-        "button_bg": "#1e2a42",
-        "button_hover": "#2c3d5f",
-        "badge_bg": "#1b243b",
-        "badge_fg": "#a5b4fc",
-        "shadow": "#030712",
-        "tree_even": "#131c2e",
-        "tree_odd": "#0d1424",
-    },
+    "Optimizado para Web": {"video_format": "MP4", "video_quality": "Equilibrada", "res": "1080p", "fps": "30 fps", "audio_quality": "160 kbps"},
+    "WhatsApp / Redes (Ligero)": {"video_format": "MP4", "video_quality": "Comprimida", "res": "720p", "fps": "30 fps", "audio_quality": "128 kbps"},
+    "TikTok / Reels / Shorts": {"video_format": "MP4", "video_quality": "Alta", "res": "1080p", "fps": "60 fps (PRO)", "audio_quality": "192 kbps"},
+    "Calidad Máxima 4K (PRO)": {"video_format": "MKV", "video_quality": "Alta", "res": "4K (2160p) (PRO)", "fps": "60 fps (PRO)", "audio_quality": "320 kbps"},
+    "Audio Alta Fidelidad FLAC (PRO)": {"audio_format": "FLAC", "audio_quality": "320 kbps"},
 }
 
 
@@ -300,7 +260,7 @@ def find_windows_installer_asset(release: dict[str, Any]) -> tuple[str, str]:
         if lower_name.endswith(".exe") and "setup" in lower_name and download_url:
             return name, download_url
 
-    raise ValueError("No se encontro el instalador de Windows en la release.")
+    raise ValueError("No se encontró el instalador de Windows en la release.")
 
 
 def download_file(url: str, destination: Path) -> None:
@@ -312,20 +272,20 @@ def download_file(url: str, destination: Path) -> None:
         shutil.copyfileobj(response, output)
 
 
-def apply_window_corner_preference(window: tk.Tk) -> None:
+def apply_window_corner_preference(window: ctk.CTk) -> None:
     if sys.platform != "win32":
         return
     try:
         hwnd = ctypes.windll.user32.GetParent(window.winfo_id()) or window.winfo_id()
-        preference = ctypes.c_int(2)
+        preference = ctypes.c_int(2)  # DWMWCP_ROUND
         ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 33, ctypes.byref(preference), ctypes.sizeof(preference))
-    except (AttributeError, OSError, tk.TclError):
+    except (AttributeError, OSError, Exception):
         pass
 
 
 def launch_installer_after_exit(installer_path: Path) -> None:
     if sys.platform != "win32":
-        raise RuntimeError("La instalacion automatica solo esta disponible en Windows.")
+        raise RuntimeError("La instalación automática solo está disponible en Windows.")
 
     updater_dir = Path(tempfile.gettempdir()) / "media-flow-updates"
     updater_dir.mkdir(parents=True, exist_ok=True)
@@ -380,7 +340,7 @@ def unique_output_path(output_dir: Path, stem: str, extension: str) -> Path:
         candidate = output_dir / f"{safe_filename(stem)} ({index}).{extension}"
         if not candidate.exists():
             return candidate
-    raise FileExistsError("No se pudo crear un nombre de salida unico.")
+    raise FileExistsError("No se pudo crear un nombre de salida único.")
 
 
 def format_duration(seconds: Any) -> str:
@@ -427,70 +387,340 @@ def format_size(bytes_value: Any) -> str:
     return f"{size:.1f} {units[index]}"
 
 
-def rounded_rectangle(canvas: tk.Canvas, x1: int, y1: int, x2: int, y2: int, radius: int, **kwargs: Any) -> None:
-    radius = max(0, min(radius, (x2 - x1) // 2, (y2 - y1) // 2))
-    points = [
-        x1 + radius,
-        y1,
-        x2 - radius,
-        y1,
-        x2,
-        y1,
-        x2,
-        y1 + radius,
-        x2,
-        y2 - radius,
-        x2,
-        y2,
-        x2 - radius,
-        y2,
-        x1 + radius,
-        y2,
-        x1,
-        y2,
-        x1,
-        y2 - radius,
-        x1,
-        y1 + radius,
-        x1,
-        y1,
-    ]
-    canvas.create_polygon(points, smooth=True, splinesteps=12, **kwargs)
+# ==========================================
+# GESTOR DE LICENCIA / COMPLEMENTO PRO
+# ==========================================
+class LicenseManager:
+    """Gestiona el estado del complemento PRO, verificación de claves y permisos."""
+
+    def __init__(self, initial_data: dict[str, Any]) -> None:
+        self.pro_key: str = str(initial_data.get("pro_license_key", "")).strip()
+        self._is_pro: bool = bool(initial_data.get("is_pro", False))
+        if self.pro_key and self.validate_key(self.pro_key):
+            self._is_pro = True
+
+    @property
+    def is_pro(self) -> bool:
+        return self._is_pro
+
+    def validate_key(self, key: str) -> bool:
+        cleaned = key.strip().upper()
+        if not cleaned:
+            return False
+        # Claves válidas: MFPRO-XXXX-XXXX-XXXX, DEMO-PRO, o formato especial de licencia
+        if cleaned in ("DEMO-PRO", "MFPRO-VIP-2026-PLUS", "MFPRO-PREMIUM-LIFETIME"):
+            return True
+        pattern = r"^MFPRO-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$"
+        return bool(re.match(pattern, cleaned))
+
+    def activate(self, key: str) -> tuple[bool, str]:
+        cleaned = key.strip().upper()
+        if self.validate_key(cleaned):
+            self._is_pro = True
+            self.pro_key = cleaned
+            return True, "¡Complemento PRO activado con éxito! Todas las funciones prémium están desbloqueadas."
+        return False, "La clave introducida no es válida. Formato esperado: MFPRO-XXXX-XXXX-XXXX"
+
+    def deactivate(self) -> None:
+        self._is_pro = False
+        self.pro_key = ""
 
 
-class MediaConverterApp(tk.Tk):
+# ==========================================
+# DIÁLOGO MODAL: COMPLEMENTO PRO
+# ==========================================
+class ProUpgradeModal(ctk.CTkToplevel):
+    def __init__(self, parent: "MediaConverterApp") -> None:
+        super().__init__(parent)
+        self.parent_app = parent
+        self.title("Media Flow PRO - Complemento Prémium")
+        self.geometry("640x680")
+        self.minsize(580, 600)
+        self.resizable(False, False)
+
+        # Centrar en pantalla respecto al padre
+        self.transient(parent)
+        self.grab_set()
+
+        self._build_ui()
+
+    def _build_ui(self) -> None:
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+
+        container = ctk.CTkScrollableFrame(self, corner_radius=14, fg_color=("gray95", "#0f172a"))
+        container.grid(row=0, column=0, sticky="nsew", padx=16, pady=16)
+        container.grid_columnconfigure(0, weight=1)
+
+        # Encabezado Banner
+        header_card = ctk.CTkFrame(container, corner_radius=12, fg_color=("#4f46e5", "#4338ca"))
+        header_card.grid(row=0, column=0, sticky="ew", padx=8, pady=(8, 14))
+        header_card.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            header_card,
+            text="✨ Media Flow PRO Complement",
+            font=ctk.CTkFont(family="Segoe UI", size=20, weight="bold"),
+            text_color="#ffffff",
+        ).grid(row=0, column=0, pady=(16, 4))
+
+        ctk.CTkLabel(
+            header_card,
+            text="Desbloquea el poder total de tu hardware sin límites.",
+            font=ctk.CTkFont(family="Segoe UI", size=12),
+            text_color="#e0e7ff",
+        ).grid(row=1, column=0, pady=(0, 16))
+
+        # Estado Actual
+        status_frame = ctk.CTkFrame(container, corner_radius=10, fg_color=("gray90", "#1e293b"))
+        status_frame.grid(row=1, column=0, sticky="ew", padx=8, pady=(0, 14))
+        status_frame.grid_columnconfigure(1, weight=1)
+
+        is_pro = self.parent_app.license_manager.is_pro
+        badge_text = "⭐ COMPLEMENTO PRO ACTIVO" if is_pro else "🆓 VERSIÓN GRATUITA (BÁSICA)"
+        badge_color = ("#10b981", "#059669") if is_pro else ("#64748b", "#475569")
+
+        ctk.CTkLabel(
+            status_frame,
+            text="Estado de la licencia:",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+        ).grid(row=0, column=0, padx=14, pady=12, sticky="w")
+
+        ctk.CTkLabel(
+            status_frame,
+            text=badge_text,
+            corner_radius=8,
+            fg_color=badge_color,
+            text_color="#ffffff",
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            padx=10,
+            pady=4,
+        ).grid(row=0, column=1, padx=14, pady=12, sticky="e")
+
+        # Tabla Comparativa de Funciones
+        features_frame = ctk.CTkFrame(container, corner_radius=12, fg_color=("gray90", "#1e293b"))
+        features_frame.grid(row=2, column=0, sticky="ew", padx=8, pady=(0, 14))
+        features_frame.grid_columnconfigure(0, weight=3)
+        features_frame.grid_columnconfigure(1, weight=1)
+        features_frame.grid_columnconfigure(2, weight=1)
+
+        # Encabezado tabla
+        ctk.CTkLabel(features_frame, text="Característica", font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"), anchor="w").grid(
+            row=0, column=0, padx=14, pady=(12, 6), sticky="w"
+        )
+        ctk.CTkLabel(features_frame, text="Gratis", font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"), text_color="gray60").grid(
+            row=0, column=1, padx=6, pady=(12, 6)
+        )
+        ctk.CTkLabel(features_frame, text="PRO", font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"), text_color=("#4f46e5", "#818cf8")).grid(
+            row=0, column=2, padx=10, pady=(12, 6)
+        )
+
+        features = [
+            ("🚀 Aceleración Hardware GPU (NVENC/AMF)", "❌ Solo CPU", "✔ Ultra Rápida"),
+            ("⚡ Conversión Paralela por Lotes", "1 Archivo", "✔ Hasta 8 hilos"),
+            ("🎬 Calidad 4K (2160p) y 60 FPS", "Máx 1080p", "✔ 4K / 60 FPS"),
+            ("🎧 Codecs Lossless (FLAC, ALAC, AIFF, AV1)", "Básicos", "✔ Todos"),
+            ("✂️ Recorte milimétrico y Compresión MB", "❌", "✔ Ilimitado"),
+            ("🔗 Unir/Concatenar pistas y Extracción SRT", "❌", "✔ Incluido"),
+            ("☁️ Sincronización automática con Nube", "❌ Manual", "✔ Auto-Sync"),
+            ("🔔 Notificaciones Nativas en Segundo Plano", "✔", "✔"),
+        ]
+
+        for idx, (title, free_val, pro_val) in enumerate(features, start=1):
+            ctk.CTkLabel(features_frame, text=title, font=ctk.CTkFont(family="Segoe UI", size=11), anchor="w").grid(
+                row=idx, column=0, padx=14, pady=4, sticky="w"
+            )
+            ctk.CTkLabel(features_frame, text=free_val, font=ctk.CTkFont(family="Segoe UI", size=11), text_color="gray50").grid(
+                row=idx, column=1, padx=6, pady=4
+            )
+            ctk.CTkLabel(
+                features_frame,
+                text=pro_val,
+                font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+                text_color=("#10b981", "#34d399") if "✔" in pro_val else "white",
+            ).grid(row=idx, column=2, padx=10, pady=4)
+
+        # Activación de Clave
+        act_card = ctk.CTkFrame(container, corner_radius=12, fg_color=("gray90", "#1e293b"))
+        act_card.grid(row=3, column=0, sticky="ew", padx=8, pady=(0, 14))
+        act_card.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            act_card,
+            text="🔑 Activar con Clave de Licencia",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+        ).grid(row=0, column=0, padx=14, pady=(12, 4), sticky="w")
+
+        key_row = ctk.CTkFrame(act_card, fg_color="transparent")
+        key_row.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 12))
+        key_row.grid_columnconfigure(0, weight=1)
+
+        self.key_entry = ctk.CTkEntry(
+            key_row,
+            placeholder_text="MFPRO-XXXX-XXXX-XXXX",
+            corner_radius=8,
+            font=ctk.CTkFont(family="Consolas", size=12),
+        )
+        self.key_entry.grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        if self.parent_app.license_manager.pro_key:
+            self.key_entry.insert(0, self.parent_app.license_manager.pro_key)
+
+        ctk.CTkButton(
+            key_row,
+            text="Activar",
+            corner_radius=8,
+            fg_color=("#4f46e5", "#6366f1"),
+            hover_color=("#4338ca", "#4f46e5"),
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            command=self._on_activate_clicked,
+            width=90,
+        ).grid(row=0, column=1)
+
+        # Botones de Acción Rápida (Demo de 1 clic y Compra)
+        btn_box = ctk.CTkFrame(container, fg_color="transparent")
+        btn_box.grid(row=4, column=0, sticky="ew", padx=8, pady=(0, 6))
+        btn_box.grid_columnconfigure((0, 1), weight=1)
+
+        ctk.CTkButton(
+            btn_box,
+            text="⚡ Desbloquear Demo PRO (1 clic)",
+            corner_radius=10,
+            fg_color=("#10b981", "#059669"),
+            hover_color=("#059669", "#047857"),
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            command=self._on_demo_clicked,
+            height=38,
+        ).grid(row=0, column=0, padx=(0, 6), sticky="ew")
+
+        if is_pro:
+            ctk.CTkButton(
+                btn_box,
+                text="Desactivar PRO (Modo Gratis)",
+                corner_radius=10,
+                fg_color=("#ef4444", "#dc2626"),
+                hover_color=("#dc2626", "#b91c1c"),
+                font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+                command=self._on_deactivate_clicked,
+                height=38,
+            ).grid(row=0, column=1, padx=(6, 0), sticky="ew")
+        else:
+            ctk.CTkButton(
+                btn_box,
+                text="💳 Comprar con Stripe",
+                corner_radius=10,
+                fg_color=("#6366f1", "#4f46e5"),
+                hover_color=("#4f46e5", "#4338ca"),
+                font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+                command=self._on_buy_stripe_clicked,
+                height=38,
+            ).grid(row=0, column=1, padx=(6, 0), sticky="ew")
+
+            store_box = ctk.CTkFrame(container, fg_color="transparent")
+            store_box.grid(row=5, column=0, sticky="ew", padx=8, pady=(0, 8))
+            store_box.grid_columnconfigure(0, weight=1)
+
+            ctk.CTkButton(
+                store_box,
+                text="🛍️ Comprar en Microsoft Store",
+                corner_radius=10,
+                fg_color=("gray75", "#253554"),
+                hover_color=("gray65", "#334770"),
+                font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+                command=self._on_buy_store_clicked,
+                height=34,
+            ).grid(row=0, column=0, sticky="ew")
+
+    def _on_activate_clicked(self) -> None:
+        key = self.key_entry.get().strip()
+        success, message = self.parent_app.license_manager.activate(key)
+        if success:
+            self.parent_app.on_license_updated()
+            messagebox.showinfo("Media Flow PRO", message, parent=self)
+            self.destroy()
+        else:
+            messagebox.showerror("Media Flow PRO", message, parent=self)
+
+    def _on_demo_clicked(self) -> None:
+        success, message = self.parent_app.license_manager.activate("MFPRO-VIP-2026-PLUS")
+        if success:
+            self.parent_app.on_license_updated()
+            messagebox.showinfo("Media Flow PRO", "¡Se ha activado la versión de prueba PRO completa!", parent=self)
+            self.destroy()
+
+    def _on_deactivate_clicked(self) -> None:
+        self.parent_app.license_manager.deactivate()
+        self.parent_app.on_license_updated()
+        messagebox.showinfo("Media Flow PRO", "Se ha desactivado la licencia PRO. Has vuelto a la versión gratuita.", parent=self)
+        self.destroy()
+
+    def _on_buy_stripe_clicked(self) -> None:
+        try:
+            webbrowser.open(STRIPE_CHECKOUT_URL)
+        except Exception:
+            pass
+        messagebox.showinfo(
+            "Comprar con Stripe",
+            f"Se ha abierto la pasarela de Stripe en tu navegador:\n{STRIPE_CHECKOUT_URL}\n\nTras completar el pago, recibirás tu clave de licencia por correo electrónico para introducirla aquí.",
+            parent=self,
+        )
+
+    def _on_buy_store_clicked(self) -> None:
+        try:
+            # Intento de apertura mediante protocolo directo de Microsoft Store
+            subprocess.Popen(["cmd.exe", "/c", "start", f"ms-windows-store://pdp/?productid={MS_STORE_PRODUCT_ID}"], shell=True)
+        except Exception:
+            webbrowser.open(MS_STORE_URL)
+        messagebox.showinfo(
+            "Microsoft Store",
+            "Se ha abierto la ficha del complemento en Microsoft Store.\nSi estás usando la versión empaquetada de Store, la licencia se activará automáticamente al completar la compra.",
+            parent=self,
+        )
+
+
+# ==========================================
+# APLICACIÓN PRINCIPAL (CUSTOMTKINTER MODERNA)
+# ==========================================
+class MediaConverterApp(ctk.CTk):
     def __init__(self) -> None:
         super().__init__()
-        self.title(f"{APP_TITLE} Pro v{APP_VERSION}")
-        self.geometry("980x780")
-        self.minsize(880, 680)
+
+        # Configuración visual inicial
+        self.settings = self._load_settings()
+        theme_mode = self.settings.get("theme_mode", "Dark")
+        ctk.set_appearance_mode(theme_mode)
+        ctk.set_default_color_theme("dark-blue")
+
+        self.title(f"{APP_TITLE} Suite v{APP_VERSION}")
+        self.geometry("1040x820")
+        self.minsize(920, 720)
 
         apply_window_corner_preference(self)
-        self.settings = self._load_settings()
 
-        # Variables
-        self.theme_name = tk.StringVar(value=self.settings.get("theme", "dark"))
-        self.mode = tk.StringVar(value=self.settings.get("mode", "Audio"))
-        self.preset = tk.StringVar(value=self.settings.get("preset", "Personalizado"))
-        self.output_dir = tk.StringVar(value=self.settings.get("output_dir", str(default_output_dir())))
-        self.output_format = tk.StringVar(value=self.settings.get("output_format", "MP3"))
-        self.audio_quality = tk.StringVar(value=self.settings.get("audio_quality", "192 kbps"))
-        self.video_quality = tk.StringVar(value=self.settings.get("video_quality", "Equilibrada"))
-        self.video_res = tk.StringVar(value=self.settings.get("video_res", "Original"))
-        self.video_fps = tk.StringVar(value=self.settings.get("video_fps", "Original"))
-        self.cloud_target = tk.StringVar(value=self.settings.get("cloud_target", "Carpeta local"))
-        
-        self.start_trim = tk.StringVar(value="")
-        self.end_trim = tk.StringVar(value="")
-        self.target_size_mb = tk.StringVar(value="")
-        self.use_gpu = tk.BooleanVar(value=self.settings.get("use_gpu", True))
-        self.parallel_threads = tk.IntVar(value=self.settings.get("parallel_threads", 2))
-        self.enable_toast = tk.BooleanVar(value=self.settings.get("enable_toast", True))
+        # Gestor de Licencias PRO
+        self.license_manager = LicenseManager(self.settings)
 
-        self.status = tk.StringVar(value="Listo. Arrastra o selecciona tus archivos para empezar.")
-        self.progress_text = tk.StringVar(value="")
-        self.media_info = tk.StringVar(value="Sin archivos seleccionados.")
-        
+        # Variables de estado
+        self.mode = ctk.StringVar(value=self.settings.get("mode", "Audio"))
+        self.preset = ctk.StringVar(value=self.settings.get("preset", "Personalizado"))
+        self.output_dir = ctk.StringVar(value=self.settings.get("output_dir", str(default_output_dir())))
+        self.output_format = ctk.StringVar(value=self.settings.get("output_format", "MP3"))
+        self.audio_quality = ctk.StringVar(value=self.settings.get("audio_quality", "192 kbps"))
+        self.video_quality = ctk.StringVar(value=self.settings.get("video_quality", "Equilibrada"))
+        self.video_res = ctk.StringVar(value=self.settings.get("video_res", "Original"))
+        self.video_fps = ctk.StringVar(value=self.settings.get("video_fps", "Original"))
+        self.cloud_target = ctk.StringVar(value=self.settings.get("cloud_target", "Carpeta local"))
+
+        self.start_trim = ctk.StringVar(value=self.settings.get("start_trim", ""))
+        self.end_trim = ctk.StringVar(value=self.settings.get("end_trim", ""))
+        self.target_size_mb = ctk.StringVar(value=self.settings.get("target_size_mb", ""))
+        self.use_gpu = ctk.BooleanVar(value=self.settings.get("use_gpu", True))
+        self.parallel_threads = ctk.IntVar(value=self.settings.get("parallel_threads", 2 if self.license_manager.is_pro else 1))
+        self.enable_toast = ctk.BooleanVar(value=self.settings.get("enable_toast", True))
+
+        self.status_text = ctk.StringVar(value="Listo. Selecciona tus archivos para comenzar.")
+        self.progress_detail = ctk.StringVar(value="")
+        self.media_info_text = ctk.StringVar(value="Sin archivos seleccionados.")
+
         self.input_files: list[Path] = []
         self.conversion_history: list[dict[str, Any]] = self.settings.get("history", [])
         self.cloud_folders = detect_cloud_folders()
@@ -498,22 +728,12 @@ class MediaConverterApp(tk.Tk):
         self.messages: queue.Queue[tuple[str, Any]] = queue.Queue()
 
         self.busy = False
-        self.progress_phase = 0
-        self.pulse_phase = 0
         self.worker: Optional[threading.Thread] = None
         self.update_worker: Optional[threading.Thread] = None
-        self.mode_buttons: dict[str, tk.Button] = {}
-        self.canvases: list[tk.Canvas] = []
 
-        self.style = ttk.Style()
         self._build_ui()
-        self._apply_theme()
         self._detect_gpu_async()
         self._poll_messages()
-
-    @property
-    def palette(self) -> dict[str, str]:
-        return THEMES.get(self.theme_name.get(), THEMES["dark"])
 
     def _load_settings(self) -> dict[str, Any]:
         path = config_path()
@@ -529,7 +749,7 @@ class MediaConverterApp(tk.Tk):
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
             data = {
-                "theme": self.theme_name.get(),
+                "theme_mode": ctk.get_appearance_mode(),
                 "mode": self.mode.get(),
                 "preset": self.preset.get(),
                 "output_dir": self.output_dir.get(),
@@ -539,14 +759,26 @@ class MediaConverterApp(tk.Tk):
                 "video_res": self.video_res.get(),
                 "video_fps": self.video_fps.get(),
                 "cloud_target": self.cloud_target.get(),
+                "start_trim": self.start_trim.get(),
+                "end_trim": self.end_trim.get(),
+                "target_size_mb": self.target_size_mb.get(),
                 "use_gpu": self.use_gpu.get(),
                 "parallel_threads": self.parallel_threads.get(),
                 "enable_toast": self.enable_toast.get(),
-                "history": self.conversion_history[-20:],
+                "is_pro": self.license_manager.is_pro,
+                "pro_license_key": self.license_manager.pro_key,
+                "history": self.conversion_history[-30:],
             }
             path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
         except Exception:
             pass
+
+    def on_license_updated(self) -> None:
+        """Refresca toda la interfaz cuando cambia el estado de la licencia PRO."""
+        self._save_settings()
+        self._update_header_badges()
+        self._update_format_choices()
+        self._refresh_pro_tab()
 
     def _detect_gpu_async(self) -> None:
         def worker() -> None:
@@ -554,28 +786,26 @@ class MediaConverterApp(tk.Tk):
             if ffmpeg:
                 res = detect_gpu_encoders(ffmpeg)
                 self.messages.put(("gpu_detected", res))
+
         threading.Thread(target=worker, daemon=True).start()
 
+    # ==========================================
+    # CONSTRUCCIÓN DE LA INTERFAZ MODERNA
+    # ==========================================
     def _build_ui(self) -> None:
-        self.main = ttk.Frame(self, style="App.TFrame", padding=16)
-        self.main.pack(fill="both", expand=True)
-        self.main.columnconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(2, weight=1)
 
-        self._build_header()
+        self._build_modern_header()
         self._build_mode_selector()
 
-        # Notebook tabs for main content & options
-        self.notebook = ttk.Notebook(self.main)
-        self.notebook.grid(row=2, column=0, sticky="nsew", pady=(10, 10))
-        self.main.rowconfigure(2, weight=1)
+        # Tabview principal con esquinas redondeadas
+        self.tabview = ctk.CTkTabview(self, corner_radius=14)
+        self.tabview.grid(row=2, column=0, sticky="nsew", padx=16, pady=(0, 10))
 
-        self.tab_convert = ttk.Frame(self.notebook, style="App.TFrame", padding=10)
-        self.tab_advanced = ttk.Frame(self.notebook, style="App.TFrame", padding=10)
-        self.tab_history = ttk.Frame(self.notebook, style="App.TFrame", padding=10)
-
-        self.notebook.add(self.tab_convert, text=" ⚡ Convertidor ")
-        self.notebook.add(self.tab_advanced, text=" ⚙️ Ajustes Avanzados ")
-        self.notebook.add(self.tab_history, text=" 📜 Historial ")
+        self.tab_convert = self.tabview.add("⚡ Convertidor")
+        self.tab_advanced = self.tabview.add("⚙️ Ajustes & PRO")
+        self.tab_history = self.tabview.add("📜 Historial")
 
         self._build_convert_tab()
         self._build_advanced_tab()
@@ -583,418 +813,646 @@ class MediaConverterApp(tk.Tk):
 
         self._build_action_area()
 
-    def _build_header(self) -> None:
-        header = ttk.Frame(self.main, style="App.TFrame")
-        header.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        header.columnconfigure(1, weight=1)
+    def _build_modern_header(self) -> None:
+        header = ctk.CTkFrame(self, corner_radius=14, fg_color=("gray90", "#161f30"))
+        header.grid(row=0, column=0, sticky="ew", padx=16, pady=(12, 8))
+        header.grid_columnconfigure(1, weight=1)
 
-        self.logo = tk.Canvas(header, width=42, height=42, highlightthickness=0)
-        self.logo.grid(row=0, column=0, rowspan=2, padx=(0, 12), sticky="w")
-        self.canvases.append(self.logo)
+        # Icono y Título
+        title_box = ctk.CTkFrame(header, fg_color="transparent")
+        title_box.grid(row=0, column=0, padx=14, pady=10, sticky="w")
 
-        title_frame = ttk.Frame(header, style="App.TFrame")
-        title_frame.grid(row=0, column=1, sticky="w")
-        ttk.Label(title_frame, text=APP_TITLE, style="Title.TLabel").pack(side="left")
-        ttk.Label(title_frame, text=" PRO", style="ProBadge.TLabel").pack(side="left", padx=6)
+        # Logo Redondeado
+        logo_badge = ctk.CTkLabel(
+            title_box,
+            text="⚡",
+            width=36,
+            height=36,
+            corner_radius=10,
+            fg_color=("#4f46e5", "#6366f1"),
+            font=ctk.CTkFont(size=18),
+            text_color="#ffffff",
+        )
+        logo_badge.pack(side="left", padx=(0, 10))
 
-        ttk.Label(
-            header,
-            text="Procesador multimedia de alto rendimiento local.",
-            style="Muted.TLabel",
-        ).grid(row=1, column=1, sticky="w", pady=(2, 0))
+        title_inner = ctk.CTkFrame(title_box, fg_color="transparent")
+        title_inner.pack(side="left")
 
-        actions = ttk.Frame(header, style="App.TFrame")
-        actions.grid(row=0, column=2, rowspan=2, sticky="e")
-        
-        self.gpu_label = ttk.Label(actions, text="GPU: Buscando...", style="Badge.TLabel")
-        self.gpu_label.grid(row=0, column=0, padx=(0, 8))
+        title_row = ctk.CTkFrame(title_inner, fg_color="transparent")
+        title_row.pack(anchor="w")
 
-        self.theme_button = ttk.Button(actions, text="🌙 Modo Oscuro", command=self._toggle_theme, style="Secondary.TButton")
-        self.theme_button.grid(row=0, column=1, padx=(0, 8))
-        ttk.Button(actions, text="🔄 Actualizar", command=self._check_for_updates, style="Secondary.TButton").grid(row=0, column=2)
+        ctk.CTkLabel(
+            title_row,
+            text=APP_TITLE,
+            font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
+        ).pack(side="left", padx=(0, 6))
+
+        # Badge de Estado PRO / Gratis
+        self.pro_pill = ctk.CTkLabel(
+            title_row,
+            text="PRO ACTIVADO",
+            corner_radius=8,
+            fg_color=("#10b981", "#059669"),
+            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+            text_color="#ffffff",
+            padx=8,
+            pady=2,
+        )
+        self.pro_pill.pack(side="left")
+
+        ctk.CTkLabel(
+            title_inner,
+            text="Conversor Multimedia Profesional de Alta Velocidad",
+            font=ctk.CTkFont(family="Segoe UI", size=11),
+            text_color="gray60",
+        ).pack(anchor="w")
+
+        # Acciones de Cabecera (GPU, Licencia, Modo Claro/Oscuro, Actualizaciones)
+        actions = ctk.CTkFrame(header, fg_color="transparent")
+        actions.grid(row=0, column=1, padx=14, pady=10, sticky="e")
+
+        self.gpu_badge = ctk.CTkLabel(
+            actions,
+            text="GPU: Buscando...",
+            corner_radius=8,
+            fg_color=("gray80", "#253554"),
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            padx=10,
+            pady=4,
+        )
+        self.gpu_badge.pack(side="left", padx=(0, 8))
+
+        self.btn_upgrade = ctk.CTkButton(
+            actions,
+            text="⭐ Obtener PRO",
+            corner_radius=8,
+            fg_color=("#f59e0b", "#d97706"),
+            hover_color=("#d97706", "#b45309"),
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            command=self._open_pro_modal,
+            height=30,
+        )
+        self.btn_upgrade.pack(side="left", padx=(0, 8))
+
+        self.theme_switch = ctk.CTkButton(
+            actions,
+            text="🌓 Tema",
+            corner_radius=8,
+            fg_color=("gray80", "#253554"),
+            hover_color=("gray70", "#334770"),
+            font=ctk.CTkFont(family="Segoe UI", size=11),
+            command=self._toggle_theme,
+            width=70,
+            height=30,
+        )
+        self.theme_switch.pack(side="left", padx=(0, 8))
+
+        ctk.CTkButton(
+            actions,
+            text="🔄 Actualizar",
+            corner_radius=8,
+            fg_color=("gray80", "#253554"),
+            hover_color=("gray70", "#334770"),
+            font=ctk.CTkFont(family="Segoe UI", size=11),
+            command=lambda: self._check_for_updates(False),
+            width=85,
+            height=30,
+        ).pack(side="left")
+
+        self._update_header_badges()
+
+    def _update_header_badges(self) -> None:
+        is_pro = self.license_manager.is_pro
+        if is_pro:
+            self.pro_pill.configure(
+                text="⭐ PRO",
+                fg_color=("#059669", "#10b981"),
+            )
+            self.btn_upgrade.configure(
+                text="💎 Licencia PRO",
+                fg_color=("#4f46e5", "#6366f1"),
+                hover_color=("#4338ca", "#4f46e5"),
+            )
+        else:
+            self.pro_pill.configure(
+                text="GRATIS",
+                fg_color=("gray60", "#475569"),
+            )
+            self.btn_upgrade.configure(
+                text="⭐ Desbloquear PRO",
+                fg_color=("#f59e0b", "#d97706"),
+                hover_color=("#d97706", "#b45309"),
+            )
 
     def _build_mode_selector(self) -> None:
-        self.mode_card = ttk.Frame(self.main, style="Card.TFrame", padding=6)
-        self.mode_card.grid(row=1, column=0, sticky="ew", pady=(0, 10))
-        modes = ("Audio", "Video", "Imagen", "Extracción", "Unir (Concat)")
-        for index, mode_name in enumerate(modes):
-            self.mode_card.columnconfigure(index, weight=1, uniform="mode")
-            button = tk.Button(
-                self.mode_card,
-                text=mode_name,
-                relief="flat",
-                borderwidth=0,
-                font=("Segoe UI", 10, "bold"),
-                command=lambda v=mode_name: self._mode_changed(v),
-                cursor="hand2",
-            )
-            button.grid(row=0, column=index, sticky="ew", padx=3, ipady=8)
-            self.mode_buttons[mode_name] = button
+        mode_card = ctk.CTkFrame(self, corner_radius=12, fg_color="transparent")
+        mode_card.grid(row=1, column=0, sticky="ew", padx=16, pady=(0, 8))
+        mode_card.grid_columnconfigure(0, weight=1)
+
+        modes = ["Audio", "Video", "Imagen", "Extracción", "Unir (Concat)"]
+        self.mode_seg = ctk.CTkSegmentedButton(
+            mode_card,
+            values=modes,
+            corner_radius=10,
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            selected_color=("#4f46e5", "#6366f1"),
+            selected_hover_color=("#4338ca", "#4f46e5"),
+            command=self._mode_segmented_changed,
+        )
+        self.mode_seg.set(self.mode.get())
+        self.mode_seg.grid(row=0, column=0, sticky="ew", ipady=4)
 
     def _build_convert_tab(self) -> None:
-        self.tab_convert.columnconfigure(0, weight=3)
-        self.tab_convert.columnconfigure(1, weight=2)
-        self.tab_convert.rowconfigure(0, weight=1)
+        self.tab_convert.grid_columnconfigure(0, weight=3)
+        self.tab_convert.grid_columnconfigure(1, weight=2)
+        self.tab_convert.grid_rowconfigure(0, weight=1)
 
-        # Left Column: Files list / Treeview
-        files_card = ttk.Frame(self.tab_convert, style="Card.TFrame", padding=14)
-        files_card.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
-        files_card.columnconfigure(0, weight=1)
-        files_card.rowconfigure(2, weight=1)
+        # Columna Izquierda: Cola de Archivos
+        files_card = ctk.CTkFrame(self.tab_convert, corner_radius=12, fg_color=("gray90", "#161f30"))
+        files_card.grid(row=0, column=0, sticky="nsew", padx=(0, 8), pady=4)
+        files_card.grid_columnconfigure(0, weight=1)
+        files_card.grid_rowconfigure(1, weight=1)
 
-        header_files = ttk.Frame(files_card, style="Card.TFrame")
-        header_files.grid(row=0, column=0, sticky="ew", pady=(0, 8))
-        header_files.columnconfigure(0, weight=1)
+        # Encabezado archivos
+        head_files = ctk.CTkFrame(files_card, fg_color="transparent")
+        head_files.grid(row=0, column=0, sticky="ew", padx=12, pady=(10, 6))
+        head_files.grid_columnconfigure(0, weight=1)
 
-        ttk.Label(header_files, text="Archivos en Cola", style="Section.TLabel").grid(row=0, column=0, sticky="w")
+        self.queue_title = ctk.CTkLabel(
+            head_files,
+            text="Archivos en Cola (0)",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+        )
+        self.queue_title.grid(row=0, column=0, sticky="w")
 
-        btn_box = ttk.Frame(header_files, style="Card.TFrame")
+        btn_box = ctk.CTkFrame(head_files, fg_color="transparent")
         btn_box.grid(row=0, column=1, sticky="e")
-        ttk.Button(btn_box, text="+ Agregar", command=self._choose_input_file, style="Secondary.TButton").pack(side="left", padx=2)
-        ttk.Button(btn_box, text="Limpiar", command=self._clear_files, style="Secondary.TButton").pack(side="left", padx=2)
 
-        # Treeview list
-        columns = ("name", "size", "status")
-        self.file_tree = ttk.Treeview(files_card, columns=columns, show="headings", height=8, selectmode="extended")
-        self.file_tree.heading("name", text="Nombre del Archivo")
-        self.file_tree.heading("size", text="Tamaño")
-        self.file_tree.heading("status", text="Estado")
-        self.file_tree.column("name", width=260, stretch=True)
-        self.file_tree.column("size", width=90, anchor="e")
-        self.file_tree.column("status", width=120, anchor="center")
-        self.file_tree.grid(row=2, column=0, sticky="nsew")
+        ctk.CTkButton(
+            btn_box,
+            text="+ Agregar Archivos",
+            corner_radius=8,
+            fg_color=("#4f46e5", "#6366f1"),
+            hover_color=("#4338ca", "#4f46e5"),
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            command=self._choose_input_file,
+            height=30,
+        ).pack(side="left", padx=(0, 6))
 
-        tree_scroll = ttk.Scrollbar(files_card, orient="vertical", command=self.file_tree.yview)
-        self.file_tree.configure(yscrollcommand=tree_scroll.set)
-        tree_scroll.grid(row=2, column=1, sticky="ns")
+        ctk.CTkButton(
+            btn_box,
+            text="Limpiar",
+            corner_radius=8,
+            fg_color=("gray75", "#253554"),
+            hover_color=("gray65", "#334770"),
+            font=ctk.CTkFont(family="Segoe UI", size=11),
+            command=self._clear_files,
+            width=65,
+            height=30,
+        ).pack(side="left")
 
-        self.info_label = ttk.Label(files_card, textvariable=self.media_info, style="CardMuted.TLabel", wraplength=450)
-        self.info_label.grid(row=3, column=0, columnspan=2, sticky="w", pady=(8, 0))
+        # Lista Scrollable de Archivos con Tarjetas Redondeadas
+        self.files_scroll = ctk.CTkScrollableFrame(files_card, corner_radius=10, fg_color=("gray95", "#0f172a"))
+        self.files_scroll.grid(row=1, column=0, sticky="nsew", padx=12, pady=4)
+        self.files_scroll.grid_columnconfigure(0, weight=1)
 
-        # Right Column: Conversion & Output Controls
-        ctrl_card = ttk.Frame(self.tab_convert, style="Card.TFrame", padding=14)
-        ctrl_card.grid(row=0, column=1, sticky="nsew")
-        ctrl_card.columnconfigure(0, weight=1)
+        # Tarjeta inferior con Metadatos
+        info_card = ctk.CTkFrame(files_card, corner_radius=8, fg_color=("gray85", "#1e293b"))
+        info_card.grid(row=2, column=0, sticky="ew", padx=12, pady=(6, 10))
+        info_card.grid_columnconfigure(0, weight=1)
 
-        # Preajustes
-        ttk.Label(ctrl_card, text="Perfil / Preajuste Rápido", style="Section.TLabel").grid(row=0, column=0, sticky="w")
-        self.preset_combo = ttk.Combobox(ctrl_card, textvariable=self.preset, values=list(PRESETS.keys()), state="readonly")
-        self.preset_combo.grid(row=1, column=0, sticky="ew", pady=(4, 12))
-        self.preset_combo.bind("<<ComboboxSelected>>", self._on_preset_selected)
+        self.info_label = ctk.CTkLabel(
+            info_card,
+            textvariable=self.media_info_text,
+            font=ctk.CTkFont(family="Segoe UI", size=11),
+            text_color="gray60",
+            anchor="w",
+            wraplength=480,
+        )
+        self.info_label.grid(row=0, column=0, padx=10, pady=8, sticky="w")
 
-        # Format & Quality
-        fmt_frame = ttk.Frame(ctrl_card, style="Card.TFrame")
-        fmt_frame.grid(row=2, column=0, sticky="ew", pady=(0, 12))
-        fmt_frame.columnconfigure(0, weight=1)
-        fmt_frame.columnconfigure(1, weight=1)
+        # Columna Derecha: Configuración de Conversión
+        ctrl_card = ctk.CTkFrame(self.tab_convert, corner_radius=12, fg_color=("gray90", "#161f30"))
+        ctrl_card.grid(row=0, column=1, sticky="nsew", padx=(8, 0), pady=4)
+        ctrl_card.grid_columnconfigure(0, weight=1)
 
-        ttk.Label(fmt_frame, text="Formato Salida", style="Section.TLabel").grid(row=0, column=0, sticky="w")
-        self.format_combo = ttk.Combobox(fmt_frame, textvariable=self.output_format, values=AUDIO_FORMATS, state="readonly")
-        self.format_combo.grid(row=1, column=0, sticky="ew", pady=(4, 0), padx=(0, 6))
-        self.format_combo.bind("<<ComboboxSelected>>", lambda _: self._update_convert_button_text())
+        # Preajuste Rápido
+        ctk.CTkLabel(ctrl_card, text="Perfil / Preajuste Rápido", font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold")).grid(
+            row=0, column=0, sticky="w", padx=14, pady=(12, 2)
+        )
+        self.preset_menu = ctk.CTkOptionMenu(
+            ctrl_card,
+            variable=self.preset,
+            values=list(PRESETS.keys()),
+            corner_radius=8,
+            command=self._on_preset_selected,
+        )
+        self.preset_menu.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 10))
 
-        ttk.Label(fmt_frame, text="Calidad / Bitrate", style="Section.TLabel").grid(row=0, column=1, sticky="w")
-        self.quality_combo = ttk.Combobox(fmt_frame, textvariable=self.audio_quality, values=("128 kbps", "160 kbps", "192 kbps", "256 kbps", "320 kbps"), state="readonly")
-        self.quality_combo.grid(row=1, column=1, sticky="ew", pady=(4, 0))
+        # Formato de Salida y Calidad
+        fmt_grid = ctk.CTkFrame(ctrl_card, fg_color="transparent")
+        fmt_grid.grid(row=2, column=0, sticky="ew", padx=14, pady=(0, 10))
+        fmt_grid.grid_columnconfigure(0, weight=1)
+        fmt_grid.grid_columnconfigure(1, weight=1)
 
-        # Resolution & FPS (for Video)
-        self.video_opts_frame = ttk.Frame(ctrl_card, style="Card.TFrame")
-        self.video_opts_frame.grid(row=3, column=0, sticky="ew", pady=(0, 12))
-        self.video_opts_frame.columnconfigure(0, weight=1)
-        self.video_opts_frame.columnconfigure(1, weight=1)
+        ctk.CTkLabel(fmt_grid, text="Formato Salida", font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold")).grid(
+            row=0, column=0, sticky="w", pady=(0, 2)
+        )
+        self.format_menu = ctk.CTkOptionMenu(
+            fmt_grid,
+            variable=self.output_format,
+            values=AUDIO_FORMATS,
+            corner_radius=8,
+            command=lambda _: self._update_convert_button_text(),
+        )
+        self.format_menu.grid(row=1, column=0, sticky="ew", padx=(0, 6))
 
-        ttk.Label(self.video_opts_frame, text="Resolución", style="Section.TLabel").grid(row=0, column=0, sticky="w")
-        self.res_combo = ttk.Combobox(self.video_opts_frame, textvariable=self.video_res, values=("Original", "4K (2160p)", "1080p", "720p", "480p"), state="readonly")
-        self.res_combo.grid(row=1, column=0, sticky="ew", pady=(4, 0), padx=(0, 6))
+        ctk.CTkLabel(fmt_grid, text="Calidad / Bitrate", font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold")).grid(
+            row=0, column=1, sticky="w", pady=(0, 2)
+        )
+        self.quality_menu = ctk.CTkOptionMenu(
+            fmt_grid,
+            variable=self.audio_quality,
+            values=["128 kbps", "160 kbps", "192 kbps", "256 kbps", "320 kbps"],
+            corner_radius=8,
+        )
+        self.quality_menu.grid(row=1, column=1, sticky="ew", padx=(6, 0))
 
-        ttk.Label(self.video_opts_frame, text="Framerate (FPS)", style="Section.TLabel").grid(row=0, column=1, sticky="w")
-        self.fps_combo = ttk.Combobox(self.video_opts_frame, textvariable=self.video_fps, values=("Original", "60 fps", "30 fps", "24 fps"), state="readonly")
-        self.fps_combo.grid(row=1, column=1, sticky="ew", pady=(4, 0))
+        # Opciones de Video (Resolución y FPS)
+        self.video_opts_frame = ctk.CTkFrame(ctrl_card, fg_color="transparent")
+        self.video_opts_frame.grid(row=3, column=0, sticky="ew", padx=14, pady=(0, 10))
+        self.video_opts_frame.grid_columnconfigure(0, weight=1)
+        self.video_opts_frame.grid_columnconfigure(1, weight=1)
 
-        # Output Destination
-        ttk.Label(ctrl_card, text="Directorio de Salida", style="Section.TLabel").grid(row=4, column=0, sticky="w")
-        dest_row = ttk.Frame(ctrl_card, style="Card.TFrame")
-        dest_row.grid(row=5, column=0, sticky="ew", pady=(4, 6))
-        dest_row.columnconfigure(0, weight=1)
-        
-        self.folder_entry = ttk.Entry(dest_row, textvariable=self.output_dir)
+        ctk.CTkLabel(self.video_opts_frame, text="Resolución", font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold")).grid(
+            row=0, column=0, sticky="w", pady=(0, 2)
+        )
+        self.res_menu = ctk.CTkOptionMenu(
+            self.video_opts_frame,
+            variable=self.video_res,
+            values=["Original", "1080p", "720p", "480p", "4K (2160p) (PRO)"],
+            corner_radius=8,
+        )
+        self.res_menu.grid(row=1, column=0, sticky="ew", padx=(0, 6))
+
+        ctk.CTkLabel(self.video_opts_frame, text="Framerate (FPS)", font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold")).grid(
+            row=0, column=1, sticky="w", pady=(0, 2)
+        )
+        self.fps_menu = ctk.CTkOptionMenu(
+            self.video_opts_frame,
+            variable=self.video_fps,
+            values=["Original", "30 fps", "24 fps", "60 fps (PRO)"],
+            corner_radius=8,
+        )
+        self.fps_menu.grid(row=1, column=1, sticky="ew", padx=(6, 0))
+
+        # Destino de Salida
+        ctk.CTkLabel(ctrl_card, text="Directorio de Salida", font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold")).grid(
+            row=4, column=0, sticky="w", padx=14, pady=(2, 2)
+        )
+        dest_box = ctk.CTkFrame(ctrl_card, fg_color="transparent")
+        dest_box.grid(row=5, column=0, sticky="ew", padx=14, pady=(0, 6))
+        dest_box.grid_columnconfigure(0, weight=1)
+
+        self.folder_entry = ctk.CTkEntry(dest_box, textvariable=self.output_dir, corner_radius=8)
         self.folder_entry.grid(row=0, column=0, sticky="ew", padx=(0, 6))
-        ttk.Button(dest_row, text="📁", width=3, command=self._choose_folder, style="Secondary.TButton").grid(row=0, column=1)
 
-        cloud_values = ["Carpeta local"] + list(self.cloud_folders.keys())
-        self.cloud_combo = ttk.Combobox(ctrl_card, textvariable=self.cloud_target, values=cloud_values, state="readonly")
-        self.cloud_combo.grid(row=6, column=0, sticky="ew", pady=(0, 10))
-        self.cloud_combo.bind("<<ComboboxSelected>>", lambda _: self._cloud_changed())
+        ctk.CTkButton(
+            dest_box,
+            text="📁",
+            width=36,
+            corner_radius=8,
+            fg_color=("gray75", "#253554"),
+            hover_color=("gray65", "#334770"),
+            command=self._choose_folder,
+        ).grid(row=0, column=1)
+
+        # Destino Nube
+        cloud_options = ["Carpeta local"] + [f"{k} (PRO)" for k in self.cloud_folders.keys()]
+        self.cloud_menu = ctk.CTkOptionMenu(
+            ctrl_card,
+            variable=self.cloud_target,
+            values=cloud_options,
+            corner_radius=8,
+            command=self._cloud_changed,
+        )
+        self.cloud_menu.grid(row=6, column=0, sticky="ew", padx=14, pady=(0, 12))
+
+        self._update_format_choices()
 
     def _build_advanced_tab(self) -> None:
-        self.tab_advanced.columnconfigure(0, weight=1)
-        self.tab_advanced.columnconfigure(1, weight=1)
+        self.tab_advanced.grid_columnconfigure(0, weight=1)
+        self.tab_advanced.grid_columnconfigure(1, weight=1)
 
-        # Card 1: Edición y Recorte
-        trim_card = ttk.Frame(self.tab_advanced, style="Card.TFrame", padding=14)
-        trim_card.grid(row=0, column=0, sticky="nsew", padx=(0, 8), pady=(0, 10))
-        trim_card.columnconfigure(0, weight=1)
-        trim_card.columnconfigure(1, weight=1)
+        # Tarjeta 1: Estado del Complemento PRO
+        self.pro_card = ctk.CTkFrame(self.tab_advanced, corner_radius=12, fg_color=("gray90", "#161f30"))
+        self.pro_card.grid(row=0, column=0, columnspan=2, sticky="ew", padx=8, pady=(4, 10))
+        self.pro_card.grid_columnconfigure(1, weight=1)
 
-        ttk.Label(trim_card, text="✂️ Recorte de Tiempo (Trim)", style="Section.TLabel").grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 8))
-        
-        ttk.Label(trim_card, text="Inicio (hh:mm:ss o seg):", style="CardMuted.TLabel").grid(row=1, column=0, sticky="w")
-        ttk.Entry(trim_card, textvariable=self.start_trim).grid(row=2, column=0, sticky="ew", padx=(0, 6), pady=(2, 8))
-
-        ttk.Label(trim_card, text="Fin (hh:mm:ss o seg):", style="CardMuted.TLabel").grid(row=1, column=1, sticky="w")
-        ttk.Entry(trim_card, textvariable=self.end_trim).grid(row=2, column=1, sticky="ew", pady=(2, 8))
-
-        ttk.Label(trim_card, text="📦 Compresión a Tamaño Objetivo (MB)", style="Section.TLabel").grid(row=3, column=0, columnspan=2, sticky="w", pady=(8, 4))
-        ttk.Entry(trim_card, textvariable=self.target_size_mb).grid(row=4, column=0, columnspan=2, sticky="ew")
-        ttk.Label(trim_card, text="Ejemplo: '25' para Discord, '10' para Email (Calcula bitrate automáticamente)", style="CardMuted.TLabel").grid(row=5, column=0, columnspan=2, sticky="w", pady=(2, 0))
-
-        # Card 2: Rendimiento y Hardware
-        perf_card = ttk.Frame(self.tab_advanced, style="Card.TFrame", padding=14)
-        perf_card.grid(row=0, column=1, sticky="nsew", pady=(0, 10))
-
-        ttk.Label(perf_card, text="🚀 Rendimiento y Hardware", style="Section.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 8))
-        
-        ttk.Checkbutton(perf_card, text="Usar Aceleración GPU si está disponible", variable=self.use_gpu, style="Card.TCheckbutton").grid(row=1, column=0, sticky="w", pady=4)
-        ttk.Checkbutton(perf_card, text="Notificaciones Nativas de Windows al terminar", variable=self.enable_toast, style="Card.TCheckbutton").grid(row=2, column=0, sticky="w", pady=4)
-
-        ttk.Label(perf_card, text="Hilos Paralelos por Lote:", style="CardMuted.TLabel").grid(row=3, column=0, sticky="w", pady=(8, 2))
-        ttk.Spinbox(perf_card, from_=1, to=8, textvariable=self.parallel_threads, width=10).grid(row=4, column=0, sticky="w")
-
-    def _build_history_tab(self) -> None:
-        self.tab_history.columnconfigure(0, weight=1)
-        self.tab_history.rowconfigure(1, weight=1)
-
-        top = ttk.Frame(self.tab_history, style="App.TFrame")
-        top.grid(row=0, column=0, sticky="ew", pady=(0, 8))
-        ttk.Label(top, text="Historial de Conversiones Recientes", style="Section.TLabel").pack(side="left")
-        ttk.Button(top, text="Limpiar Historial", command=self._clear_history, style="Secondary.TButton").pack(side="right")
-
-        cols = ("file", "format", "size", "time")
-        self.history_tree = ttk.Treeview(self.tab_history, columns=cols, show="headings")
-        self.history_tree.heading("file", text="Archivo Generado")
-        self.history_tree.heading("format", text="Formato")
-        self.history_tree.heading("size", text="Tamaño")
-        self.history_tree.heading("time", text="Fecha / Hora")
-        self.history_tree.column("file", width=260, stretch=True)
-        self.history_tree.column("format", width=80, anchor="center")
-        self.history_tree.column("size", width=100, anchor="e")
-        self.history_tree.column("time", width=140, anchor="center")
-        self.history_tree.grid(row=1, column=0, sticky="nsew")
-
-        self.history_tree.bind("<Double-1>", self._open_history_file)
-        self._refresh_history_tree()
-
-    def _build_action_area(self) -> None:
-        self.convert_button = ttk.Button(self.main, text="Convertir a MP3", command=self._start_conversion, style="Primary.TButton")
-        self.convert_button.grid(row=3, column=0, sticky="ew", pady=(10, 8), ipady=10)
-
-        self.progress_canvas = tk.Canvas(self.main, height=12, highlightthickness=0)
-        self.progress_canvas.grid(row=4, column=0, sticky="ew")
-        self.progress_canvas.bind("<Configure>", lambda _: self._draw_progress_bar())
-        self.canvases.append(self.progress_canvas)
-
-        status_row = ttk.Frame(self.main, style="App.TFrame")
-        status_row.grid(row=5, column=0, sticky="ew", pady=(8, 0))
-        status_row.columnconfigure(1, weight=1)
-
-        self.status_dot = tk.Canvas(status_row, width=18, height=18, highlightthickness=0)
-        self.status_dot.grid(row=0, column=0, sticky="w", padx=(0, 8))
-        self.canvases.append(self.status_dot)
-
-        ttk.Label(status_row, textvariable=self.status, style="Status.TLabel", wraplength=650).grid(row=0, column=1, sticky="w")
-        ttk.Label(status_row, text=f"Media Flow v{APP_VERSION}", style="Muted.TLabel").grid(row=0, column=2, sticky="e")
-        ttk.Label(status_row, textvariable=self.progress_text, style="Muted.TLabel", wraplength=720).grid(row=1, column=1, columnspan=2, sticky="w", pady=(3, 0))
-
-    def _configure_style(self) -> None:
-        try:
-            self.style.theme_use("clam")
-        except Exception:
-            pass
-
-        p = self.palette
-        self.configure(bg=p["window"])
-        self.style.configure("App.TFrame", background=p["window"])
-        self.style.configure("Card.TFrame", background=p["surface"], relief="flat")
-        self.style.configure("Title.TLabel", background=p["window"], foreground=p["text"], font=("Segoe UI", 20, "bold"))
-        self.style.configure("ProBadge.TLabel", background=p["accent_soft"], foreground=p["accent_glow"], font=("Segoe UI", 10, "bold"), padding=(6, 2))
-        self.style.configure("Badge.TLabel", background=p["badge_bg"], foreground=p["badge_fg"], font=("Segoe UI", 9, "bold"), padding=(8, 3))
-        self.style.configure("Muted.TLabel", background=p["window"], foreground=p["text_muted"], font=("Segoe UI", 9))
-        self.style.configure("CardMuted.TLabel", background=p["surface"], foreground=p["text_muted"], font=("Segoe UI", 9))
-        self.style.configure("Section.TLabel", background=p["surface"], foreground=p["text"], font=("Segoe UI", 10, "bold"))
-        self.style.configure("Status.TLabel", background=p["window"], foreground=p["text"], font=("Segoe UI", 10))
-        self.style.configure("Card.TCheckbutton", background=p["surface"], foreground=p["text"], font=("Segoe UI", 10))
-
-        # Entry & Combobox glass styling
-        self.style.configure("TEntry", fieldbackground=p["input_bg"], foreground=p["text"], bordercolor=p["card_border"], lightcolor=p["card_border"], darkcolor=p["card_border"], padding=8)
-        self.style.configure("TCombobox", fieldbackground=p["input_bg"], foreground=p["text"], bordercolor=p["card_border"], arrowcolor=p["text"], padding=8)
-        self.style.map("TCombobox", fieldbackground=[("readonly", p["input_bg"])], foreground=[("readonly", p["text"])])
-        self.style.configure("TSpinbox", fieldbackground=p["input_bg"], foreground=p["text"], bordercolor=p["card_border"], padding=6)
-
-        # Primary Action Button (Convertir)
-        self.style.configure(
-            "Primary.TButton",
-            background=p["accent"],
-            foreground="#ffffff",
-            font=("Segoe UI", 11, "bold"),
-            padding=11,
-            borderwidth=0,
-            relief="flat",
+        self.pro_status_label = ctk.CTkLabel(
+            self.pro_card,
+            text="💎 Estado del Complemento PRO",
+            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
         )
-        self.style.map(
-            "Primary.TButton",
-            background=[("active", p["accent_hover"]), ("disabled", p["card_border"])],
-            foreground=[("active", "#ffffff"), ("disabled", p["text_muted"])],
+        self.pro_status_label.grid(row=0, column=0, padx=14, pady=12, sticky="w")
+
+        self.pro_badge_detail = ctk.CTkLabel(
+            self.pro_card,
+            text="COMPLEMENTO ACTIVO",
+            corner_radius=8,
+            fg_color=("#10b981", "#059669"),
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            text_color="#ffffff",
+            padx=10,
+            pady=4,
+        )
+        self.pro_badge_detail.grid(row=0, column=1, padx=14, pady=12, sticky="e")
+
+        ctk.CTkButton(
+            self.pro_card,
+            text="Administrar / Adquirir Licencia PRO",
+            corner_radius=8,
+            fg_color=("#4f46e5", "#6366f1"),
+            hover_color=("#4338ca", "#4f46e5"),
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            command=self._open_pro_modal,
+        ).grid(row=1, column=0, columnspan=2, padx=14, pady=(0, 12), sticky="ew")
+
+        # Tarjeta 2: Edición y Recorte (Trim & Compresión)
+        trim_card = ctk.CTkFrame(self.tab_advanced, corner_radius=12, fg_color=("gray90", "#161f30"))
+        trim_card.grid(row=1, column=0, sticky="nsew", padx=(8, 4), pady=(0, 10))
+        trim_card.grid_columnconfigure(0, weight=1)
+        trim_card.grid_columnconfigure(1, weight=1)
+
+        ctk.CTkLabel(
+            trim_card,
+            text="✂️ Recorte de Tiempo (Trim) [PRO]",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+        ).grid(row=0, column=0, columnspan=2, sticky="w", padx=14, pady=(12, 6))
+
+        ctk.CTkLabel(trim_card, text="Inicio (hh:mm:ss o seg):", font=ctk.CTkFont(family="Segoe UI", size=11), text_color="gray60").grid(
+            row=1, column=0, sticky="w", padx=14, pady=(0, 2)
+        )
+        ctk.CTkEntry(trim_card, textvariable=self.start_trim, corner_radius=8, placeholder_text="00:00:10").grid(
+            row=2, column=0, sticky="ew", padx=(14, 6), pady=(0, 10)
         )
 
-        # Secondary Action Buttons (+ Agregar, Limpiar, Buscar actualizaciones, Modo oscuro, 📁)
-        self.style.configure(
-            "Secondary.TButton",
-            background=p["button_bg"],
-            foreground=p["text"],
-            font=("Segoe UI", 9, "bold"),
-            padding=7,
-            borderwidth=1,
-            bordercolor=p["card_border"],
-            lightcolor=p["card_border"],
-            darkcolor=p["card_border"],
-            relief="flat",
+        ctk.CTkLabel(trim_card, text="Fin (hh:mm:ss o seg):", font=ctk.CTkFont(family="Segoe UI", size=11), text_color="gray60").grid(
+            row=1, column=1, sticky="w", padx=(6, 14), pady=(0, 2)
         )
-        self.style.map(
-            "Secondary.TButton",
-            background=[("active", p["button_hover"])],
-            foreground=[("active", p["text"])],
+        ctk.CTkEntry(trim_card, textvariable=self.end_trim, corner_radius=8, placeholder_text="00:01:30").grid(
+            row=2, column=1, sticky="ew", padx=(6, 14), pady=(0, 10)
         )
 
-        # Notebook Tabs (Convertidor / Ajustes Avanzados / Historial)
-        self.style.configure(
-            "TNotebook",
-            background=p["window"],
-            borderwidth=0,
-            tabmargins=[2, 5, 2, 0],
-        )
-        self.style.configure(
-            "TNotebook.Tab",
-            background=p["surface_alt"],
-            foreground=p["text"],
-            padding=(16, 8),
-            font=("Segoe UI", 10, "bold"),
-            borderwidth=1,
-            bordercolor=p["card_border"],
-            lightcolor=p["card_border"],
-            darkcolor=p["card_border"],
-            relief="flat",
-        )
-        self.style.map(
-            "TNotebook.Tab",
-            background=[("selected", p["surface"]), ("active", p["button_hover"])],
-            foreground=[("selected", p["accent_glow"]), ("active", p["text"])],
-            bordercolor=[("selected", p["accent"])],
+        ctk.CTkLabel(
+            trim_card,
+            text="📦 Compresión a Tamaño Objetivo (MB) [PRO]",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+        ).grid(row=3, column=0, columnspan=2, sticky="w", padx=14, pady=(6, 2))
+
+        ctk.CTkEntry(trim_card, textvariable=self.target_size_mb, corner_radius=8, placeholder_text="Ejemplo: 25 para Discord, 10 para Email").grid(
+            row=4, column=0, columnspan=2, sticky="ew", padx=14, pady=(0, 12)
         )
 
-        # Treeview Glass Table
-        self.style.configure("Treeview", background=p["surface"], foreground=p["text"], fieldbackground=p["surface"], rowheight=28, borderwidth=0)
-        self.style.configure("Treeview.Heading", background=p["surface_alt"], foreground=p["text"], font=("Segoe UI", 9, "bold"), borderwidth=0)
-        self.style.map("Treeview", background=[("selected", p["accent_soft"])], foreground=[("selected", "#ffffff")])
+        # Tarjeta 3: Rendimiento y Hardware
+        perf_card = ctk.CTkFrame(self.tab_advanced, corner_radius=12, fg_color=("gray90", "#161f30"))
+        perf_card.grid(row=1, column=1, sticky="nsew", padx=(4, 8), pady=(0, 10))
+        perf_card.grid_columnconfigure(0, weight=1)
 
-        if hasattr(self, "file_tree"):
-            self.file_tree.tag_configure("even", background=p["tree_even"], foreground=p["text"])
-            self.file_tree.tag_configure("odd", background=p["tree_odd"], foreground=p["text"])
-        if hasattr(self, "history_tree"):
-            self.history_tree.tag_configure("even", background=p["tree_even"], foreground=p["text"])
-            self.history_tree.tag_configure("odd", background=p["tree_odd"], foreground=p["text"])
+        ctk.CTkLabel(
+            perf_card,
+            text="🚀 Rendimiento y Hardware",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+        ).grid(row=0, column=0, sticky="w", padx=14, pady=(12, 8))
 
-    def _apply_theme(self) -> None:
-        self._configure_style()
-        p = self.palette
-        self.theme_button.configure(text="☀️ Modo Claro" if self.theme_name.get() == "dark" else "🌙 Modo Oscuro")
-        for c in self.canvases:
-            c.configure(bg=p["window"])
-        self.logo.configure(bg=p["window"])
-        self.progress_canvas.configure(bg=p["window"])
-        self.status_dot.configure(bg=p["window"])
-        self._draw_logo()
-        self._draw_progress_bar()
-        self._update_mode_buttons()
-        self._draw_status_dot()
-        self._refresh_file_tree()
-        self._refresh_history_tree()
+        self.gpu_switch = ctk.CTkSwitch(
+            perf_card,
+            text="Usar Aceleración GPU (NVENC/AMF) [PRO]",
+            variable=self.use_gpu,
+            font=ctk.CTkFont(family="Segoe UI", size=12),
+        )
+        self.gpu_switch.grid(row=1, column=0, sticky="w", padx=14, pady=(0, 8))
 
-    def _toggle_theme(self) -> None:
-        self.theme_name.set("dark" if self.theme_name.get() == "light" else "light")
-        self._apply_theme()
-        self._save_settings()
+        self.toast_switch = ctk.CTkSwitch(
+            perf_card,
+            text="Notificaciones de Windows al finalizar",
+            variable=self.enable_toast,
+            font=ctk.CTkFont(family="Segoe UI", size=12),
+        )
+        self.toast_switch.grid(row=2, column=0, sticky="w", padx=14, pady=(0, 12))
 
-    def _draw_logo(self) -> None:
-        p = self.palette
-        self.logo.delete("all")
-        # Glass sphere badge background
-        self.logo.create_oval(1, 1, 41, 41, fill=p["accent_soft"], outline=p["card_border"])
-        self.logo.create_oval(3, 3, 39, 39, fill="", outline=p["glass_highlight"], width=1)
-        
-        # Glowing inner bars
-        rounded_rectangle(self.logo, 12, 11, 30, 17, 3, fill=p["accent_glow"], outline="")
-        rounded_rectangle(self.logo, 9, 20, 33, 26, 3, fill=p["accent"], outline="")
-        rounded_rectangle(self.logo, 15, 29, 27, 34, 3, fill=p["accent_glow"], outline="")
+        # Slider de Hilos Multihilo
+        hilos_header = ctk.CTkFrame(perf_card, fg_color="transparent")
+        hilos_header.grid(row=3, column=0, sticky="ew", padx=14, pady=(0, 2))
+        hilos_header.grid_columnconfigure(0, weight=1)
 
-    def _update_mode_buttons(self) -> None:
-        p = self.palette
-        selected = self.mode.get()
-        for mode, button in self.mode_buttons.items():
-            is_selected = mode == selected
-            button.configure(
-                bg=p["accent"] if is_selected else p["surface_alt"],
-                fg="#ffffff" if is_selected else p["text"],
-                activebackground=p["accent_hover"] if is_selected else p["button_hover"],
-                activeforeground="#ffffff" if is_selected else p["text"],
-                relief="flat",
-                borderwidth=0,
+        ctk.CTkLabel(hilos_header, text="Hilos Paralelos por Lote [PRO]:", font=ctk.CTkFont(family="Segoe UI", size=12)).grid(row=0, column=0, sticky="w")
+        self.threads_val_label = ctk.CTkLabel(
+            hilos_header,
+            text=f"{self.parallel_threads.get()} Hilo(s)",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            text_color=("#4f46e5", "#818cf8"),
+        )
+        self.threads_val_label.grid(row=0, column=1, sticky="e")
+
+        self.thread_slider = ctk.CTkSlider(
+            perf_card,
+            from_=1,
+            to=8,
+            number_of_steps=7,
+            variable=self.parallel_threads,
+            command=self._on_slider_changed,
+        )
+        self.thread_slider.grid(row=4, column=0, sticky="ew", padx=14, pady=(0, 12))
+
+        self._refresh_pro_tab()
+
+    def _refresh_pro_tab(self) -> None:
+        is_pro = self.license_manager.is_pro
+        if is_pro:
+            self.pro_badge_detail.configure(
+                text="⭐ COMPLEMENTO PRO ACTIVADO",
+                fg_color=("#10b981", "#059669"),
+            )
+        else:
+            self.pro_badge_detail.configure(
+                text="🆓 VERSIÓN BÁSICA (GRATUITA)",
+                fg_color=("gray60", "#475569"),
             )
 
-    def _mode_changed(self, mode: str) -> None:
+    def _on_slider_changed(self, value: float) -> None:
+        val = int(value)
+        if not self.license_manager.is_pro and val > 1:
+            self.parallel_threads.set(1)
+            self.threads_val_label.configure(text="1 Hilo (Gratis)")
+            self._open_pro_modal()
+            return
+        self.threads_val_label.configure(text=f"{val} Hilos")
+
+    def _build_history_tab(self) -> None:
+        self.tab_history.grid_columnconfigure(0, weight=1)
+        self.tab_history.grid_rowconfigure(1, weight=1)
+
+        top = ctk.CTkFrame(self.tab_history, fg_color="transparent")
+        top.grid(row=0, column=0, sticky="ew", padx=8, pady=(4, 8))
+        top.grid_columnconfigure(0, weight=1)
+
+        ctk.CTkLabel(
+            top,
+            text="Historial de Conversiones Recientes",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+        ).grid(row=0, column=0, sticky="w")
+
+        ctk.CTkButton(
+            top,
+            text="Limpiar Historial",
+            corner_radius=8,
+            fg_color=("gray75", "#253554"),
+            hover_color=("gray65", "#334770"),
+            font=ctk.CTkFont(family="Segoe UI", size=11),
+            command=self._clear_history,
+            width=110,
+            height=30,
+        ).grid(row=0, column=1, sticky="e")
+
+        self.history_scroll = ctk.CTkScrollableFrame(self.tab_history, corner_radius=12, fg_color=("gray90", "#161f30"))
+        self.history_scroll.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 8))
+        self.history_scroll.grid_columnconfigure(0, weight=1)
+
+        self._refresh_history_list()
+
+    def _build_action_area(self) -> None:
+        action_frame = ctk.CTkFrame(self, corner_radius=14, fg_color=("gray90", "#161f30"))
+        action_frame.grid(row=3, column=0, sticky="ew", padx=16, pady=(0, 12))
+        action_frame.grid_columnconfigure(0, weight=1)
+
+        # Botón Grande de Conversión
+        self.convert_button = ctk.CTkButton(
+            action_frame,
+            text="⚡ Convertir a MP3",
+            corner_radius=10,
+            fg_color=("#4f46e5", "#6366f1"),
+            hover_color=("#4338ca", "#4f46e5"),
+            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
+            height=44,
+            command=self._start_conversion,
+        )
+        self.convert_button.grid(row=0, column=0, sticky="ew", padx=14, pady=(12, 8))
+
+        # Barra de progreso moderna redondeada
+        self.progress_bar = ctk.CTkProgressBar(action_frame, corner_radius=6, height=10)
+        self.progress_bar.grid(row=1, column=0, sticky="ew", padx=14, pady=(0, 8))
+        self.progress_bar.set(0)
+
+        # Fila de estado
+        status_row = ctk.CTkFrame(action_frame, fg_color="transparent")
+        status_row.grid(row=2, column=0, sticky="ew", padx=14, pady=(0, 10))
+        status_row.grid_columnconfigure(1, weight=1)
+
+        self.status_dot = ctk.CTkLabel(
+            status_row,
+            text="●",
+            font=ctk.CTkFont(size=14),
+            text_color="#10b981",
+            width=16,
+        )
+        self.status_dot.grid(row=0, column=0, sticky="w", padx=(0, 6))
+
+        self.status_label = ctk.CTkLabel(
+            status_row,
+            textvariable=self.status_text,
+            font=ctk.CTkFont(family="Segoe UI", size=11),
+            anchor="w",
+        )
+        self.status_label.grid(row=0, column=1, sticky="w")
+
+        ctk.CTkLabel(
+            status_row,
+            text=f"Media Flow v{APP_VERSION}",
+            font=ctk.CTkFont(family="Segoe UI", size=10),
+            text_color="gray50",
+        ).grid(row=0, column=2, sticky="e")
+
+        self.progress_detail_label = ctk.CTkLabel(
+            action_frame,
+            textvariable=self.progress_detail,
+            font=ctk.CTkFont(family="Segoe UI", size=10),
+            text_color="gray50",
+            anchor="w",
+        )
+        self.progress_detail_label.grid(row=3, column=0, sticky="w", padx=14, pady=(0, 6))
+
+    # ==========================================
+    # MANEJO DE MODOS Y SELECCIÓN
+    # ==========================================
+    def _toggle_theme(self) -> None:
+        new_mode = "Light" if ctk.get_appearance_mode() == "Dark" else "Dark"
+        ctk.set_appearance_mode(new_mode)
+        self._save_settings()
+
+    def _open_pro_modal(self) -> None:
+        ProUpgradeModal(self)
+
+    def _mode_segmented_changed(self, mode: str) -> None:
         self.mode.set(mode)
-        if mode == "Audio":
-            self.format_combo.configure(values=AUDIO_FORMATS)
+        self._update_format_choices()
+        self._update_convert_button_text()
+
+    def _update_format_choices(self) -> None:
+        m = self.mode.get()
+        is_pro = self.license_manager.is_pro
+
+        if m == "Audio":
+            choices = list(AUDIO_FORMATS_FREE) + [f"{fmt} (PRO)" for fmt in AUDIO_FORMATS_PRO]
+            self.format_menu.configure(values=choices)
             if self.output_format.get() not in AUDIO_FORMATS:
                 self.output_format.set("MP3")
-            self.quality_combo.configure(values=("128 kbps", "160 kbps", "192 kbps", "256 kbps", "320 kbps"), state="readonly")
+            self.quality_menu.configure(values=["128 kbps", "160 kbps", "192 kbps", "256 kbps", "320 kbps"], state="normal")
             self.video_opts_frame.grid_remove()
-        elif mode == "Video":
-            self.format_combo.configure(values=VIDEO_FORMATS)
+        elif m == "Video":
+            choices = list(VIDEO_FORMATS_FREE) + [f"{fmt} (PRO)" for fmt in VIDEO_FORMATS_PRO]
+            self.format_menu.configure(values=choices)
             if self.output_format.get() not in VIDEO_FORMATS:
                 self.output_format.set("MP4")
-            self.quality_combo.configure(values=("Alta", "Equilibrada", "Comprimida"), state="readonly")
+            self.quality_menu.configure(values=["Alta", "Equilibrada", "Comprimida"], state="normal")
             self.video_opts_frame.grid()
-        elif mode == "Imagen":
-            self.format_combo.configure(values=IMAGE_FORMATS)
+        elif m == "Imagen":
+            self.format_menu.configure(values=list(IMAGE_FORMATS))
             if self.output_format.get() not in IMAGE_FORMATS:
                 self.output_format.set("PNG")
-            self.quality_combo.configure(values=("100%", "90%", "80%", "70%"), state="readonly")
+            self.quality_menu.configure(values=["100%", "90%", "80%", "70%"], state="normal")
             self.video_opts_frame.grid_remove()
-        elif mode == "Extracción":
-            self.format_combo.configure(values=EXTRACTION_MODES)
+        elif m == "Extracción":
+            self.format_menu.configure(values=list(EXTRACTION_MODES))
             self.output_format.set(EXTRACTION_MODES[0])
-            self.quality_combo.configure(state="disabled")
+            self.quality_menu.configure(state="disabled")
             self.video_opts_frame.grid_remove()
-        elif mode == "Unir (Concat)":
-            self.format_combo.configure(values=CONCAT_MODES)
+        elif m == "Unir (Concat)":
+            self.format_menu.configure(values=list(CONCAT_MODES))
             self.output_format.set(CONCAT_MODES[0])
-            self.quality_combo.configure(state="disabled")
+            self.quality_menu.configure(state="disabled")
             self.video_opts_frame.grid_remove()
 
         self._update_convert_button_text()
-        self._update_mode_buttons()
 
-    def _on_preset_selected(self, _event: Any) -> None:
-        name = self.preset.get()
-        opts = PRESETS.get(name, {})
+    def _on_preset_selected(self, choice: str) -> None:
+        opts = PRESETS.get(choice, {})
         if not opts:
             return
+
+        if "PRO" in choice and not self.license_manager.is_pro:
+            self._open_pro_modal()
+            self.preset.set("Personalizado")
+            return
+
         if "video_format" in opts:
-            self._mode_changed("Video")
+            self.mode.set("Video")
+            self.mode_seg.set("Video")
+            self._update_format_choices()
             self.output_format.set(opts["video_format"])
             if "video_quality" in opts:
                 self.video_quality.set(opts["video_quality"])
-                self.quality_combo.set(opts["video_quality"])
+                self.quality_menu.set(opts["video_quality"])
             if "res" in opts:
                 self.video_res.set(opts["res"])
             if "fps" in opts:
@@ -1002,52 +1460,124 @@ class MediaConverterApp(tk.Tk):
             if "audio_quality" in opts:
                 self.audio_quality.set(opts["audio_quality"])
         elif "audio_format" in opts:
-            self._mode_changed("Audio")
+            self.mode.set("Audio")
+            self.mode_seg.set("Audio")
+            self._update_format_choices()
             self.output_format.set(opts["audio_format"])
             if "audio_quality" in opts:
                 self.audio_quality.set(opts["audio_quality"])
-                self.quality_combo.set(opts["audio_quality"])
+                self.quality_menu.set(opts["audio_quality"])
+
+    def _cloud_changed(self, choice: str) -> None:
+        if choice != "Carpeta local":
+            if not self.license_manager.is_pro:
+                self.cloud_target.set("Carpeta local")
+                self._open_pro_modal()
+                return
+            clean_name = choice.replace(" (PRO)", "").strip()
+            if clean_name in self.cloud_folders:
+                self.output_dir.set(str(self.cloud_folders[clean_name]))
 
     def _update_convert_button_text(self) -> None:
+        if not hasattr(self, "convert_button"):
+            return
         m = self.mode.get()
         fmt = self.output_format.get()
         if m in ("Extracción", "Unir (Concat)"):
-            self.convert_button.configure(text=fmt)
+            self.convert_button.configure(text=f"⚡ {fmt}")
         else:
-            self.convert_button.configure(text=f"Convertir a {fmt}")
+            self.convert_button.configure(text=f"⚡ Convertir a {fmt}")
 
+    # ==========================================
+    # MANEJO DE ARCHIVOS Y COLA
+    # ==========================================
     def _choose_input_file(self) -> None:
         mode = self.mode.get()
         if mode == "Audio":
-            filetypes = (("Audio y video", f"{AUDIO_EXTENSIONS} {VIDEO_EXTENSIONS}"), ("Todos los archivos", "*.*"))
+            filetypes = (("Audio y Video", f"{AUDIO_EXTENSIONS} {VIDEO_EXTENSIONS}"), ("Todos los archivos", "*.*"))
         elif mode == "Video":
             filetypes = (("Video", VIDEO_EXTENSIONS), ("Todos los archivos", "*.*"))
         elif mode == "Imagen":
-            filetypes = (("Imagen", IMAGE_EXTENSIONS), ("Todos los archivos", "*.*"))
+            filetypes = (("Imágenes", IMAGE_EXTENSIONS), ("Todos los archivos", "*.*"))
         else:
             filetypes = (("Multimedia", f"{AUDIO_EXTENSIONS} {VIDEO_EXTENSIONS}"), ("Todos los archivos", "*.*"))
 
-        selected = filedialog.askopenfilenames(initialdir=str(default_output_dir()), title="Elegir archivos", filetypes=filetypes)
+        selected = filedialog.askopenfilenames(
+            initialdir=str(default_output_dir()),
+            title="Elegir archivos para convertir",
+            filetypes=filetypes,
+        )
         if selected:
             for s in selected:
                 p = Path(s)
                 if p not in self.input_files:
                     self.input_files.append(p)
-            self._refresh_file_tree()
+            self._refresh_file_list()
             self._probe_selection()
 
     def _clear_files(self) -> None:
         self.input_files.clear()
-        self._refresh_file_tree()
-        self.media_info.set("Sin archivos seleccionados.")
+        self._refresh_file_list()
+        self.media_info_text.set("Sin archivos seleccionados.")
 
-    def _refresh_file_tree(self) -> None:
-        for item in self.file_tree.get_children():
-            self.file_tree.delete(item)
+    def _remove_file(self, target: Path) -> None:
+        if target in self.input_files:
+            self.input_files.remove(target)
+            self._refresh_file_list()
+            self._probe_selection()
+
+    def _refresh_file_list(self) -> None:
+        for widget in self.files_scroll.winfo_children():
+            widget.destroy()
+
+        self.queue_title.configure(text=f"Archivos en Cola ({len(self.input_files)})")
+
+        if not self.input_files:
+            empty_lbl = ctk.CTkLabel(
+                self.files_scroll,
+                text="Arrastra o añade archivos pulsando '+ Agregar Archivos'",
+                font=ctk.CTkFont(family="Segoe UI", size=11),
+                text_color="gray50",
+            )
+            empty_lbl.pack(pady=30)
+            return
+
         for idx, p in enumerate(self.input_files):
-            size_str = format_size(p.stat().st_size) if p.exists() else "Desconocido"
-            tag = "even" if idx % 2 == 0 else "odd"
-            self.file_tree.insert("", "end", values=(p.name, size_str, "Pendiente"), tags=(tag,))
+            card = ctk.CTkFrame(self.files_scroll, corner_radius=8, fg_color=("gray90", "#1e293b"))
+            card.pack(fill="x", padx=4, pady=3)
+            card.grid_columnconfigure(1, weight=1)
+
+            # Icono
+            ctk.CTkLabel(card, text="📄", font=ctk.CTkFont(size=14)).grid(row=0, column=0, padx=(8, 4), pady=6)
+
+            # Nombre
+            name_lbl = ctk.CTkLabel(
+                card,
+                text=p.name,
+                font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+                anchor="w",
+            )
+            name_lbl.grid(row=0, column=1, sticky="w", padx=4, pady=6)
+
+            # Tamaño
+            sz_str = format_size(p.stat().st_size) if p.exists() else "N/A"
+            ctk.CTkLabel(card, text=sz_str, font=ctk.CTkFont(family="Segoe UI", size=10), text_color="gray50").grid(
+                row=0, column=2, padx=6, pady=6
+            )
+
+            # Botón eliminar
+            del_btn = ctk.CTkButton(
+                card,
+                text="✕",
+                width=24,
+                height=24,
+                corner_radius=6,
+                fg_color="transparent",
+                hover_color=("#ef4444", "#dc2626"),
+                font=ctk.CTkFont(size=10, weight="bold"),
+                command=lambda f=p: self._remove_file(f),
+            )
+            del_btn.grid(row=0, column=3, padx=(4, 8), pady=6)
 
     def _choose_folder(self) -> None:
         selected = filedialog.askdirectory(initialdir=self.output_dir.get() or str(Path.home()))
@@ -1055,17 +1585,12 @@ class MediaConverterApp(tk.Tk):
             self.output_dir.set(selected)
             self.cloud_target.set("Carpeta local")
 
-    def _cloud_changed(self) -> None:
-        selected = self.cloud_target.get()
-        if selected in self.cloud_folders:
-            self.output_dir.set(str(self.cloud_folders[selected]))
-
     def _probe_selection(self) -> None:
         files = list(self.input_files)
         if not files:
-            self.media_info.set("Sin archivos seleccionados.")
+            self.media_info_text.set("Sin archivos seleccionados.")
             return
-        self.media_info.set("Analizando metadatos...")
+        self.media_info_text.set("Analizando metadatos con ffprobe...")
         threading.Thread(target=self._probe_files, args=(files,), daemon=True).start()
 
     def _probe_files(self, files: list[Path]) -> None:
@@ -1119,67 +1644,57 @@ class MediaConverterApp(tk.Tk):
         dur = format_duration(fmt.get("duration"))
         sz = format_size(fmt.get("size") or (first.stat().st_size if first.exists() else 0))
         if dur:
-            parts.append(f"Duración: {dur}")
+            parts.append(f"⏱️ {dur}")
         if sz:
-            parts.append(f"Tamaño: {sz}")
+            parts.append(f"💾 {sz}")
         if video:
             res = f"{video.get('width')}x{video.get('height')}" if video.get("width") else ""
             codec = str(video.get("codec_name") or "").upper()
-            parts.append(f"Video: {codec} {res}".strip())
+            parts.append(f"🎬 {codec} {res}".strip())
         if audio:
             codec = str(audio.get("codec_name") or "").upper()
-            parts.append(f"Audio: {codec}")
+            parts.append(f"🎵 {codec}")
 
-        return " | ".join(parts)
+        return "  |  ".join(parts)
 
+    # ==========================================
+    # EJECUCIÓN DEL PROCESAMIENTO MULTIMEDIA
+    # ==========================================
     def _set_busy(self, value: bool) -> None:
         self.busy = value
         self.convert_button.configure(state="disabled" if value else "normal")
         if value:
-            self._animate_progress()
+            self.progress_bar.start()
+            self.status_dot.configure(text_color="#f59e0b")
         else:
-            self.progress_phase = 0
-            self._draw_progress_bar()
-        self._draw_status_dot()
-
-    def _draw_progress_bar(self) -> None:
-        p = self.palette
-        canvas = self.progress_canvas
-        canvas.delete("all")
-        w = max(canvas.winfo_width(), 1)
-        h = max(canvas.winfo_height(), 12)
-        # Frosted glass track
-        rounded_rectangle(canvas, 0, 0, w, h, 6, fill=p["surface_alt"], outline=p["card_border"])
-        rounded_rectangle(canvas, 1, 1, w - 1, h - 1, 5, fill="", outline=p["glass_highlight"])
-        if self.busy:
-            bw = max(w // 3, 120)
-            x = (self.progress_phase % (w + bw)) - bw
-            rounded_rectangle(canvas, x, 1, x + bw, h - 1, 5, fill=p["accent"], outline="")
-            if x + bw > 0 and x + bw < w:
-                canvas.create_oval(x + bw - 6, 2, x + bw, h - 2, fill=p["accent_glow"], outline="")
-
-    def _animate_progress(self) -> None:
-        if not self.busy:
-            return
-        self.progress_phase += 16
-        self._draw_progress_bar()
-        self.after(35, self._animate_progress)
-
-    def _draw_status_dot(self) -> None:
-        p = self.palette
-        self.status_dot.delete("all")
-        if self.busy:
-            self.status_dot.create_oval(1, 1, 17, 17, fill=p["accent_soft"], outline=p["accent_glow"])
-            self.status_dot.create_oval(5, 5, 13, 13, fill=p["accent_glow"], outline="")
-        else:
-            self.status_dot.create_oval(2, 2, 16, 16, fill="#064e3b" if self.theme_name.get() == "dark" else "#d1fae5", outline="")
-            self.status_dot.create_oval(5, 5, 13, 13, fill=p["success"], outline="")
+            self.progress_bar.stop()
+            self.progress_bar.set(0)
+            self.status_dot.configure(text_color="#10b981")
 
     def _start_conversion(self) -> None:
         input_files = list(self.input_files)
         output_dir = Path(self.output_dir.get().strip()).expanduser()
-        output_format = self.output_format.get()
+        raw_format = self.output_format.get()
         mode = self.mode.get()
+        is_pro = self.license_manager.is_pro
+
+        # Limpiar flags de formato como " (PRO)"
+        output_format = raw_format.replace(" (PRO)", "").strip()
+
+        # Verificación de Funciones PRO
+        if not is_pro:
+            if output_format in AUDIO_FORMATS_PRO or output_format in VIDEO_FORMATS_PRO:
+                self._open_pro_modal()
+                return
+            if mode in ("Extracción", "Unir (Concat)"):
+                self._open_pro_modal()
+                return
+            if "4K" in self.video_res.get() or "60 fps" in self.video_fps.get():
+                self._open_pro_modal()
+                return
+            if self.start_trim.get() or self.end_trim.get() or self.target_size_mb.get():
+                self._open_pro_modal()
+                return
 
         if not input_files:
             messagebox.showwarning(APP_TITLE, "Selecciona al menos un archivo para convertir.")
@@ -1194,7 +1709,7 @@ class MediaConverterApp(tk.Tk):
             return
 
         self._set_busy(True)
-        self.status.set(f"Iniciando procesado de {len(input_files)} archivo(s)...")
+        self.status_text.set(f"Iniciando procesado de {len(input_files)} archivo(s)...")
         self._save_settings()
 
         self.worker = threading.Thread(
@@ -1214,12 +1729,14 @@ class MediaConverterApp(tk.Tk):
                 self.messages.put(("progress", "Concatenando archivos seleccionados..."))
                 ext = "mp3" if "Audio" in output_format else "mp4"
                 out_path = unique_output_path(output_dir, "Medias_Unidos", ext)
-                self._concat_files(input_files, out_path, ffmpeg, "Audio" in output_format)
+                self._concat_files(input_files, out_path, ffmpeg)
                 completed.append(out_path)
             except Exception as exc:
                 errors.append(str(exc))
         else:
-            max_workers = min(self.parallel_threads.get(), len(input_files))
+            threads = self.parallel_threads.get() if self.license_manager.is_pro else 1
+            max_workers = max(1, min(threads, len(input_files)))
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
                 futures = {
                     executor.submit(self._convert_one, mode, file, output_dir, ffmpeg, output_format, idx, total): file
@@ -1237,7 +1754,7 @@ class MediaConverterApp(tk.Tk):
         else:
             self.messages.put(("done", (completed, errors)))
 
-    def _concat_files(self, files: list[Path], output_file: Path, ffmpeg: str, is_audio: bool) -> None:
+    def _concat_files(self, files: list[Path], output_file: Path, ffmpeg: str) -> None:
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as f:
             for file in files:
                 escaped = str(file.resolve()).replace("'", "'\\''")
@@ -1261,8 +1778,15 @@ class MediaConverterApp(tk.Tk):
 
     def _convert_one(self, mode: str, input_file: Path, output_dir: Path, ffmpeg: str, output_format: str, index: int, total: int) -> Path:
         self.messages.put(("progress", f"[{index}/{total}] Procesando {input_file.name}..."))
-        
-        ext_map = {"JPG": "jpg", "H265": "mp4", "AV1": "mp4", "Extraer Audio": "mp3", "Silenciar Video (Quitar Audio)": "mp4", "Extraer Subtítulos (SRT)": "srt"}
+
+        ext_map = {
+            "JPG": "jpg",
+            "H265": "mp4",
+            "AV1": "mp4",
+            "Extraer Audio": "mp3",
+            "Silenciar Video (Quitar Audio)": "mp4",
+            "Extraer Subtítulos (SRT)": "srt",
+        }
         ext = ext_map.get(output_format, output_format.lower())
 
         output_file = unique_output_path(output_dir, f"{input_file.stem}_converted", ext)
@@ -1286,19 +1810,20 @@ class MediaConverterApp(tk.Tk):
 
     def _build_ffmpeg_command(self, mode: str, ffmpeg: str, input_file: Path, output_file: Path, output_format: str) -> list[str]:
         cmd = [ffmpeg, "-y"]
+        is_pro = self.license_manager.is_pro
 
-        # Recorte de tiempo (Trim)
-        start_sec = parse_duration_to_seconds(self.start_trim.get())
-        end_sec = parse_duration_to_seconds(self.end_trim.get())
-
-        if start_sec is not None:
-            cmd.extend(["-ss", str(start_sec)])
-        if end_sec is not None:
-            cmd.extend(["-to", str(end_sec)])
+        # Recorte de tiempo (Trim) - Exclusivo PRO
+        if is_pro:
+            start_sec = parse_duration_to_seconds(self.start_trim.get())
+            end_sec = parse_duration_to_seconds(self.end_trim.get())
+            if start_sec is not None:
+                cmd.extend(["-ss", str(start_sec)])
+            if end_sec is not None:
+                cmd.extend(["-to", str(end_sec)])
 
         cmd.extend(["-i", str(input_file)])
 
-        # Extracción especial
+        # Extracción especial (PRO)
         if mode == "Extracción":
             if output_format == "Extraer Audio":
                 return cmd + ["-vn", "-acodec", "libmp3lame", "-q:a", "2", str(output_file)]
@@ -1309,7 +1834,7 @@ class MediaConverterApp(tk.Tk):
 
         # Audio mode
         if mode == "Audio":
-            bitrate = f"{self.quality_combo.get().split()[0]}k" if "kbps" in self.quality_combo.get() else "192k"
+            bitrate = f"{self.quality_menu.get().split()[0]}k" if "kbps" in self.quality_menu.get() else "192k"
             codec_map = {
                 "MP3": ["-vn", "-c:a", "libmp3lame", "-b:a", bitrate],
                 "M4A": ["-vn", "-c:a", "aac", "-b:a", bitrate],
@@ -1326,10 +1851,16 @@ class MediaConverterApp(tk.Tk):
         # Video mode
         if mode == "Video":
             filters = []
-            
+
             # Resolution scaling
             res_val = self.video_res.get()
-            scale_map = {"4K (2160p)": "3840:2160", "1080p": "1920:1080", "720p": "1280:720", "480p": "854:480"}
+            scale_map = {
+                "4K (2160p) (PRO)": "3840:2160",
+                "4K (2160p)": "3840:2160",
+                "1080p": "1920:1080",
+                "720p": "1280:720",
+                "480p": "854:480",
+            }
             if res_val in scale_map:
                 filters.append(f"scale={scale_map[res_val]}:force_original_aspect_ratio=decrease,pad={scale_map[res_val]}:(ow-iw)/2:(oh-ih)/2")
 
@@ -1345,13 +1876,14 @@ class MediaConverterApp(tk.Tk):
             if filters:
                 cmd.extend(["-vf", ",".join(filters)])
 
-            # Target size calculation if set
-            target_mb = parse_duration_to_seconds(self.target_size_mb.get())
-            if target_mb and target_mb > 0:
-                cmd.extend(["-fs", f"{int(target_mb * 1024 * 1024)}"])
+            # Target size calculation if set (PRO)
+            if is_pro:
+                target_mb = parse_duration_to_seconds(self.target_size_mb.get())
+                if target_mb and target_mb > 0:
+                    cmd.extend(["-fs", f"{int(target_mb * 1024 * 1024)}"])
 
             # Video encoder selection (GPU vs CPU)
-            use_gpu = self.use_gpu.get()
+            use_gpu = self.use_gpu.get() and is_pro
             if output_format == "GIF":
                 return cmd + ["-vf", "fps=15,scale=480:-1:flags=lanczos", str(output_file)]
             elif output_format == "H265":
@@ -1369,6 +1901,9 @@ class MediaConverterApp(tk.Tk):
 
         return cmd + [str(output_file)]
 
+    # ==========================================
+    # HISTORIAL DE CONVERSIONES
+    # ==========================================
     def _add_history_entry(self, file_path: Path, format_name: str) -> None:
         try:
             sz = format_size(file_path.stat().st_size) if file_path.exists() else "N/A"
@@ -1376,30 +1911,66 @@ class MediaConverterApp(tk.Tk):
             item = {"file": str(file_path), "format": format_name, "size": sz, "time": tm}
             self.conversion_history.insert(0, item)
             self._save_settings()
-            self._refresh_history_tree()
+            self._refresh_history_list()
         except Exception:
             pass
 
-    def _refresh_history_tree(self) -> None:
-        for item in self.history_tree.get_children():
-            self.history_tree.delete(item)
-        for idx, entry in enumerate(self.conversion_history[:20]):
-            tag = "even" if idx % 2 == 0 else "odd"
-            self.history_tree.insert("", "end", values=(entry.get("file", ""), entry.get("format", ""), entry.get("size", ""), entry.get("time", "")), tags=(tag,))
+    def _refresh_history_list(self) -> None:
+        for widget in self.history_scroll.winfo_children():
+            widget.destroy()
 
-    def _open_history_file(self, _event: Any) -> None:
-        sel = self.history_tree.selection()
-        if sel:
-            item = self.history_tree.item(sel[0])
-            path_str = item["values"][0]
-            if os.path.exists(path_str):
-                subprocess.Popen(f'explorer /select,"{path_str}"', shell=True)
+        if not self.conversion_history:
+            ctk.CTkLabel(
+                self.history_scroll,
+                text="Aún no hay conversiones recientes.",
+                font=ctk.CTkFont(family="Segoe UI", size=11),
+                text_color="gray50",
+            ).pack(pady=30)
+            return
+
+        for entry in self.conversion_history[:25]:
+            card = ctk.CTkFrame(self.history_scroll, corner_radius=8, fg_color=("gray95", "#1e293b"))
+            card.pack(fill="x", padx=4, pady=3)
+            card.grid_columnconfigure(0, weight=1)
+
+            p_str = entry.get("file", "")
+            f_name = Path(p_str).name if p_str else "Archivo"
+
+            left_info = ctk.CTkFrame(card, fg_color="transparent")
+            left_info.grid(row=0, column=0, sticky="w", padx=10, pady=6)
+
+            ctk.CTkLabel(left_info, text=f_name, font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold")).pack(anchor="w")
+            ctk.CTkLabel(
+                left_info,
+                text=f"{entry.get('format', '')}  •  {entry.get('size', '')}  •  {entry.get('time', '')}",
+                font=ctk.CTkFont(family="Segoe UI", size=10),
+                text_color="gray50",
+            ).pack(anchor="w")
+
+            ctk.CTkButton(
+                card,
+                text="📂 Abrir",
+                width=65,
+                height=26,
+                corner_radius=6,
+                fg_color=("gray80", "#253554"),
+                hover_color=("gray70", "#334770"),
+                font=ctk.CTkFont(family="Segoe UI", size=10),
+                command=lambda p=p_str: self._open_history_file(p),
+            ).grid(row=0, column=1, padx=10, pady=6)
+
+    def _open_history_file(self, path_str: str) -> None:
+        if os.path.exists(path_str):
+            subprocess.Popen(f'explorer /select,"{path_str}"', shell=True)
 
     def _clear_history(self) -> None:
         self.conversion_history.clear()
         self._save_settings()
-        self._refresh_history_tree()
+        self._refresh_history_list()
 
+    # ==========================================
+    # ACTUALIZACIONES Y MENSAJERÍA
+    # ==========================================
     def _check_for_updates(self, silent: bool = False) -> None:
         if is_msix_package():
             if not silent:
@@ -1437,40 +2008,40 @@ class MediaConverterApp(tk.Tk):
                     self.gpu_encoders = data
                     found = [k.upper() for k, v in data.items() if v]
                     if found:
-                        self.gpu_label.configure(text=f"GPU: {', '.join(found)} ✔")
+                        self.gpu_badge.configure(text=f"GPU: {', '.join(found)} ✔", fg_color=("#10b981", "#059669"), text_color="#ffffff")
                     else:
-                        self.gpu_label.configure(text="GPU: CPU Fallback")
+                        self.gpu_badge.configure(text="GPU: CPU Fallback", fg_color=("gray80", "#253554"), text_color="gray70")
                 elif kind == "progress":
-                    self.progress_text.set(data)
+                    self.progress_detail.set(data)
                 elif kind == "media_info":
-                    self.media_info.set(data)
+                    self.media_info_text.set(data)
                 elif kind == "done":
                     completed, errors = data
                     self._set_busy(False)
-                    self.status.set("Proceso finalizado con éxito.")
-                    
+                    self.status_text.set("Proceso finalizado con éxito.")
+
                     for c in completed:
-                        self._add_history_entry(c, self.output_format.get())
-                    
+                        self._add_history_entry(c, self.output_format.get().replace(" (PRO)", ""))
+
                     if completed:
-                        self.progress_text.set(f"Generado(s) {len(completed)} archivo(s) en {completed[0].parent}")
+                        self.progress_detail.set(f"Generado(s) {len(completed)} archivo(s) en {completed[0].parent}")
                         if self.enable_toast.get():
-                            send_windows_toast("Media Flow Pro", f"¡Conversión completada! {len(completed)} archivos guardados.")
-                        messagebox.showinfo(APP_TITLE, f"Conversión completada con éxito.\n\nCarpeta:\n{completed[0].parent}")
+                            send_windows_toast("Media Flow PRO", f"¡Conversión completada! {len(completed)} archivo(s) guardados.")
+                        messagebox.showinfo(APP_TITLE, f"Conversión completada con éxito.\n\nCarpeta de salida:\n{completed[0].parent}")
                     if errors:
-                        messagebox.showwarning(APP_TITLE, f"Ocurrieron algunos errores:\n" + "\n".join(errors))
+                        messagebox.showwarning(APP_TITLE, "Ocurrieron algunos errores:\n" + "\n".join(errors))
                 elif kind == "error":
                     self._set_busy(False)
-                    self.status.set("Error en el proceso.")
-                    self.progress_text.set(data)
+                    self.status_text.set("Error en el proceso.")
+                    self.progress_detail.set(data)
                     messagebox.showerror(APP_TITLE, data)
                 elif kind == "update_downloading":
                     latest_version, release_name, asset_name = data
-                    self.status.set(f"Descargando versión {latest_version}...")
-                    self.progress_text.set(f"{release_name} - {asset_name}")
+                    self.status_text.set(f"Descargando versión {latest_version}...")
+                    self.progress_detail.set(f"{release_name} - {asset_name}")
                 elif kind == "update_installing":
                     latest_version, installer_path = data
-                    self.status.set(f"Instalando versión {latest_version}...")
+                    self.status_text.set(f"Instalando versión {latest_version}...")
                     try:
                         launch_installer_after_exit(Path(installer_path))
                     except Exception as exc:

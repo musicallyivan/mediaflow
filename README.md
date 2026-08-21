@@ -1,29 +1,24 @@
-# Media Flow Pro
+# Media Flow Suite
 
-Versión actual: `1.6.2`
+Versión actual: `1.7.0`
 
-Media Flow es una suite completa y local para Windows que convierte, recorta, comprime y procesa archivos de audio, video e imagen con aceleración por hardware mediante `ffmpeg`.
+Media Flow es una suite multimedia moderna para Windows con diseño contemporáneo de tarjetas y esquinas redondeadas, que convierte, recorta, comprime y procesa archivos de audio, video e imagen con aceleración por hardware mediante `ffmpeg`.
 
-## Funciones Destacadas
+## 💎 Versión Gratuita vs Complemento PRO
 
-- **Conversión de audio:** `MP3`, `M4A`, `WAV`, `FLAC`, `OGG`, `OPUS`, `AAC`, `ALAC`, `AIFF`.
-- **Conversión de video:** `MP4`, `MOV`, `WEBM`, `MKV`, `GIF`, `AVI`, `AV1`, `H.265 (HEVC)`.
-- **Conversión de imagen:** `PNG`, `JPG`, `WEBP`, `BMP`, `AVIF`, `ICO`, `TIFF`.
-- **Modos Especiales:**
-  - Extraer audio de videos a MP3.
-  - Silenciar videos (eliminar pista de audio).
-  - Extraer subtítulos en `.srt`.
-  - Unir/Concatenar múltiples archivos de audio o video en uno solo.
-- **Aceleración por Hardware (GPU):** Codificación acelerada automática con NVIDIA NVENC, AMD AMF o Intel QSV.
-- **Procesamiento Multihilo por Lotes:** Procesar múltiples archivos en paralelo acelerando las conversiones en lotes masivos.
-- **Recorte de Tiempo (Trim):** Especifica tiempo de inicio y fin (`hh:mm:ss`).
-- **Compresión a Tamaño Objetivo:** Especifica un tamaño máximo en MB (ej. 25 MB para Discord) y ajusta bitrate automáticamente.
-- **Preajustes Rápidos (Presets):** Configuración lista para usar (Optimizado para Web, WhatsApp/Redes, TikTok/Reels, Lossless).
-- **Redimensión y FPS:** Escala resoluciones (4K, 1080p, 720p, 480p) y tasas de refresco (60fps, 30fps, 24fps).
-- **Notificaciones Nativas de Windows:** Alertas globales al finalizar conversiones en segundo plano.
-- **Historial de Conversiones:** Registro reciente con apertura rápida de archivo o carpeta en Explorer.
-- **Tema Claro y Oscuro:** Interfaz moderna rediseñada con tarjetas pulidas y esquinas redondeadas.
-- **Sincronización con Nube:** Salida directa a carpetas locales de OneDrive, Google Drive o iCloud Drive.
+Media Flow incluye un sistema de niveles con un **Complemento PRO** para usuarios avanzados:
+
+| Característica | Versión Gratuita | Complemento PRO |
+| :--- | :--- | :--- |
+| **Formatos Estándar** | MP3, M4A, WAV, OGG, AAC, MP4, MOV, WEBM, AVI, GIF, PNG, JPG... | Todos los estándar + Hi-Fi |
+| **Formatos Hi-Fi & Lossless** | ❌ Básico | ✔ FLAC, OPUS, ALAC, AIFF, AV1, H.265 (HEVC) |
+| **Aceleración Hardware GPU** | Solo codificación por CPU | ✔ NVIDIA NVENC / AMD AMF / Intel QSV (10x más rápido) |
+| **Multihilo en Lote** | 1 archivo a la vez | ✔ Hasta 8 conversiones en paralelo |
+| **Resolución & FPS** | Hasta 1080p / 30 fps | ✔ 4K Ultra HD (2160p) y 60 FPS |
+| **Herramientas de Edición** | ❌ Bloqueado | ✔ Recorte milimétrico (Trim) y Compresión a Tamaño Objetivo (MB) |
+| **Modos Especiales** | ❌ Básico | ✔ Extracción de audio/subtítulos SRT y Unión/Concatenación |
+| **Sincronización en la Nube** | Guardado local | ✔ Exportación automática a OneDrive, Google Drive, iCloud |
+| **Interfaz Moderna** | ✔ Bordes redondeados y Dark/Light Mode | ✔ Bordes redondeados, Temas e insignia VIP |
 
 La app no descarga contenido de servicios de terceros. Convierte archivos locales que ya tengas derecho a usar.
 
