@@ -2,6 +2,14 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.7.0] - 2026-08-21
+
+### Added
+
+- **Interfaz Moderna con Bordes Redondeados**: Migración completa a CustomTkinter con bordes redondeados en todas las tarjetas, botones, selectores segmentados, campos de entrada y barras de progreso.
+- **Sistema de Complemento PRO (Gratis vs PRO)**: Niveles de acceso con funciones prémium para aceleración por GPU (NVENC/AMF/QSV), procesamiento masivo en lote multihilo (hasta 8 hilos), video 4K/60fps, codecs Hi-Fi/Lossless (FLAC, ALAC, AIFF, AV1, H.265), recorte milimétrico (Trim), compresión a tamaño objetivo (MB) y sincronización automática en la nube.
+- **Soporte Híbrido de Monetización (Stripe & Microsoft Store)**: Modal interactivo de activación con integración para pagos online en Stripe y compra mediante Microsoft Store / IAP, además de validación de claves `MFPRO-XXXX-XXXX-XXXX` y activación de prueba con 1 clic.
+
 ## [1.6.2] - 2026-08-20
 
 ### Fixed
