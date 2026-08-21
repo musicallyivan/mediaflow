@@ -10,7 +10,10 @@ Respuestas a las dudas más habituales sobre el funcionamiento, privacidad y sol
 **No.** Media Flow procesa el 100% de tus archivos de forma estrictamente local en la memoria y almacenamiento de tu propio ordenador utilizando `FFmpeg`.
 
 #### ¿Requiere crear cuenta o iniciar sesión?
-**No.** La aplicación no solicita correos electrónicos, contraseñas ni suscripciones de ningún tipo.
+**No para las funciones gratuitas.** Puedes convertir tus archivos locales sin crear una cuenta. El complemento PRO es opcional y se activa con una clave, una prueba o mediante los canales de compra disponibles.
+
+#### ¿Qué datos se usan al comprar o activar PRO?
+Los pagos opcionales mediante Stripe o Microsoft Store son gestionados por el proveedor de pago correspondiente. La activación de PRO no sube ni comparte tus archivos multimedia: las conversiones siguen realizándose localmente.
 
 #### ¿Funciona sin conexión a Internet?
 **Sí.** Todas las herramientas de conversión, recorte, compresión y extracción funcionan perfectamente sin conexión a Internet (offline).

@@ -20,7 +20,7 @@ Media Flow incluye un sistema de niveles con un **Complemento PRO** para usuario
 | **Sincronización en la Nube** | Guardado local | ✔ Exportación automática a OneDrive, Google Drive, iCloud |
 | **Interfaz Moderna** | ✔ Bordes redondeados y Dark/Light Mode | ✔ Bordes redondeados, Temas e insignia VIP |
 
-La app no descarga contenido de servicios de terceros. Convierte archivos locales que ya tengas derecho a usar.
+La app no descarga contenido de servicios de terceros. Convierte archivos locales que ya tengas derecho a usar. PRO es opcional y se puede activar con una clave, una prueba o mediante los canales de compra disponibles.
 
 ## Instalacion
 
@@ -54,10 +54,10 @@ Puedes cambiar entre modo claro y oscuro desde el boton de la esquina superior d
 
 ## Sincronizacion con nube
 
-Media Flow no pide cuentas ni contrasenas. Si OneDrive, Google Drive o iCloud Drive estan instalados, detecta sus carpetas locales y guarda ahi el archivo convertido. El cliente oficial de cada servicio se encarga de la sincronizacion.
+Las funciones gratuitas de Media Flow no piden cuentas ni contrasenas. Si OneDrive, Google Drive o iCloud Drive estan instalados, detecta sus carpetas locales y guarda ahi el archivo convertido. El cliente oficial de cada servicio se encarga de la sincronizacion. El complemento PRO opcional ofrece exportación automática a estas carpetas compatibles.
 
 ## Privacidad
 
-Media Flow procesa los archivos localmente. No sube tus archivos a servidores propios y no requiere iniciar sesion.
+Media Flow procesa los archivos localmente y no sube tus archivos a servidores propios. Las funciones gratuitas no requieren iniciar sesión; los pagos opcionales de PRO se gestionan por el proveedor de compra seleccionado.
 
 Consulta `PRIVACY.md` para mas detalles.

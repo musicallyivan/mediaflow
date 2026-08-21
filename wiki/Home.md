@@ -14,13 +14,13 @@
 
 ---
 
-## 🌟 Características Principales de la v1.6.2
+## 🌟 Características Principales de la v1.7.0
 
-* **Aceleración por Hardware (GPU):** Codificación masiva acelerada por tarjeta gráfica (NVIDIA, AMD o Intel).
-* **Diseño Glassmorphism Pro:** Interfaz moderna en tono *Obsidian Midnight* con modo claro y oscuro.
-* **Recorte de Tiempo (Trim):** Define puntos de inicio y fin (`hh:mm:ss` o segundos).
-* **Compresión a Tamaño Objetivo:** Especifica el peso en MB (ej. 25 MB para Discord) y calcula el bitrate idóneo.
+* **Versión Gratis + Complemento PRO:** Empieza sin cuenta y activa PRO opcionalmente con clave, prueba o mediante los canales de compra disponibles.
+* **Interfaz renovada:** Tarjetas, botones, selectores y barras de progreso con bordes redondeados, en modo claro y oscuro.
+* **Rendimiento PRO:** GPU NVIDIA/AMD/Intel, hasta 8 conversiones en paralelo y exportación en 4K/60 fps.
+* **Calidad PRO:** FLAC, ALAC, AIFF, AV1 y H.265 (HEVC), además de recorte de precisión y tamaño objetivo en MB.
 * **Herramientas Especiales:** Extraer audio a MP3, silenciar video y extraer subtítulos `.srt`.
 * **Unir / Concatenar Archivos:** Fusiona múltiples clips o audios en un solo archivo.
 * **Preajustes Rápidos (Presets):** Configuración instantánea para WhatsApp, TikTok, Reels, Shorts y Web.
-* **100% Privado:** Procesamiento local sin subir archivos a ningún servidor externo.
+* **100% Privado:** Procesamiento local sin subir archivos a ningún servidor externo; la sincronización en nube usa las carpetas y clientes oficiales del usuario.

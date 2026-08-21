@@ -17,10 +17,14 @@ Este proyecto se presenta como convertidor multimedia local. La funcionalidad pr
 9. Evitar en titulo, descripcion, capturas y keywords cualquier referencia a servicios de video, descarga de videos o extraccion de musica desde servicios de terceros.
 10. Explicar que la sincronizacion con Google Drive, OneDrive e iCloud Drive se hace guardando archivos en carpetas locales ya sincronizadas por los clientes oficiales.
 
+## Complemento PRO opcional
+
+La versión 1.7 incluye un complemento PRO opcional para GPU, conversiones en lote multihilo, 4K/60 fps, códecs Hi-Fi/Lossless, herramientas avanzadas y sincronización en carpetas de nube compatibles. Si se ofrece compra en la Microsoft Store, describe claramente qué funciones incluye y que el pago se procesa a través de la tienda. Las funciones gratuitas de conversión no requieren cuenta.
+
 ## Descripcion sugerida
 
 Convertidor multimedia local para Windows. Permite elegir archivos del equipo y crear copias en formatos comunes de audio, video e imagen. Puede guardar resultados en carpetas locales o en carpetas sincronizadas por OneDrive, Google Drive o iCloud Drive.
 
 ## Notas de certificacion sugeridas
 
-La app convierte archivos locales seleccionados por el usuario. No descarga contenido de servicios de terceros, no requiere inicio de sesion, no recoge credenciales y no sube archivos directamente a servidores externos. La sincronizacion en nube se realiza guardando el resultado en carpetas locales gestionadas por los clientes oficiales instalados por el usuario.
+La app convierte archivos locales seleccionados por el usuario. No descarga contenido de servicios de terceros ni sube archivos directamente a servidores externos. Las funciones gratuitas no requieren inicio de sesión. El complemento PRO opcional se activa mediante los canales de compra disponibles; cualquier pago se procesa por el proveedor correspondiente. La sincronización en nube se realiza guardando el resultado en carpetas locales gestionadas por los clientes oficiales instalados por el usuario.
