@@ -6,12 +6,12 @@ struct DocumentPicker: UIViewControllerRepresentable {
     
     func makeUIViewController(context: Context) -> UIDocumentPickerViewController {
         let supportedTypes: [UTType] = [
-            .audio,
-            .movie,
-            .video,
-            .image,
+            .item,
+            .content,
             .data,
-            .content
+            .movie,
+            .audio,
+            .image
         ]
         
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes, asCopy: true)
@@ -39,7 +39,7 @@ struct DocumentPicker: UIViewControllerRepresentable {
         }
         
         func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-            // Cancelled
+            // User cancelled
         }
     }
 }
