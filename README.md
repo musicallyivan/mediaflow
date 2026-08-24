@@ -41,6 +41,13 @@ FFmpegKit y guarda los resultados en `Descargas/MediaFlow`.
 
 Abre `android-app/` con Android Studio para compilarla.
 
+## Version iOS (iPhone / iPad)
+
+Hay una version nativa para iOS en `ios-app/` desarrollada en **SwiftUI** con conversión local mediante **FFmpegKit**:
+- No requiere Mac: se compila automáticamente en **GitHub Actions** (`.github/workflows/ios-build.yml`).
+- No requiere cuenta de pago: se instala gratis con **Sideloadly** o **AltStore** desde Windows.
+- Consulta [ios-app/GUIA_INSTALACION_IOS.md](ios-app/GUIA_INSTALACION_IOS.md) para ver la guía de instalación.
+
 ## Uso
 
 1. Abre Media Flow.
