@@ -8,3 +8,4 @@ cookies.txt
 dist/
 build/
 *.spec
+log.txt

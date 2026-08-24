@@ -74,8 +74,9 @@ struct ContentView: View {
     private var fileSelectionCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Label("Archivo a Convertir", systemImage: "doc.fill")
-                .font(.subheadline)
-                .fontWeight(.semibold)
+                .font(.system(.body, design: .default).weight(.semibold))
+                // O de forma más directa en SwiftUI para iOS 15:
+                .font(.body.weight(.semibold))
                 .foregroundColor(primaryTeal)
             
             if engine.selectedFileURL != nil {
@@ -150,8 +151,9 @@ struct ContentView: View {
     private var settingsCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             Label("Ajustes de Conversión", systemImage: "slider.horizontal.3")
-                .font(.subheadline)
-                .fontWeight(.semibold)
+                .font(.system(.body, design: .default).weight(.semibold))
+                // O de forma más directa en SwiftUI para iOS 15:
+                .font(.body.weight(.semibold))
                 .foregroundColor(primaryTeal)
             
             // Mode selector
