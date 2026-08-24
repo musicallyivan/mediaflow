@@ -2,6 +2,12 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.7.3] - 2026-08-24
+
+### Added
+
+- **Add IOS APP NATIVE**: Hemos añadido la posibilidad de instalar el programa en los dispositivos Apple.
+
 ## [1.7.2] - 2026-08-24
 
 ### Fixed
