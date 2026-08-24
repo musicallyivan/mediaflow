@@ -20,7 +20,7 @@ La app puede consultar GitHub Releases para comprobar si hay una version nueva. 
 
 ## Complemento PRO y pagos opcionales
 
-Media Flow ofrece un complemento PRO opcional. La activación puede realizarse con una clave de licencia, una prueba o mediante los canales de compra disponibles, como Stripe o Microsoft Store. Los pagos y los datos de facturación son gestionados por el proveedor de pago correspondiente conforme a su propia política de privacidad; Media Flow no usa esos datos para procesar ni analizar tus archivos.
+Media Flow ofrece un complemento PRO opcional. La activación puede realizarse con una clave de licencia o mediante los canales de compra disponibles, como Stripe o Microsoft Store. Los pagos y los datos de facturación son gestionados por el proveedor de pago correspondiente conforme a su propia política de privacidad; Media Flow no usa esos datos para procesar ni analizar tus archivos.
 
 La activación de PRO no modifica el tratamiento de tus archivos: el contenido multimedia sigue procesándose localmente y no se sube a servidores de Media Flow.
 

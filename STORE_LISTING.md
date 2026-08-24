@@ -16,7 +16,7 @@ Puedes convertir audio a MP3, M4A, WAV, FLAC, OGG, OPUS, AAC, ALAC o AIFF; video
 
 La versión 1.7 estrena una interfaz moderna de controles redondeados. PRO añade aceleración por GPU (NVIDIA, AMD e Intel), procesamiento multihilo por lotes de hasta 8 conversiones, vídeo 4K/60 fps, formatos Hi-Fi y Lossless, recorte de precisión, compresión a tamaño objetivo y sincronización automática con carpetas de nube compatibles.
 
-Media Flow procesa todos tus archivos 100% localmente. No descarga contenido de servicios de terceros ni sube tus archivos a servidores externos. Las funciones gratuitas no requieren iniciar sesión; PRO es un complemento opcional que puede activarse con una clave, prueba o compra mediante los canales disponibles.
+Media Flow procesa todos tus archivos 100% localmente. No descarga contenido de servicios de terceros ni sube tus archivos a servidores externos. Las funciones gratuitas no requieren iniciar sesión; PRO es un complemento opcional que puede activarse con una clave o compra mediante los canales disponibles.
 
 ## Features
 
