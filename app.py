@@ -19,13 +19,14 @@ from typing import Any, Optional
 import customtkinter as ctk
 from tkinter import filedialog, messagebox
 
+from microsoft_store_pro import MicrosoftStorePro
+
 APP_TITLE = "Media Flow"
-APP_VERSION = "1.7.0"
+APP_VERSION = "1.7.1"
 GITHUB_REPO = os.environ.get("MEDIA_FLOW_GITHUB_REPO", "musicallyivan/mediaflow")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 STRIPE_CHECKOUT_URL = os.environ.get("MEDIA_FLOW_STRIPE_URL", "https://buy.stripe.com/4gM00l2uV0aXe6k1eIgEg00")
 MS_STORE_PRODUCT_ID = os.environ.get("MEDIA_FLOW_STORE_ID", "9N6VZZ3HDFHJ")
-MS_STORE_URL = f"https://apps.microsoft.com/detail/{MS_STORE_PRODUCT_ID}"
 
 AUDIO_FORMATS_FREE = ("MP3", "M4A", "WAV", "OGG", "AAC")
 AUDIO_FORMATS_PRO = ("FLAC", "OPUS", "ALAC", "AIFF")
@@ -395,7 +396,9 @@ class LicenseManager:
 
     def __init__(self, initial_data: dict[str, Any]) -> None:
         self.pro_key: str = str(initial_data.get("pro_license_key", "")).strip()
-        self._is_pro: bool = bool(initial_data.get("is_pro", False))
+        # Store purchases are revalidated with Microsoft Store at startup;
+        # do not treat a value in the local settings file as proof of ownership.
+        self._is_pro: bool = bool(initial_data.get("is_pro", False)) and self.pro_key != "MICROSOFT-STORE"
         if self.pro_key and self.validate_key(self.pro_key):
             self._is_pro = True
 
@@ -407,8 +410,8 @@ class LicenseManager:
         cleaned = key.strip().upper()
         if not cleaned:
             return False
-        # Claves válidas: MFPRO-XXXX-XXXX-XXXX, DEMO-PRO, o formato especial de licencia
-        if cleaned in ("DEMO-PRO", "MFPRO-VIP-2026-PLUS", "MFPRO-PREMIUM-LIFETIME"):
+        # Las licencias vendidas fuera de Microsoft Store usan este formato.
+        if cleaned in ("MFPRO-VIP-2026-PLUS", "MFPRO-PREMIUM-LIFETIME"):
             return True
         pattern = r"^MFPRO-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$"
         return bool(re.match(pattern, cleaned))
@@ -420,6 +423,11 @@ class LicenseManager:
             self.pro_key = cleaned
             return True, "¡Complemento PRO activado con éxito! Todas las funciones prémium están desbloqueadas."
         return False, "La clave introducida no es válida. Formato esperado: MFPRO-XXXX-XXXX-XXXX"
+
+    def activate_store_purchase(self) -> None:
+        """Activa PRO después de que Microsoft Store confirme la compra."""
+        self._is_pro = True
+        self.pro_key = "MICROSOFT-STORE"
 
     def deactivate(self) -> None:
         self._is_pro = False
@@ -576,21 +584,10 @@ class ProUpgradeModal(ctk.CTkToplevel):
             width=90,
         ).grid(row=0, column=1)
 
-        # Botones de Acción Rápida (Demo de 1 clic y Compra)
+        # Botones de compra
         btn_box = ctk.CTkFrame(container, fg_color="transparent")
         btn_box.grid(row=4, column=0, sticky="ew", padx=8, pady=(0, 6))
-        btn_box.grid_columnconfigure((0, 1), weight=1)
-
-        ctk.CTkButton(
-            btn_box,
-            text="⚡ Desbloquear Demo PRO (1 clic)",
-            corner_radius=10,
-            fg_color=("#10b981", "#059669"),
-            hover_color=("#059669", "#047857"),
-            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
-            command=self._on_demo_clicked,
-            height=38,
-        ).grid(row=0, column=0, padx=(0, 6), sticky="ew")
+        btn_box.grid_columnconfigure(0, weight=1)
 
         if is_pro:
             ctk.CTkButton(
@@ -602,7 +599,7 @@ class ProUpgradeModal(ctk.CTkToplevel):
                 font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
                 command=self._on_deactivate_clicked,
                 height=38,
-            ).grid(row=0, column=1, padx=(6, 0), sticky="ew")
+            ).grid(row=0, column=0, sticky="ew")
         else:
             ctk.CTkButton(
                 btn_box,
@@ -613,7 +610,7 @@ class ProUpgradeModal(ctk.CTkToplevel):
                 font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
                 command=self._on_buy_stripe_clicked,
                 height=38,
-            ).grid(row=0, column=1, padx=(6, 0), sticky="ew")
+            ).grid(row=0, column=0, sticky="ew")
 
             store_box = ctk.CTkFrame(container, fg_color="transparent")
             store_box.grid(row=5, column=0, sticky="ew", padx=8, pady=(0, 8))
@@ -640,13 +637,6 @@ class ProUpgradeModal(ctk.CTkToplevel):
         else:
             messagebox.showerror("Media Flow PRO", message, parent=self)
 
-    def _on_demo_clicked(self) -> None:
-        success, message = self.parent_app.license_manager.activate("MFPRO-VIP-2026-PLUS")
-        if success:
-            self.parent_app.on_license_updated()
-            messagebox.showinfo("Media Flow PRO", "¡Se ha activado la versión de prueba PRO completa!", parent=self)
-            self.destroy()
-
     def _on_deactivate_clicked(self) -> None:
         self.parent_app.license_manager.deactivate()
         self.parent_app.on_license_updated()
@@ -666,15 +656,23 @@ class ProUpgradeModal(ctk.CTkToplevel):
 
     def _on_buy_store_clicked(self) -> None:
         try:
-            # Intento de apertura mediante protocolo directo de Microsoft Store
-            subprocess.Popen(["cmd.exe", "/c", "start", f"ms-windows-store://pdp/?productid={MS_STORE_PRODUCT_ID}"], shell=True)
-        except Exception:
-            webbrowser.open(MS_STORE_URL)
-        messagebox.showinfo(
-            "Microsoft Store",
-            "Se ha abierto la ficha del complemento en Microsoft Store.\nSi estás usando la versión empaquetada de Store, la licencia se activará automáticamente al completar la compra.",
-            parent=self,
-        )
+            purchased = self.parent_app.store_pro.purchase_pro()
+        except Exception as exc:
+            messagebox.showerror("Microsoft Store", f"No se pudo iniciar la compra del complemento PRO.\n\n{exc}", parent=self)
+            return
+
+        if not purchased:
+            messagebox.showwarning(
+                "Microsoft Store",
+                "La compra no se completó. Para comprar el complemento, instala Media Flow desde Microsoft Store e inténtalo de nuevo.",
+                parent=self,
+            )
+            return
+
+        self.parent_app.license_manager.activate_store_purchase()
+        self.parent_app.on_license_updated()
+        messagebox.showinfo("Media Flow PRO", "¡Compra confirmada! El complemento PRO está activo.", parent=self)
+        self.destroy()
 
 
 # ==========================================
@@ -698,6 +696,7 @@ class MediaConverterApp(ctk.CTk):
 
         # Gestor de Licencias PRO
         self.license_manager = LicenseManager(self.settings)
+        self.store_pro = MicrosoftStorePro(MS_STORE_PRODUCT_ID)
 
         # Variables de estado
         self.mode = ctk.StringVar(value=self.settings.get("mode", "Audio"))
@@ -733,7 +732,16 @@ class MediaConverterApp(ctk.CTk):
 
         self._build_ui()
         self._detect_gpu_async()
+        self._verify_store_purchase_async()
         self._poll_messages()
+
+    def _verify_store_purchase_async(self) -> None:
+        """Restores PRO for durable add-ons already owned by the signed-in user."""
+        def worker() -> None:
+            if self.store_pro.is_pro_owned():
+                self.messages.put(("store_pro_owned", None))
+
+        threading.Thread(target=worker, daemon=True).start()
 
     def _load_settings(self) -> dict[str, Any]:
         path = config_path()
@@ -2011,6 +2019,10 @@ class MediaConverterApp(ctk.CTk):
                         self.gpu_badge.configure(text=f"GPU: {', '.join(found)} ✔", fg_color=("#10b981", "#059669"), text_color="#ffffff")
                     else:
                         self.gpu_badge.configure(text="GPU: CPU Fallback", fg_color=("gray80", "#253554"), text_color="gray70")
+                elif kind == "store_pro_owned":
+                    if not self.license_manager.is_pro:
+                        self.license_manager.activate_store_purchase()
+                        self.on_license_updated()
                 elif kind == "progress":
                     self.progress_detail.set(data)
                 elif kind == "media_info":
