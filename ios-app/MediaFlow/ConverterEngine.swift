@@ -62,10 +62,25 @@ final class ConverterEngine: ObservableObject {
             }
         }
         
-        selectedFileURL = url
+        let tempDir = FileManager.default.temporaryDirectory
+        let safeName = "selected_\(Int(Date().timeIntervalSince1970))_\(url.lastPathComponent)"
+        let localTempURL = tempDir.appendingPathComponent(safeName)
+        
+        if FileManager.default.fileExists(atPath: localTempURL.path) {
+            try? FileManager.default.removeItem(at: localTempURL)
+        }
+        
+        do {
+            try FileManager.default.copyItem(at: url, to: localTempURL)
+            selectedFileURL = localTempURL
+        } catch {
+            selectedFileURL = url
+        }
+        
         selectedFileName = url.lastPathComponent
         
-        if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+        let inspectionPath = selectedFileURL?.path ?? url.path
+        if let attributes = try? FileManager.default.attributesOfItem(atPath: inspectionPath),
            let size = attributes[.size] as? Int64 {
             selectedFileSize = ByteCountFormatter.string(fromByteCount: size, countStyle: .file)
         } else {
@@ -136,8 +151,14 @@ final class ConverterEngine: ObservableObject {
                     try? FileManager.default.removeItem(at: tempInputURL)
                 }
                 
-                let fileData = try Data(contentsOf: inputSourceURL)
-                try fileData.write(to: tempInputURL)
+                if inputSourceURL.path != tempInputURL.path {
+                    if FileManager.default.fileExists(atPath: inputSourceURL.path) {
+                        try? FileManager.default.copyItem(at: inputSourceURL, to: tempInputURL)
+                    } else {
+                        let fileData = try Data(contentsOf: inputSourceURL)
+                        try fileData.write(to: tempInputURL)
+                    }
+                }
                 
                 let qualitySuffix = targetQuality.rawValue.replacingOccurrences(of: " ", with: "_")
                 let outputFileName = "\(safeBase)_\(qualitySuffix).\(targetFormat)"
@@ -241,8 +262,10 @@ final class ConverterEngine: ObservableObject {
         case .smallFile: compression = 0.5
         }
         
-        let options = [kCGImageDestinationLossyCompressionQuality: compression] as CFDictionary
-        CGImageDestinationAddImage(destination, cgImage, options)
+        let options: [CFString: Any] = [
+            kCGImageDestinationLossyCompressionQuality: NSNumber(value: compression)
+        ]
+        CGImageDestinationAddImage(destination, cgImage, options as CFDictionary)
         
         if !CGImageDestinationFinalize(destination) {
             throw NSError(domain: "MediaFlow", code: -3, userInfo: [NSLocalizedDescriptionKey: "Error al guardar la imagen procesada."])

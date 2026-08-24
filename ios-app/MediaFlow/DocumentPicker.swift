@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
 
 struct DocumentPicker: UIViewControllerRepresentable {
@@ -14,7 +15,7 @@ struct DocumentPicker: UIViewControllerRepresentable {
             .image
         ]
         
-        let picker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes, asCopy: true)
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: supportedTypes)
         picker.allowsMultipleSelection = false
         picker.delegate = context.coordinator
         return picker
