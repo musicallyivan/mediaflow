@@ -5,8 +5,8 @@ struct ContentView: View {
     @State private var showingFilePicker = false
     @State private var showingShareSheet = false
     
-    private let primaryTeal = Color(red: 23/255, green: 122/255, blue: 115/255)
-    private let lightTeal = Color(red: 230/255, green: 242/255, blue: 241/255)
+    private let primaryTeal = Color(red: 23.0 / 255.0, green: 122.0 / 255.0, blue: 115.0 / 255.0)
+    private let lightTeal = Color(red: 230.0 / 255.0, green: 242.0 / 255.0, blue: 241.0 / 255.0)
     
     var body: some View {
         NavigationView {
@@ -294,7 +294,7 @@ struct ContentView: View {
     }
     
     private var footerNote: some View {
-        Text("Media Flow procesa los archivos 100% en tu dispositivo utilizando FFmpeg. Los archivos grandes pueden requerir tiempo adicional.")
+        Text("Media Flow procesa los archivos 100% en tu dispositivo utilizando hardware acelerado de Apple.")
             .font(.caption2)
             .foregroundColor(.secondary)
             .multilineTextAlignment(.center)
@@ -308,11 +308,5 @@ struct ContentView: View {
         case .video: return "film"
         case .image: return "photo"
         }
-    }
-}
-
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        ContentView()
     }
 }
