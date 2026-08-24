@@ -1,6 +1,6 @@
 # Media Flow Suite
 
-Versión actual: `1.7.0`
+Versión actual: `1.7.2`
 
 Media Flow es una suite multimedia moderna para Windows con diseño contemporáneo de tarjetas y esquinas redondeadas, que convierte, recorta, comprime y procesa archivos de audio, video e imagen con aceleración por hardware mediante `ffmpeg`.
 
@@ -20,7 +20,7 @@ Media Flow incluye un sistema de niveles con un **Complemento PRO** para usuario
 | **Sincronización en la Nube** | Guardado local | ✔ Exportación automática a OneDrive, Google Drive, iCloud |
 | **Interfaz Moderna** | ✔ Bordes redondeados y Dark/Light Mode | ✔ Bordes redondeados, Temas e insignia VIP |
 
-La app no descarga contenido de servicios de terceros. Convierte archivos locales que ya tengas derecho a usar. PRO es opcional y se puede activar con una clave, una prueba o mediante los canales de compra disponibles.
+La app no descarga contenido de servicios de terceros. Convierte archivos locales que ya tengas derecho a usar. PRO es opcional y se puede activar con una clave o mediante los canales de compra disponibles.
 
 ## Instalacion
 

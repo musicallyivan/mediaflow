@@ -14,9 +14,9 @@
 
 ---
 
-## 🌟 Características Principales de la v1.7.0
+## 🌟 Características Principales de la v1.7.2
 
-* **Versión Gratis + Complemento PRO:** Empieza sin cuenta y activa PRO opcionalmente con clave, prueba o mediante los canales de compra disponibles.
+* **Versión Gratis + Complemento PRO:** Empieza sin cuenta y activa PRO opcionalmente con clave o mediante los canales de compra disponibles.
 * **Interfaz renovada:** Tarjetas, botones, selectores y barras de progreso con bordes redondeados, en modo claro y oscuro.
 * **Rendimiento PRO:** GPU NVIDIA/AMD/Intel, hasta 8 conversiones en paralelo y exportación en 4K/60 fps.
 * **Calidad PRO:** FLAC, ALAC, AIFF, AV1 y H.265 (HEVC), además de recorte de precisión y tamaño objetivo en MB.
