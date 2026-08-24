@@ -24,16 +24,11 @@ jobs:
       - name: Select Xcode Version
         run: sudo xcode-select -switch /Applications/Xcode_15.4.app || sudo xcode-select -switch /Applications/Xcode.app
 
-      - name: Install CocoaPods Dependencies
-        run: |
-          cd ios-app
-          pod install --repo-update
-
-      - name: Build iOS App (Unsigned)
+      - name: Build iOS App (Native Unsigned)
         run: |
           cd ios-app
           xcodebuild clean build \
-            -workspace MediaFlow.xcworkspace \
+            -project MediaFlow.xcodeproj \
             -scheme MediaFlow \
             -configuration Release \
             -sdk iphoneos \
@@ -45,13 +40,13 @@ jobs:
       - name: Package IPA
         run: |
           cd ios-app
-          APP_PATH="build/Build/Products/Release-iphoneos/MediaFlow.app"
-          if [ ! -d "$APP_PATH" ]; then
-            echo "Direct product path not found, searching..."
-            APP_PATH=$(find build -name "MediaFlow.app" -type d | head -n 1)
+          APP_PATH=$(find build -name "MediaFlow.app" -type d | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: MediaFlow.app not found in build directory"
+            exit 1
           fi
-          echo "Using APP_PATH: $APP_PATH"
-          mkdir Payload
+          echo "Found app at: $APP_PATH"
+          mkdir -p Payload
           cp -R "$APP_PATH" Payload/
           zip -qr MediaFlow.ipa Payload
           ls -la MediaFlow.ipa
