@@ -27,15 +27,16 @@ jobs:
       - name: Build iOS App (Native Unsigned)
         run: |
           cd ios-app
-          xcodebuild clean build \
+          xcodebuild build \
             -project MediaFlow.xcodeproj \
             -scheme MediaFlow \
             -configuration Release \
-            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
 
       - name: Package IPA
         run: |

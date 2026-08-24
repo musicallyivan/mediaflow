@@ -78,7 +78,7 @@ struct ContentView: View {
                 .fontWeight(.semibold)
                 .foregroundColor(primaryTeal)
             
-            if let _ = engine.selectedFileURL {
+            if engine.selectedFileURL != nil {
                 HStack(spacing: 12) {
                     Image(systemName: iconForMode(engine.selectedMode))
                         .font(.title)
@@ -249,7 +249,7 @@ struct ContentView: View {
     
     private var actionButtons: some View {
         VStack(spacing: 10) {
-            if let _ = engine.outputFileURL {
+            if engine.outputFileURL != nil {
                 Button(action: { showingShareSheet = true }) {
                     HStack {
                         Image(systemName: "square.and.arrow.up.fill")
