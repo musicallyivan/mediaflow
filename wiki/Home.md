@@ -14,7 +14,7 @@
 
 ---
 
-## 🌟 Características Principales de la v1.7.1
+## 🌟 Características Principales de la v1.7.2
 
 * **Versión Gratis + Complemento PRO:** Empieza sin cuenta y activa PRO opcionalmente con clave o mediante los canales de compra disponibles.
 * **Interfaz renovada:** Tarjetas, botones, selectores y barras de progreso con bordes redondeados, en modo claro y oscuro.
