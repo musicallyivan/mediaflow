@@ -2,6 +2,12 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.7.2] - 2026-08-24
+
+### Fixed
+
+- **Empaquetado de Microsoft Store**: El instalador incluye el runtime WinRT necesario para consultar y comprar el complemento PRO.
+
 ## [1.7.1] - 2026-08-24
 
 ### Fixed

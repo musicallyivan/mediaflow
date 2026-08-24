@@ -1,6 +1,6 @@
 # Media Flow Suite
 
-Versión actual: `1.7.1`
+Versión actual: `1.7.2`
 
 Media Flow es una suite multimedia moderna para Windows con diseño contemporáneo de tarjetas y esquinas redondeadas, que convierte, recorta, comprime y procesa archivos de audio, video e imagen con aceleración por hardware mediante `ffmpeg`.
 
@@ -40,6 +40,13 @@ selecciona archivos con el selector de Android, convierte localmente con
 FFmpegKit y guarda los resultados en `Descargas/MediaFlow`.
 
 Abre `android-app/` con Android Studio para compilarla.
+
+## Version iOS (iPhone / iPad)
+
+Hay una version nativa para iOS en `ios-app/` desarrollada en **SwiftUI** con conversión local mediante **FFmpegKit**:
+- No requiere Mac: se compila automáticamente en **GitHub Actions** (`.github/workflows/ios-build.yml`).
+- No requiere cuenta de pago: se instala gratis con **Sideloadly** o **AltStore** desde Windows.
+- Consulta [ios-app/GUIA_INSTALACION_IOS.md](ios-app/GUIA_INSTALACION_IOS.md) para ver la guía de instalación.
 
 ## Uso
 

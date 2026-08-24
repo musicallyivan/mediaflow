@@ -1,0 +1,70 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "ios-app/**"
+      - ".github/workflows/ios-build.yml"
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-ios:
+    name: Build iOS App (.ipa)
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode Version
+        run: sudo xcode-select -switch /Applications/Xcode_15.4.app || sudo xcode-select -switch /Applications/Xcode.app
+
+      - name: Install CocoaPods Dependencies
+        run: |
+          cd ios-app
+          pod install --repo-update
+
+      - name: Build iOS App (Unsigned)
+        run: |
+          cd ios-app
+          xcodebuild clean build \
+            -workspace MediaFlow.xcworkspace \
+            -scheme MediaFlow \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package IPA
+        run: |
+          cd ios-app
+          APP_PATH="build/Build/Products/Release-iphoneos/MediaFlow.app"
+          if [ ! -d "$APP_PATH" ]; then
+            echo "Direct product path not found, searching..."
+            APP_PATH=$(find build -name "MediaFlow.app" -type d | head -n 1)
+          fi
+          echo "Using APP_PATH: $APP_PATH"
+          mkdir Payload
+          cp -R "$APP_PATH" Payload/
+          zip -qr MediaFlow.ipa Payload
+          ls -la MediaFlow.ipa
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MediaFlow-iOS-IPA
+          path: ios-app/MediaFlow.ipa
+          retention-days: 14
+
+      - name: Attach IPA to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ios-app/MediaFlow.ipa
