@@ -2,6 +2,12 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.7.4] - 2026-08-25
+
+### Added
+
+- **Liquid Glass a partir de iOS 26**: Se ha añadido la compatibilidad con Liquid Glass del nuevo SO iOS 26, las anteriores versiones siguen siendo compatibles.
+
 ## [1.7.3] - 2026-08-24
 
 ### Added

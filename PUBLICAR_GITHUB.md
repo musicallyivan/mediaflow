@@ -34,11 +34,11 @@ git push -u origin main
 
 ## 3. Publicar una release
 
-Para publicar la version `1.7.2`:
+Para publicar la version `1.7.4`:
 
 ```powershell
-git tag -a v1.7.2 -m "Media Flow 1.7.2"
-git push origin v1.7.2
+git tag -a v1.7.4 -m "Media Flow 1.7.4"
+git push origin v1.7.4
 ```
 
 GitHub Actions ejecutara `.github/workflows/release.yml` y publicara estos archivos en Releases:
@@ -47,6 +47,7 @@ GitHub Actions ejecutara `.github/workflows/release.yml` y publicara estos archi
 - Instalador `.exe`.
 - Paquete `.msix`.
 - Archivo `.appinstaller`.
+- iOS .ipa `.zip/.ipa`.
 
 Para que el MSIX sea instalable directamente fuera de Microsoft Store, configura estos valores en GitHub:
 
