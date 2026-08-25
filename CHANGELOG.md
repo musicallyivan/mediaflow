@@ -2,6 +2,12 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.7.5] - 2026-08-25
+
+### Fixed
+
+- **Compilación de empaquetado .IPA**: Hemos actualizado el diseño de la app.
+
 ## [1.7.4] - 2026-08-25
 
 ### Added

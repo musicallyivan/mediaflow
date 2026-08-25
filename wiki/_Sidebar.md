@@ -9,7 +9,7 @@
 
 ---
 
-**Versión Actual:** `v1.6.2`  
+**Versión Actual:** `v1.7.5`  
 **Licencia:** MIT  
-**Plataforma:** Windows 10 / 11  
+**Plataforma:** Windows 10 / 11  | iOS (16 & 26)
 [🌐 Sitio Web Oficial](https://musicallyivan.github.io/mediaflow/)
