@@ -2,6 +2,12 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.7.6] - 2026-08-25
+
+### Added
+
+- **Compatibilidad con Linux**: Hemos añadido la posibilidad de instalar el programa en dispositivos Linux.
+
 ## [1.7.5] - 2026-08-25
 
 ### Fixed
@@ -50,7 +56,7 @@ Todas las versiones publicadas se documentan en este archivo.
 
 ### Changed
 
-- **Rediseño Glassmorphism Premium**: Renovado completo del modo oscuro y claro con tarjetas de profundidad en tono *Obsidian Midnight*, bordes translúcidos de vidrio, resplandor en acentos *Electric Indigo*, barras de progreso frosted glass e indicadores pulsantes con aureola neon.
+- **Rediseño Glassmorphism Premium**: Renovado completo del modo oscuro y claro con tarjetas de profundidad en tono _Obsidian Midnight_, bordes translúcidos de vidrio, resplandor en acentos _Electric Indigo_, barras de progreso frosted glass e indicadores pulsantes con aureola neon.
 
 ## [1.6.0] - 2026-08-20
 

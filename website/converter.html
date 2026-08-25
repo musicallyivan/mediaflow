@@ -1,131 +1,132 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Convertidor online | Media Flow</title>
-    <meta
-      name="description"
-      content="Convierte audio, video e imagen directamente en el navegador con Media Flow. Tus archivos se procesan localmente."
-    >
-    <link rel="icon" href="assets/icon-300.png">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="converter.css">
-  </head>
-  <body>
-    <header class="site-header">
-      <a class="brand" href="index.html" aria-label="Media Flow">
-        <img src="assets/icon-300.png" alt="" width="36" height="36">
-        <span>Media Flow <small class="version-badge">v1.7.5 PRO</small></span>
-      </a>
-      <nav class="nav-links" aria-label="Principal">
-        <a href="index.html">Inicio</a>
-        <a href="privacy.html">Privacidad</a>
-        <a href="index.html#descargar">Descargar app</a>
-        <a href="https://github.com/musicallyivan/mediaflow">GitHub</a>
-      </nav>
-    </header>
 
-    <main>
-      <section class="converter-hero">
-        <div>
-          <p class="eyebrow">Conversion en linea</p>
-          <h1>Convierte archivos desde el navegador</h1>
-          <p>
-            Esta version usa WebAssembly para ejecutar FFmpeg en tu navegador.
-            Los archivos se quedan en tu equipo y se descargan al terminar.
-          </p>
-        </div>
-      </section>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Convertidor online | Media Flow</title>
+  <meta name="description"
+    content="Convierte audio, video e imagen directamente en el navegador con Media Flow. Tus archivos se procesan localmente.">
+  <link rel="icon" href="assets/icon-300.png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="converter.css">
+</head>
 
-      <section class="converter-shell" aria-label="Convertidor online">
-        <form class="converter-panel" id="converterForm">
-          <label class="drop-zone" for="fileInput" id="dropZone">
-            <span class="drop-title">Selecciona un archivo</span>
-            <span class="drop-copy">Audio, video o imagen. Tambien puedes arrastrarlo aqui.</span>
-            <input id="fileInput" type="file" required>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html" aria-label="Media Flow">
+      <img src="assets/icon-300.png" alt="" width="36" height="36">
+      <span>Media Flow <small class="version-badge">v1.7.6 PRO</small></span>
+    </a>
+    <nav class="nav-links" aria-label="Principal">
+      <a href="index.html">Inicio</a>
+      <a href="privacy.html">Privacidad</a>
+      <a href="index.html#descargar">Descargar app</a>
+      <a href="https://github.com/musicallyivan/mediaflow">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="converter-hero">
+      <div>
+        <p class="eyebrow">Conversion en linea</p>
+        <h1>Convierte archivos desde el navegador</h1>
+        <p>
+          Esta version usa WebAssembly para ejecutar FFmpeg en tu navegador.
+          Los archivos se quedan en tu equipo y se descargan al terminar.
+        </p>
+      </div>
+    </section>
+
+    <section class="converter-shell" aria-label="Convertidor online">
+      <form class="converter-panel" id="converterForm">
+        <label class="drop-zone" for="fileInput" id="dropZone">
+          <span class="drop-title">Selecciona un archivo</span>
+          <span class="drop-copy">Audio, video o imagen. Tambien puedes arrastrarlo aqui.</span>
+          <input id="fileInput" type="file" required>
+        </label>
+
+        <div class="selected-file" id="selectedFile" hidden></div>
+
+        <div class="control-grid">
+          <label>
+            Tipo
+            <select id="modeSelect">
+              <option value="audio">Audio</option>
+              <option value="video">Video</option>
+              <option value="image">Imagen</option>
+            </select>
           </label>
 
-          <div class="selected-file" id="selectedFile" hidden></div>
+          <label>
+            Formato
+            <select id="formatSelect"></select>
+          </label>
 
-          <div class="control-grid">
-            <label>
-              Tipo
-              <select id="modeSelect">
-                <option value="audio">Audio</option>
-                <option value="video">Video</option>
-                <option value="image">Imagen</option>
-              </select>
-            </label>
-
-            <label>
-              Formato
-              <select id="formatSelect"></select>
-            </label>
-
-            <label>
-              Calidad
-              <select id="qualitySelect">
-                <option value="balanced">Equilibrada</option>
-                <option value="small">Archivo pequeno</option>
-                <option value="high">Alta calidad</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="status-box" aria-live="polite">
-            <div class="progress-row">
-              <span id="statusText">Listo para convertir.</span>
-              <span id="progressText">0%</span>
-            </div>
-            <progress id="progressBar" value="0" max="100"></progress>
-          </div>
-
-          <div class="converter-actions">
-            <button class="button primary" id="convertButton" type="submit">
-              Convertir
-            </button>
-            <a class="button secondary download-result" id="downloadResult" hidden>
-              Descargar resultado
-            </a>
-            <button class="button secondary" id="convertAnotherButton" type="button" hidden>
-              Convertir otro
-            </button>
-          </div>
-        </form>
-
-        <aside class="converter-notes">
-          <h2>Privado por diseño</h2>
-          <p>
-            La conversion se ejecuta en tu navegador. El rendimiento depende de
-            tu dispositivo y los videos grandes pueden tardar bastante.
-          </p>
-          <ul>
-            <li>No hay subida a servidores de Media Flow.</li>
-            <li>Funciona mejor con archivos pequenos o medianos.</li>
-            <li>La primera conversion descarga el motor WebAssembly.</li>
-          </ul>
-        </aside>
-      </section>
-    </main>
-
-    <footer class="site-footer">
-      <div class="footer-content">
-        <div class="footer-brand">
-          <img src="assets/icon-300.png" alt="" width="28" height="28">
-          <span>Media Flow Pro v1.7.5</span>
+          <label>
+            Calidad
+            <select id="qualitySelect">
+              <option value="balanced">Equilibrada</option>
+              <option value="small">Archivo pequeno</option>
+              <option value="high">Alta calidad</option>
+            </select>
+          </label>
         </div>
-        <div class="footer-links">
-          <a href="index.html">Inicio</a>
-          <a href="converter.html">Convertidor Online</a>
-          <a href="privacy.html">Privacidad</a>
-          <a href="https://github.com/musicallyivan/mediaflow" target="_blank" rel="noopener">GitHub</a>
-          <a href="https://github.com/musicallyivan/mediaflow/releases" target="_blank" rel="noopener">Releases</a>
+
+        <div class="status-box" aria-live="polite">
+          <div class="progress-row">
+            <span id="statusText">Listo para convertir.</span>
+            <span id="progressText">0%</span>
+          </div>
+          <progress id="progressBar" value="0" max="100"></progress>
         </div>
+
+        <div class="converter-actions">
+          <button class="button primary" id="convertButton" type="submit">
+            Convertir
+          </button>
+          <a class="button secondary download-result" id="downloadResult" hidden>
+            Descargar resultado
+          </a>
+          <button class="button secondary" id="convertAnotherButton" type="button" hidden>
+            Convertir otro
+          </button>
+        </div>
+      </form>
+
+      <aside class="converter-notes">
+        <h2>Privado por diseño</h2>
+        <p>
+          La conversion se ejecuta en tu navegador. El rendimiento depende de
+          tu dispositivo y los videos grandes pueden tardar bastante.
+        </p>
+        <ul>
+          <li>No hay subida a servidores de Media Flow.</li>
+          <li>Funciona mejor con archivos pequenos o medianos.</li>
+          <li>La primera conversion descarga el motor WebAssembly.</li>
+        </ul>
+      </aside>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="assets/icon-300.png" alt="" width="28" height="28">
+        <span>Media Flow Pro v1.7.6</span>
       </div>
-    </footer>
+      <div class="footer-links">
+        <a href="index.html">Inicio</a>
+        <a href="converter.html">Convertidor Online</a>
+        <a href="privacy.html">Privacidad</a>
+        <a href="https://github.com/musicallyivan/mediaflow" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/musicallyivan/mediaflow/releases" target="_blank" rel="noopener">Releases</a>
+      </div>
+    </div>
+  </footer>
 
-    <script src="vendor/ffmpeg/ffmpeg.min.js"></script>
-    <script src="converter.js"></script>
-  </body>
+  <script src="vendor/ffmpeg/ffmpeg.min.js"></script>
+  <script src="converter.js"></script>
+</body>
+
 </html>
