@@ -239,11 +239,16 @@ private extension View {
     @ViewBuilder
     func liquidGlass(cornerRadius: CGFloat) -> some View {
         if #available(iOS 26.0, *) {
+            // Aplica el efecto de cristal líquido nativo en iOS 26
             self.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
         } else {
-            self.background(Color(uiColor: .secondarySystemGroupedBackground))
+            // Material esmerilado nativo para iOS 16 y 17
+            self.background(.ultraThinMaterial)
                 .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous).stroke(Color.primary.opacity(0.06), lineWidth: 0.8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(Color.primary.opacity(0.06), lineWidth: 0.8)
+                )
         }
     }
 }
@@ -253,8 +258,18 @@ private struct SettingsView: View {
         NavigationView {
             List {
                 Section("Media Flow") {
-                    LabeledContent("Versión", value: "1.7.1")
-                    LabeledContent("Procesamiento", value: "En el dispositivo")
+                    HStack {
+                        Text("Versión")
+                        Spacer()
+                        Text("1.7.1")
+                            .foregroundColor(.secondary)
+                    }
+                    HStack {
+                        Text("Procesamiento")
+                        Spacer()
+                        Text("En el dispositivo")
+                            .foregroundColor(.secondary)
+                    }
                 }
                 Section("Privacidad") {
                     Label("Tus archivos no se suben a ningún servidor.", systemImage: "lock.shield")
