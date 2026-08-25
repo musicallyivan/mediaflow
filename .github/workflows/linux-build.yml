@@ -7,6 +7,7 @@ on:
       - linux-support
     paths:
       - "app.py"
+      - "linux_app.py"
       - "microsoft_store_pro.py"
       - "requirements.txt"
       - ".github/workflows/linux-build.yml"
@@ -31,7 +32,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-tk libfuse2t64 xz-utils
+          sudo apt-get install -y python3-tk xz-utils
 
       - name: Install Python dependencies
         run: |
@@ -58,7 +59,7 @@ jobs:
           pyinstaller --noconfirm --onefile --windowed \
             --name media-flow \
             --collect-all customtkinter \
-            app.py
+            linux_app.py
 
       - name: Prepare Linux package
         run: |
@@ -74,11 +75,13 @@ jobs:
           ## Requisitos
 
           - Linux x86_64
-          - GTK/X11 o Wayland con Tk disponible
+          - Tk disponible en el sistema
+          - X11 o Wayland
 
           ## Ejecutar
 
-          Haz ejecutable `media-flow` y ejecútalo. FFmpeg y FFprobe están incluidos en el paquete.
+          Haz ejecutable `media-flow` y ejecuta `./media-flow`.
+          FFmpeg y FFprobe están incluidos en el paquete.
 
           Media Flow procesa los archivos localmente.
           EOF
