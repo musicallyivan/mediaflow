@@ -52,11 +52,10 @@ jobs:
           pyinstaller --noconfirm --onefile --windowed \
             --name media-flow \
             --collect-all customtkinter \
-            app.py
+            linux_app.py
 
       - name: Prepare release package
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
           mkdir -p release/media-flow
           cp dist/media-flow release/media-flow/
           cp ffmpeg ffprobe release/media-flow/
