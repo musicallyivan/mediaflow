@@ -4,40 +4,51 @@ struct ContentView: View {
     @StateObject private var engine = ConverterEngine()
     @State private var showingFilePicker = false
     @State private var showingShareSheet = false
+    @State private var showingSettings = false
+    @State private var showingInfo = false
     
     private let primaryTeal = Color(red: 23.0 / 255.0, green: 122.0 / 255.0, blue: 115.0 / 255.0)
-    private let lightTeal = Color(red: 230.0 / 255.0, green: 242.0 / 255.0, blue: 241.0 / 255.0)
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
-                Color(uiColor: .systemGroupedBackground)
-                    .ignoresSafeArea()
+                background
                 
-                ScrollView {
-                    VStack(spacing: 20) {
-                        headerSection
-                        fileSelectionCard
-                        settingsCard
-                        progressAndStatusCard
-                        actionButtons
-                        footerNote
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 18) {
+                        hero
+                        fileCard
+                        conversionCard
+                        statusCard
+                        actionArea
+                        privacyNote
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, 18)
+                    .padding(.top, 10)
+                    .padding(.bottom, 28)
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 8) {
+                ToolbarItem(placement: .topBarLeading) {
+                    HStack(spacing: 9) {
                         Image(systemName: "waveform.circle.fill")
-                            .foregroundColor(primaryTeal)
                             .font(.title3)
+                            .foregroundStyle(primaryTeal)
                         Text("Media Flow")
-                            .font(.headline)
-                            .fontWeight(.bold)
+                            .font(.headline.weight(.bold))
                     }
+                }
+                
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button { showingInfo = true } label: {
+                        Image(systemName: "info.circle")
+                    }
+                    .accessibilityLabel("Información")
+                    
+                    Button { showingSettings = true } label: {
+                        Image(systemName: "gearshape")
+                    }
+                    .accessibilityLabel("Ajustes")
                 }
             }
             .sheet(isPresented: $showingFilePicker) {
@@ -50,258 +61,328 @@ struct ContentView: View {
                     ShareSheet(activityItems: [url])
                 }
             }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView()
+            }
+            .sheet(isPresented: $showingInfo) {
+                InfoView()
+            }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
+        .tint(primaryTeal)
     }
     
-    // MARK: - Subviews
-    
-    private var headerSection: some View {
-        VStack(spacing: 6) {
-            Text("Convierte Audio, Video e Imagen")
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
+    private var background: some View {
+        ZStack {
+            Color(uiColor: .systemGroupedBackground)
+                .ignoresSafeArea()
             
-            Text("Procesamiento local 100% privado en tu iPhone")
-                .font(.footnote)
-                .foregroundColor(.secondary)
+            Circle()
+                .fill(primaryTeal.opacity(0.10))
+                .frame(width: 260, height: 260)
+                .blur(radius: 45)
+                .offset(x: 150, y: -300)
+            
+            Circle()
+                .fill(Color.blue.opacity(0.07))
+                .frame(width: 220, height: 220)
+                .blur(radius: 50)
+                .offset(x: -160, y: 350)
         }
-        .multilineTextAlignment(.center)
-        .padding(.top, 4)
     }
     
-    private var fileSelectionCard: some View {
+    private var hero: some View {
+        VStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(primaryTeal.opacity(0.13))
+                    .frame(width: 76, height: 76)
+                
+                Image(systemName: "waveform.and.mic")
+                    .font(.system(size: 32, weight: .semibold))
+                    .foregroundStyle(primaryTeal)
+            }
+            
+            Text("Convierte tus archivos")
+                .font(.system(size: 29, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+            
+            Text("Audio, vídeo e imagen. Todo se procesa en tu iPhone, sin subir tus archivos.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+        }
+        .padding(.top, 6)
+        .padding(.bottom, 4)
+    }
+    
+    private var fileCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label("Archivo a Convertir", systemImage: "doc.fill")
-                .font(.system(.body, design: .default).weight(.semibold))
-                // O de forma más directa en SwiftUI para iOS 15:
-                .font(.body.weight(.semibold))
-                .foregroundColor(primaryTeal)
+            sectionTitle("Archivo", systemImage: "doc.fill")
             
             if engine.selectedFileURL != nil {
-                HStack(spacing: 12) {
-                    Image(systemName: iconForMode(engine.selectedMode))
-                        .font(.title)
-                        .foregroundColor(primaryTeal)
-                        .frame(width: 44, height: 44)
-                        .background(lightTeal)
-                        .cornerRadius(10)
+                HStack(spacing: 13) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 15, style: .continuous)
+                            .fill(primaryTeal.opacity(0.13))
+                        Image(systemName: iconForMode(engine.selectedMode))
+                            .font(.title2.weight(.semibold))
+                            .foregroundStyle(primaryTeal)
+                    }
+                    .frame(width: 54, height: 54)
                     
-                    VStack(alignment: .leading, spacing: 3) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(engine.selectedFileName)
-                            .font(.body)
-                            .fontWeight(.medium)
+                            .font(.subheadline.weight(.semibold))
                             .lineLimit(1)
                         
                         if !engine.selectedFileSize.isEmpty {
                             Text(engine.selectedFileSize)
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                         }
                     }
                     
-                    Spacer()
+                    Spacer(minLength: 6)
                     
-                    Button(action: { showingFilePicker = true }) {
-                        Image(systemName: "pencil.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(primaryTeal)
+                    Button {
+                        showingFilePicker = true
+                        haptic()
+                    } label: {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.headline.weight(.semibold))
+                            .frame(width: 38, height: 38)
                     }
+                    .buttonStyle(.borderless)
+                    .accessibilityLabel("Cambiar archivo")
                 }
                 .padding(12)
-                .background(Color(uiColor: .secondarySystemGroupedBackground))
-                .cornerRadius(12)
+                .liquidGlass(cornerRadius: 18)
             } else {
-                Button(action: { showingFilePicker = true }) {
-                    HStack {
-                        Spacer()
-                        VStack(spacing: 8) {
-                            Image(systemName: "arrow.up.doc.fill")
-                                .font(.largeTitle)
-                                .foregroundColor(primaryTeal)
-                            
-                            Text("Seleccionar Archivo")
-                                .font(.headline)
-                                .foregroundColor(primaryTeal)
-                            
-                            Text("Audio, Video, Imagen desde Archivos o iCloud")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 24)
-                        Spacer()
+                Button {
+                    showingFilePicker = true
+                    haptic()
+                } label: {
+                    VStack(spacing: 11) {
+                        Image(systemName: "arrow.up.doc")
+                            .font(.system(size: 30, weight: .medium))
+                            .foregroundStyle(primaryTeal)
+                        
+                        Text("Seleccionar archivo")
+                            .font(.headline.weight(.semibold))
+                        
+                        Text("Archivos, iCloud Drive y otras ubicaciones")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
-                    .background(Color(uiColor: .secondarySystemGroupedBackground))
-                    .cornerRadius(14)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [6]))
-                            .foregroundColor(primaryTeal.opacity(0.4))
-                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 25)
                 }
+                .buttonStyle(.plain)
+                .liquidGlass(cornerRadius: 22)
             }
         }
-        .padding(16)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .padding(18)
+        .liquidGlass(cornerRadius: 26)
     }
     
-    private var settingsCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Label("Ajustes de Conversión", systemImage: "slider.horizontal.3")
-                .font(.system(.body, design: .default).weight(.semibold))
-                // O de forma más directa en SwiftUI para iOS 15:
-                .font(.body.weight(.semibold))
-                .foregroundColor(primaryTeal)
+    private var conversionCard: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            sectionTitle("Conversión", systemImage: "slider.horizontal.3")
             
-            // Mode selector
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Tipo de Medio")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Tipo de medio")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
                 
-                Picker("Tipo", selection: $engine.selectedMode) {
+                Picker("Tipo de medio", selection: $engine.selectedMode) {
                     ForEach(MediaMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
+                        Label(mode.rawValue, systemImage: iconForMode(mode))
+                            .tag(mode)
                     }
                 }
-                .pickerStyle(SegmentedPickerStyle())
+                .pickerStyle(.segmented)
             }
             
-            // Format selector
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Formato de Salida")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Formato de salida")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
                 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(engine.selectedMode.defaultFormats, id: \.self) { format in
-                            Button(action: { engine.selectedFormat = format }) {
+                            Button {
+                                engine.selectedFormat = format
+                                haptic()
+                            } label: {
                                 Text(format.uppercased())
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 8)
-                                    .background(engine.selectedFormat == format ? primaryTeal : Color(uiColor: .tertiarySystemGroupedBackground))
-                                    .foregroundColor(engine.selectedFormat == format ? .white : .primary)
-                                    .cornerRadius(8)
+                                    .font(.caption.weight(.bold))
+                                    .padding(.horizontal, 15)
+                                    .padding(.vertical, 10)
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(engine.selectedFormat == format ? .white : .primary)
+                            .background {
+                                Capsule()
+                                    .fill(engine.selectedFormat == format ? primaryTeal : Color(uiColor: .tertiarySystemGroupedBackground))
                             }
                         }
                     }
                 }
             }
             
-            // Quality selector
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Calidad")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
                 
                 Picker("Calidad", selection: $engine.selectedQuality) {
-                    ForEach(QualityLevel.allCases) { q in
-                        Text(q.rawValue).tag(q)
+                    ForEach(QualityLevel.allCases) { quality in
+                        Text(quality.rawValue).tag(quality)
                     }
                 }
-                .pickerStyle(SegmentedPickerStyle())
+                .pickerStyle(.segmented)
             }
         }
-        .padding(16)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .padding(18)
+        .liquidGlass(cornerRadius: 26)
     }
     
-    private var progressAndStatusCard: some View {
-        VStack(spacing: 12) {
-            if engine.isConverting {
-                ProgressView(value: engine.progress, total: 1.0)
-                    .progressViewStyle(LinearProgressViewStyle(tint: primaryTeal))
-                    .padding(.top, 4)
-            }
-            
-            HStack {
-                if engine.isConverting {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                        .padding(.trailing, 4)
-                } else if engine.outputFileURL != nil {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                } else if engine.errorMessage != nil {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.red)
+    private var statusCard: some View {
+        Group {
+            if engine.isConverting || engine.outputFileURL != nil || engine.errorMessage != nil {
+                VStack(spacing: 13) {
+                    HStack(spacing: 12) {
+                        statusIcon
+                        
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(statusTitle)
+                                .font(.subheadline.weight(.semibold))
+                            Text(engine.errorMessage ?? engine.statusMessage)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+                        
+                        Spacer()
+                        
+                        if engine.isConverting {
+                            Text("\(Int(engine.progress * 100))%")
+                                .font(.caption.weight(.bold))
+                                .monospacedDigit()
+                                .foregroundStyle(primaryTeal)
+                        }
+                    }
+                    
+                    if engine.isConverting {
+                        ProgressView(value: engine.progress)
+                            .tint(primaryTeal)
+                            .animation(.easeInOut, value: engine.progress)
+                    }
                 }
-                
-                Text(engine.errorMessage ?? engine.statusMessage)
-                    .font(.subheadline)
-                    .foregroundColor(engine.errorMessage != nil ? .red : .secondary)
-                    .lineLimit(2)
-                
-                Spacer()
+                .padding(17)
+                .liquidGlass(cornerRadius: 24)
             }
         }
-        .padding(14)
-        .background(Color(uiColor: .secondarySystemGroupedBackground))
-        .cornerRadius(14)
-        .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 1)
     }
     
-    private var actionButtons: some View {
+    private var actionArea: some View {
         VStack(spacing: 10) {
             if engine.outputFileURL != nil {
-                Button(action: { showingShareSheet = true }) {
-                    HStack {
-                        Image(systemName: "square.and.arrow.up.fill")
-                        Text("Guardar / Compartir Archivo")
-                            .fontWeight(.bold)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(primaryTeal)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
+                Button {
+                    showingShareSheet = true
+                    haptic()
+                } label: {
+                    Label("Guardar y compartir", systemImage: "square.and.arrow.up")
+                        .font(.headline.weight(.bold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 15)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white)
+                .background {
+                    RoundedRectangle(cornerRadius: 19, style: .continuous)
+                        .fill(primaryTeal)
                 }
                 
-                Button(action: { engine.reset() }) {
-                    HStack {
-                        Image(systemName: "arrow.counterclockwise")
-                        Text("Convertir Otro Archivo")
-                            .fontWeight(.medium)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Color(uiColor: .secondarySystemGroupedBackground))
-                    .foregroundColor(primaryTeal)
-                    .cornerRadius(12)
+                Button {
+                    engine.reset()
+                    haptic()
+                } label: {
+                    Label("Convertir otro archivo", systemImage: "arrow.counterclockwise")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
                 }
+                .buttonStyle(.plain)
+                .foregroundStyle(primaryTeal)
+                .liquidGlass(cornerRadius: 19)
             } else {
-                Button(action: { engine.startConversion() }) {
-                    HStack {
-                        Image(systemName: "bolt.fill")
-                        Text(engine.isConverting ? "Convirtiendo..." : "Convertir Ahora")
+                Button {
+                    engine.startConversion()
+                    haptic()
+                } label: {
+                    HStack(spacing: 9) {
+                        Image(systemName: engine.isConverting ? "hourglass" : "bolt.fill")
+                        Text(engine.isConverting ? "Convirtiendo…" : "Convertir ahora")
                             .fontWeight(.bold)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(engine.selectedFileURL != nil && !engine.isConverting ? primaryTeal : Color.gray.opacity(0.4))
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
+                    .padding(.vertical, 16)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white)
+                .background {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(engine.selectedFileURL != nil && !engine.isConverting ? primaryTeal : Color.gray.opacity(0.35))
                 }
                 .disabled(engine.selectedFileURL == nil || engine.isConverting)
+                .animation(.easeInOut(duration: 0.2), value: engine.selectedFileURL != nil)
             }
         }
     }
     
-    private var footerNote: some View {
-        Text("Media Flow procesa los archivos 100% en tu dispositivo utilizando hardware acelerado de Apple.")
-            .font(.caption2)
-            .foregroundColor(.secondary)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, 10)
-            .padding(.top, 6)
+    private var privacyNote: some View {
+        Label("Procesamiento local y privado", systemImage: "lock.shield.fill")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .padding(.top, 2)
+    }
+    
+    private var statusIcon: some View {
+        ZStack {
+            Circle()
+                .fill(statusColor.opacity(0.13))
+                .frame(width: 42, height: 42)
+            
+            if engine.isConverting {
+                ProgressView()
+                    .tint(statusColor)
+            } else {
+                Image(systemName: engine.errorMessage != nil ? "exclamationmark.triangle.fill" : "checkmark")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(statusColor)
+            }
+        }
+    }
+    
+    private var statusTitle: String {
+        if engine.isConverting { return "Convirtiendo" }
+        if engine.errorMessage != nil { return "Ha ocurrido un error" }
+        return "Conversión completada"
+    }
+    
+    private var statusColor: Color {
+        if engine.errorMessage != nil { return .red }
+        if engine.isConverting { return primaryTeal }
+        return .green
+    }
+    
+    private func sectionTitle(_ title: String, systemImage: String) -> some View {
+        Label(title, systemImage: systemImage)
+            .font(.headline.weight(.bold))
+            .foregroundStyle(primaryTeal)
     }
     
     private func iconForMode(_ mode: MediaMode) -> String {
@@ -310,5 +391,82 @@ struct ContentView: View {
         case .video: return "film"
         case .image: return "photo"
         }
+    }
+    
+    private func haptic() {
+        #if os(iOS)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        #endif
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func liquidGlass(cornerRadius: CGFloat) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular, in: .rect(cornerRadius: cornerRadius))
+        } else {
+            self
+                .background(Color(uiColor: .secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .stroke(Color.primary.opacity(0.06), lineWidth: 0.8)
+                }
+        }
+    }
+}
+
+private struct SettingsView: View {
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Media Flow") {
+                    LabeledContent("Versión", value: "1.7.1")
+                    LabeledContent("Procesamiento", value: "En el dispositivo")
+                }
+                
+                Section("Privacidad") {
+                    Label("Tus archivos no se suben a ningún servidor.", systemImage: "lock.shield")
+                    Label("La conversión se realiza localmente.", systemImage: "iphone")
+                }
+            }
+            .navigationTitle("Ajustes")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .presentationDetents([.medium, .large])
+    }
+}
+
+private struct InfoView: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 18) {
+                Image(systemName: "waveform.circle.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(Color(red: 23.0 / 255.0, green: 122.0 / 255.0, blue: 115.0 / 255.0))
+                
+                Text("Media Flow")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                
+                Text("Conversor multimedia rápido, privado y diseñado para iPhone.")
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 28)
+                
+                Spacer()
+            }
+            .padding(.top, 35)
+            .navigationTitle("Información")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cerrar") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }
