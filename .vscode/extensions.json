@@ -1,0 +1,29 @@
+{
+  "recommendations": [
+    // Python (esencial si Mediaflow usa Python)
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    
+    // Formato y Linting
+    "esbenp.prettier-vscode",
+    "charliermarsh.ruff",
+
+    // Git y Colaboración
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+
+    // Utilidades
+    "formulahendry.auto-rename-tag",
+    "christian-kohler.path-intellisense",
+    
+    //COSAS PERSONALES
+    "ritwickdey.liveserver",
+    "swiftlang.swift-vscode",
+    "076923.python-image-preview",
+    "ms-vscode.makefile-tools",
+    "ms-vscode.powershell",
+    "llvm-vs-code-extensions.lldb-dap",
+    "continue.continue",
+    "openai.chatgpt"
+  ]
+}
