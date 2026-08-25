@@ -1,0 +1,27 @@
+{
+  "name": "Mediaflow Dev Environment",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+
+  // Instala las dependencias del proyecto al crear el contenedor
+  "postCreateCommand": "pip install --upgrade pip && if [ -f requirements.txt ]; then pip install -r requirements.txt; fi",
+
+  // Extensiones de VS Code que se instalarán automáticamente dentro del contenedor
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "eamodio.gitlens",
+        "ritwickdey.liveserver",
+        "swiftlang.swift-vscode",
+        "076923.python-image-preview",
+        "ms-vscode.makefile-tools",
+        "ms-vscode.powershell",
+        "llvm-vs-code-extensions.lldb-dap",
+        "continue.continue",
+        "openai.chatgpt"
+      ]
+    }
+  }
+}
