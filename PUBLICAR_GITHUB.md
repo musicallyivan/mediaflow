@@ -34,11 +34,11 @@ git push -u origin main
 
 ## 3. Publicar una release
 
-Para publicar la version `1.7.6`:
+Para publicar la version `1.7.7`:
 
 ```powershell
-git tag -a v1.7.6 -m "Media Flow 1.7.6"
-git push origin v1.7.6
+git tag -a v1.7.7 -m "Media Flow 1.7.7"
+git push origin v1.7.7
 ```
 
 GitHub Actions ejecutara `.github/workflows/release.yml` y publicara estos archivos en Releases:

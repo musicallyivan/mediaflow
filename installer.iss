@@ -1,6 +1,6 @@
 #define MyAppName "Media Flow"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.7.6"
+  #define MyAppVersion "1.7.7"
 #endif
 #define MyAppPublisher "musicallyivan"
 #define MyAppURL "https://github.com/musicallyivan/mediaflow"
@@ -59,6 +59,7 @@ Source: "release\media-flow\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignorever
 Source: "release\media-flow\ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "release\media-flow\ffprobe.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "release\media-flow\icon-300.png"; DestDir: "{app}"; Flags: ignoreversion
+Source: "release\media-flow\assets\icons\*"; DestDir: "{app}\assets\icons"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "release\media-flow\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "release\media-flow\CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "release\media-flow\PRIVACY.md"; DestDir: "{app}"; Flags: ignoreversion

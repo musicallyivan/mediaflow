@@ -63,10 +63,11 @@ jobs:
 
       - name: Prepare Linux package
         run: |
-          mkdir -p release/media-flow
+          mkdir -p release/media-flow/assets/icons
           cp dist/media-flow release/media-flow/
           cp ffmpeg ffprobe release/media-flow/
           cp icon-300.png release/media-flow/ 2>/dev/null || true
+          cp -r assets/icons/* release/media-flow/assets/icons/ 2>/dev/null || true
           cp README.md CHANGELOG.md PRIVACY.md THIRD_PARTY_NOTICES.md release/media-flow/
           cp -r ffmpeg-licenses release/media-flow/
           cat > release/media-flow/README-LINUX.md <<'EOF'

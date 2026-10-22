@@ -44,11 +44,12 @@ jobs:
       - name: Prepare release ZIP
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path release\media-flow
+          New-Item -ItemType Directory -Force -Path release\media-flow\assets\icons
           Copy-Item dist\media-flow.exe release\media-flow\
           Copy-Item ffmpeg.exe release\media-flow\
           Copy-Item ffprobe.exe release\media-flow\
           Copy-Item icon-300.png release\media-flow\
+          Copy-Item assets\icons\* release\media-flow\assets\icons\ -Force
           Copy-Item README.md release\media-flow\
           Copy-Item CHANGELOG.md release\media-flow\
           Copy-Item PRIVACY.md release\media-flow\
