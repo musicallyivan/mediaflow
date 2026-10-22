@@ -1,12 +1,12 @@
 """Linux entry point for Media Flow.
 
-Keeps the main application shared with Windows while adapting the few
-Windows-specific integration points for Linux.
+Adapts desktop integration, font selection, and system notifications for Linux distributions.
 """
 
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
 import sys
 import webbrowser
@@ -25,7 +25,10 @@ def _remove_windows_store_buttons(widget: object) -> None:
             text = ""
         if "Microsoft Store" in text:
             try:
+                parent = getattr(child, "master", None)
                 child.destroy()
+                if parent and len(getattr(parent, "winfo_children", lambda: [])()) == 0:
+                    parent.destroy()
             except Exception:
                 pass
         else:
@@ -43,28 +46,13 @@ def _linux_pro_build_ui(self: app.ProUpgradeModal) -> None:
 app.ProUpgradeModal._build_ui = _linux_pro_build_ui
 
 
-def _linux_open_history_file(self: app.MediaConverterApp, path_str: str) -> None:
-    if not os.path.exists(path_str):
-        return
-    try:
-        subprocess.Popen(["xdg-open", str(Path(path_str).parent)])
-    except Exception:
-        try:
-            webbrowser.open(Path(path_str).parent.as_uri())
-        except Exception:
-            pass
-
-
-app.MediaConverterApp._open_history_file = _linux_open_history_file
-
-
 def _linux_check_for_updates(self: app.MediaConverterApp, silent: bool = False) -> None:
     """Linux updates are distributed as GitHub release archives."""
     if not silent:
-        webbrowser.open("https://github.com/musicallyivan/mediaflow/releases")
+        webbrowser.open(f"https://github.com/{app.GITHUB_REPO}/releases")
         app.messagebox.showinfo(
             app.APP_TITLE,
-            "Las actualizaciones de Linux se publican en GitHub Releases. Se ha abierto la página de descargas.",
+            "Las actualizaciones de Linux se publican en GitHub Releases. Se ha abierto la página de descargas en tu navegador.",
         )
 
 
@@ -72,12 +60,20 @@ app.MediaConverterApp._check_for_updates = _linux_check_for_updates
 
 
 def main() -> None:
-    # Make bundled ffmpeg/ffprobe discoverable by the shared application.
+    # Ensure bundled ffmpeg/ffprobe or common Linux bin directories are prioritized
     app_dir = Path(sys.argv[0]).resolve().parent
-    os.environ["PATH"] = f"{app_dir}{os.pathsep}{os.environ.get('PATH', '')}"
+    extra_paths = [
+        str(app_dir),
+        str(app_dir / "bin"),
+        str(Path.home() / ".local" / "bin"),
+        "/usr/local/bin",
+        "/usr/bin",
+    ]
+    current_path = os.environ.get("PATH", "")
+    os.environ["PATH"] = f"{os.pathsep.join(extra_paths)}{os.pathsep}{current_path}"
 
     window = app.MediaConverterApp()
-    window.title(f"{app.APP_TITLE} — Linux v{app.APP_VERSION}")
+    window.title(f"{app.APP_TITLE} Suite — Linux v{app.APP_VERSION}")
     window.mainloop()
 
 

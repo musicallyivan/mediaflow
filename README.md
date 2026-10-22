@@ -1,6 +1,6 @@
 # Media Flow Suite
 
-Versión actual: `1.7.6`
+Versión actual: `1.7.7`
 
 Media Flow es una suite multimedia moderna para Windows con diseño contemporáneo de tarjetas y esquinas redondeadas, que convierte, recorta, comprime y procesa archivos de audio, video e imagen con aceleración por hardware mediante `ffmpeg`.
 
@@ -8,17 +8,17 @@ Media Flow es una suite multimedia moderna para Windows con diseño contemporán
 
 Media Flow incluye un sistema de niveles con un **Complemento PRO** para usuarios avanzados:
 
-| Característica | Versión Gratuita | Complemento PRO |
-| :--- | :--- | :--- |
-| **Formatos Estándar** | MP3, M4A, WAV, OGG, AAC, MP4, MOV, WEBM, AVI, GIF, PNG, JPG... | Todos los estándar + Hi-Fi |
-| **Formatos Hi-Fi & Lossless** | ❌ Básico | ✔ FLAC, OPUS, ALAC, AIFF, AV1, H.265 (HEVC) |
-| **Aceleración Hardware GPU** | Solo codificación por CPU | ✔ NVIDIA NVENC / AMD AMF / Intel QSV (10x más rápido) |
-| **Multihilo en Lote** | 1 archivo a la vez | ✔ Hasta 8 conversiones en paralelo |
-| **Resolución & FPS** | Hasta 1080p / 30 fps | ✔ 4K Ultra HD (2160p) y 60 FPS |
-| **Herramientas de Edición** | ❌ Bloqueado | ✔ Recorte milimétrico (Trim) y Compresión a Tamaño Objetivo (MB) |
-| **Modos Especiales** | ❌ Básico | ✔ Extracción de audio/subtítulos SRT y Unión/Concatenación |
-| **Sincronización en la Nube** | Guardado local | ✔ Exportación automática a OneDrive, Google Drive, iCloud |
-| **Interfaz Moderna** | ✔ Bordes redondeados y Dark/Light Mode | ✔ Bordes redondeados, Temas e insignia VIP |
+| Característica                | Versión Gratuita                                               | Complemento PRO                                                  |
+| :---------------------------- | :------------------------------------------------------------- | :--------------------------------------------------------------- |
+| **Formatos Estándar**         | MP3, M4A, WAV, OGG, AAC, MP4, MOV, WEBM, AVI, GIF, PNG, JPG... | Todos los estándar + Hi-Fi                                       |
+| **Formatos Hi-Fi & Lossless** | ❌ Básico                                                      | ✔ FLAC, OPUS, ALAC, AIFF, AV1, H.265 (HEVC)                      |
+| **Aceleración Hardware GPU**  | Solo codificación por CPU                                      | ✔ NVIDIA NVENC / AMD AMF / Intel QSV (10x más rápido)            |
+| **Multihilo en Lote**         | 1 archivo a la vez                                             | ✔ Hasta 8 conversiones en paralelo                               |
+| **Resolución & FPS**          | Hasta 1080p / 30 fps                                           | ✔ 4K Ultra HD (2160p) y 60 FPS                                   |
+| **Herramientas de Edición**   | ❌ Bloqueado                                                   | ✔ Recorte milimétrico (Trim) y Compresión a Tamaño Objetivo (MB) |
+| **Modos Especiales**          | ❌ Básico                                                      | ✔ Extracción de audio/subtítulos SRT y Unión/Concatenación       |
+| **Sincronización en la Nube** | Guardado local                                                 | ✔ Exportación automática a OneDrive, Google Drive, iCloud        |
+| **Interfaz Moderna**          | ✔ Bordes redondeados y Dark/Light Mode                         | ✔ Bordes redondeados, Temas e insignia VIP                       |
 
 La app no descarga contenido de servicios de terceros. Convierte archivos locales que ya tengas derecho a usar. PRO es opcional y se puede activar con una clave o mediante los canales de compra disponibles.
 
@@ -44,6 +44,7 @@ Abre `android-app/` con Android Studio para compilarla.
 ## Version iOS (iPhone / iPad)
 
 Hay una version nativa para iOS en `ios-app/` desarrollada en **SwiftUI** con conversión local mediante **FFmpegKit**:
+
 - No requiere Mac: se compila automáticamente en **GitHub Actions** (`.github/workflows/ios-build.yml`).
 - No requiere cuenta de pago: se instala gratis con **Sideloadly** o **AltStore** desde Windows.
 - Consulta [ios-app/GUIA_INSTALACION_IOS.md](ios-app/GUIA_INSTALACION_IOS.md) para ver la guía de instalación.

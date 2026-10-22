@@ -2,6 +2,33 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.7.7] - 2026-10-23
+
+### Added
+
+- **Rediseño Completo Estilo Microsoft Store (Windows 11 / WinUI 3)**:
+  - Nueva cabecera con barra de búsqueda tipo píldora interactiva para filtrar formatos, herramientas y preajustes en tiempo real.
+  - Avatar circular de usuario y badge de estado de licencia (PRO / Gratis) en la barra superior.
+  - Sidebar vertical (_Navigation Rail_) con indicador visual activo de 3px y accesos a _Inicio_, _Audio_, _Video_, _Imagen_, _Herramientas_, _Biblioteca_ y _Ajustes_.
+  - Panel _Hero Showcase_ cinemático con tarjeta principal destacada, puntos de carrusel, tarjeta esmeralda para Audio Hi-Fi y accesos rápidos a Video 4K y Herramientas.
+  - Secciones estructuradas con navegación por flechas (_Tendencias de conversión ›_ y _Archivos en Cola ›_).
+  - Tarjetas de archivo modernas en la cola con icono por categoría multimedia (🎵, 🎬, 🖼️), metadatos de peso/duración y botón rápido de eliminación.
+  - Barra de acción inferior acoplada con botón primario Fluent Blue de alto contraste y barra de progreso estilizada.
+  - Soporte impecable y automático para Modo Oscuro y Modo Claro.
+- **Implementación y Compatibilidad Total con Linux**:
+  - `linux_app.py` adaptado para heredar toda la nueva interfaz moderna con soporte para X11 y Wayland.
+  - Notificaciones de escritorio nativas en Linux mediante `notify-send` (`send_desktop_notification`).
+  - Apertura nativa de archivos y carpetas del historial mediante `xdg-open`.
+  - Detección automática de carpetas locales y servicios en la nube en Linux (Nextcloud, ownCloud, Dropbox, Google Drive, Mega).
+  - Priorización inteligente de ejecutables locales y del sistema para `ffmpeg` y `ffprobe`.
+  - Eliminación automática de referencias a Microsoft Store en Linux, manteniendo soporte para Stripe y activación por clave.
+- **Nuevo Sitio Web Oficial Estilo Apple.com (`mediaflow-web`)**:
+  - Tipografía San Francisco (`-apple-system`, `SF Pro Display`) y cristal esmerilado translúcido (_frosted glass blur_).
+  - Animaciones cinéticas fluidas: resplandor aurora en el Hero, ticker marquee infinito de formatos en movimiento, efecto 3D Parallax con foco dinámico al pasar el cursor y animaciones en scroll con curvas elásticas.
+  - Simulador y playground interactivo para probar conversiones multimedia en vivo dentro del navegador.
+  - Visualizador de audio interactivo con barras de espectro dinámicas.
+  - Visor interactivo de la aplicación con alternador instantáneo entre Modo Oscuro y Modo Claro.
+
 ## [1.7.6] - 2026-08-25
 
 ### Added
