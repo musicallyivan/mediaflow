@@ -100,6 +100,10 @@ function withTimeout(promise, timeoutMs, message) {
   });
 }
 
+function getVendorBase() {
+  return document.body?.dataset?.vendorBase || "vendor/ffmpeg/";
+}
+
 function createFFmpegInstance() {
   const { createFFmpeg } = window.FFmpeg || {};
 
@@ -110,7 +114,7 @@ function createFFmpegInstance() {
   return createFFmpeg({
     log: true,
     mainName: "main",
-    corePath: new URL("vendor/ffmpeg/ffmpeg-core.js", window.location.href).href,
+    corePath: new URL(`${getVendorBase()}ffmpeg-core.js`, window.location.href).href,
     progress: ({ ratio }) => {
       if (ratio > 0) {
         setStatus("Convirtiendo...", ratio * 100);
@@ -120,7 +124,7 @@ function createFFmpegInstance() {
 }
 
 async function ensureCoreIsReachable() {
-  const wasmURL = new URL("vendor/ffmpeg/ffmpeg-core.wasm", window.location.href);
+  const wasmURL = new URL(`${getVendorBase()}ffmpeg-core.wasm`, window.location.href);
   const response = await fetch(wasmURL, { method: "HEAD", cache: "no-store" });
 
   if (!response.ok) {

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Convertidor Online WebAssembly — Media Flow Suite</title>
+  <meta name="description" content="Convierte audio, video e imagen directamente en tu navegador con Media Flow WebAssembly. 100% local, sin subir tus archivos a servidores externos.">
+  <link rel="icon" type="image/png" href="../assets/icon.png">
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../converter.css">
+</head>
+<body data-vendor-base="../vendor/ffmpeg/">
+
+  <!-- ==========================================================================
+       1. GLOBAL APPLE NAV
+       ========================================================================== -->
+  <header class="apple-nav">
+    <div class="apple-nav-inner">
+      <a href="../index.html" class="nav-brand">
+        <img src="../assets/icon.png" alt="Media Flow Logo" class="nav-logo-icon">
+        <span>Media Flow</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="../index.html#vision" class="nav-link">Visión General</a></li>
+        <li><a href="../index.html#rendimiento" class="nav-link">Rendimiento</a></li>
+        <li><a href="../index.html#bento" class="nav-link">Innovación</a></li>
+        <li><a href="../converter.html" class="nav-link" style="color: var(--apple-cyan); font-weight: 600;">Convertidor Online</a></li>
+        <li><a href="../privacy.html" class="nav-link">Privacidad</a></li>
+        <li><a href="../index.html#descargar" class="nav-link">Descargas</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <a href="../index.html#descargar" class="btn-nav-download">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Descargar App
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sticky Product Sub-Bar -->
+  <nav class="apple-subnav">
+    <div class="apple-subnav-inner">
+      <div class="subnav-title">Convertidor WebAssembly</div>
+      <ul class="subnav-links">
+        <li><a href="../index.html">← Volver al inicio</a></li>
+        <li><a href="../converter.html" class="active">Convertidor en el navegador</a></li>
+        <li><a href="../privacy.html">Privacidad</a></li>
+        <li><a href="../index.html#descargar">App Windows &amp; Linux</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ==========================================================================
+       2. CONVERTER HERO SECTION
+       ========================================================================== -->
+  <main>
+    <section class="converter-hero">
+      <div class="aurora-bg"></div>
+      <div class="hero-content">
+        <span class="hero-eyebrow">Motor FFmpeg WebAssembly • 100% En Tu Navegador</span>
+        <h1 class="hero-title" style="font-size: clamp(34px, 5.5vw, 60px); margin-bottom: 14px;">Convierte sin subir nada.</h1>
+        <p class="hero-subtitle" style="font-size: clamp(16px, 2vw, 20px); margin-bottom: 12px;">
+          Ejecuta FFmpeg directamente dentro de tu navegador mediante WebAssembly. Tus archivos nunca salen de tu equipo.
+        </p>
+      </div>
+    </section>
+
+    <!-- ==========================================================================
+         3. CONVERTER WORKSPACE
+         ========================================================================== -->
+    <section class="converter-shell" aria-label="Convertidor online">
+      <form class="converter-panel" id="converterForm">
+        <label class="drop-zone" for="fileInput" id="dropZone">
+          <div class="drop-icon-badge">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+          </div>
+          <span class="drop-title">Selecciona o arrastra un archivo</span>
+          <span class="drop-copy">Audio, video o imagen procesados en la memoria local de tu navegador.</span>
+          <input id="fileInput" type="file" required>
+        </label>
+
+        <div class="selected-file" id="selectedFile" hidden></div>
+
+        <div class="control-grid">
+          <label>
+            Tipo de medio
+            <select id="modeSelect">
+              <option value="audio">Audio</option>
+              <option value="video">Video</option>
+              <option value="image">Imagen</option>
+            </select>
+          </label>
+
+          <label>
+            Formato de salida
+            <select id="formatSelect"></select>
+          </label>
+
+          <label>
+            Perfil de calidad
+            <select id="qualitySelect">
+              <option value="balanced">Equilibrada (Recomendado)</option>
+              <option value="small">Archivo compacto</option>
+              <option value="high">Alta calidad</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="status-box" aria-live="polite">
+          <div class="progress-row">
+            <span id="statusText">Listo para convertir localmente.</span>
+            <span id="progressText">0%</span>
+          </div>
+          <progress id="progressBar" value="0" max="100"></progress>
+        </div>
+
+        <div class="converter-actions">
+          <button class="button primary" id="convertButton" type="submit">
+            ⚡ Iniciar conversión
+          </button>
+          <a class="button secondary download-result" id="downloadResult" hidden>
+            ⬇ Descargar archivo convertido
+          </a>
+          <button class="button secondary" id="convertAnotherButton" type="button" hidden>
+            Convertir otro archivo
+          </button>
+        </div>
+      </form>
+
+      <aside class="converter-notes">
+        <span class="converter-notes-badge">Privacidad Garantizada</span>
+        <h2>Privado por diseño</h2>
+        <p>
+          Esta herramienta ejecuta un núcleo de conversión local dentro de tu navegador web sin enviar tus archivos a ningún servidor externo.
+        </p>
+        <ul>
+          <li><strong>Cero subidas:</strong> Tus archivos permanecen en tu ordenador en todo momento.</li>
+          <li><strong>Ideal para archivos ligeros:</strong> La primera ejecución descarga el motor WebAssembly.</li>
+          <li><strong>¿Archivos pesados o 4K?</strong> Usa la aplicación nativa de escritorio con aceleración por GPU (NVIDIA, AMD e Intel).</li>
+        </ul>
+
+        <div class="converter-notes-cta">
+          <p>¿Buscas velocidad hasta 10x superior con GPU por hardware y lotes ilimitados?</p>
+          <a href="../index.html#descargar" class="btn-dl-item primary" style="justify-content: center; gap: 8px;">
+            <span>💻 Descargar App de Escritorio</span>
+          </a>
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <!-- ==========================================================================
+       4. APPLE FOOTER
+       ========================================================================== -->
+  <footer class="apple-footer">
+    <div class="footer-inner">
+      <div class="footer-disclaimer">
+        * Media Flow transcodifica y procesa archivos multimedia almacenados localmente de forma 100% privada sin transmitir tus datos ni contenido a servidores externos. Las características aceleradas por GPU requieren hardware compatible de NVIDIA, AMD o Intel.
+      </div>
+
+      <div class="footer-links-grid">
+        <div class="footer-col">
+          <div class="footer-col-title">Media Flow Suite</div>
+          <ul class="footer-col-links">
+            <li><a href="../index.html#vision">Visión General</a></li>
+            <li><a href="../index.html#rendimiento">Aceleración GPU</a></li>
+            <li><a href="../converter.html" style="color: var(--apple-cyan); font-weight: 600;">Convertidor Online</a></li>
+            <li><a href="../index.html#bento">Video 4K / 60 FPS</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <div class="footer-col-title">Plataformas</div>
+          <ul class="footer-col-links">
+            <li><a href="../index.html#descargar">Media Flow Windows</a></li>
+            <li><a href="../index.html#descargar">Media Flow Linux</a></li>
+            <li><a href="https://github.com/musicallyivan/mediaflow/tree/main/android-app" target="_blank">Versión Android</a></li>
+            <li><a href="https://github.com/musicallyivan/mediaflow/tree/main/ios-app" target="_blank">Versión iOS (SwiftUI)</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <div class="footer-col-title">Complemento PRO</div>
+          <ul class="footer-col-links">
+            <li><a href="../index.html#bento">Funciones PRO</a></li>
+            <li><a href="https://buy.stripe.com/4gM00l2uV0aXe6k1eIgEg00" target="_blank">Comprar con Stripe</a></li>
+            <li><a href="https://github.com/musicallyivan/mediaflow/blob/main/STORE_LISTING.md" target="_blank">Microsoft Store Add-on</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <div class="footer-col-title">Proyecto &amp; Legal</div>
+          <ul class="footer-col-links">
+            <li><a href="../privacy.html">Política de Privacidad</a></li>
+            <li><a href="https://github.com/musicallyivan/mediaflow" target="_blank">GitHub Repository</a></li>
+            <li><a href="https://github.com/musicallyivan/mediaflow/releases" target="_blank">Releases &amp; Changelog</a></li>
+            <li><a href="https://github.com/musicallyivan/mediaflow/blob/main/LICENSE" target="_blank">Licencia MIT</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>Copyright © 2026 Media Flow Suite. Todos los derechos reservados.</div>
+        <div>
+          <a href="../privacy.html" style="color: var(--text-secondary); margin-right: 16px;">Política de Privacidad</a>
+          <span style="color: var(--text-tertiary);">Diseñado con la filosofía estética de Apple y potencia de FFmpeg.</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="../vendor/ffmpeg/ffmpeg.min.js"></script>
+  <script src="../converter.js"></script>
+</body>
+</html>

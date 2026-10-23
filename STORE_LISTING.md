@@ -38,6 +38,11 @@ convertidor, ffmpeg, audio, video, imagen, mp3, mp4, hevc, gpu, nvenc, 4k, windo
 
 Utilities & tools
 
+## Privacy Policy URL
+
+- Subpágina directa: `https://musicallyivan.github.io/mediaflow/privacy.html`
+- Ruta limpia alternativa: `https://musicallyivan.github.io/mediaflow/privacy/`
+
 ## Certification Notes
 
 The app processes user-selected local files with FFmpeg. It does not download third-party media or upload files directly to external servers. Free conversion features do not require login credentials. The optional PRO add-on can be activated through available purchase channels; payment data is handled by the selected payment provider. Cloud sync support works by saving converted files into local folders already managed by the official OneDrive, Google Drive or iCloud Drive clients installed by the user.
