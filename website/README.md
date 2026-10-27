@@ -1,4 +1,4 @@
-# Media Flow — Sitio Web Renovado (Estilo Apple.com)
+# Media Flow — Sitio Web Renovado
 
 Página web oficial de presentación para **Media Flow Suite**, diseñada con la estética de **Apple.com**: tipografía San Francisco (`-apple-system`), efectos de cristal esmerilado (*frosted glass blur*), paleta oscura cinematográfica y animaciones cinéticas fluidas en scroll, widgets y carruseles.
 
