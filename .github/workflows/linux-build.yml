@@ -42,18 +42,19 @@ jobs:
 
       - name: Download static FFmpeg
         run: |
-          curl -L --fail --retry 3 \
-            https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz \
+          curl -fsSL --retry 3 \
+            https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz \
             -o ffmpeg.tar.xz
           mkdir -p ffmpeg-dist
           tar -xJf ffmpeg.tar.xz -C ffmpeg-dist
-          FFMPEG_DIR="$(find ffmpeg-dist -maxdepth 1 -type d -name 'ffmpeg-*-amd64-static' | head -n 1)"
-          test -n "$FFMPEG_DIR"
-          cp "$FFMPEG_DIR/ffmpeg" ffmpeg
-          cp "$FFMPEG_DIR/ffprobe" ffprobe
+          FFMPEG_BIN="$(find ffmpeg-dist -type f -name 'ffmpeg' | head -n 1)"
+          FFPROBE_BIN="$(find ffmpeg-dist -type f -name 'ffprobe' | head -n 1)"
+          test -n "$FFMPEG_BIN" && test -n "$FFPROBE_BIN"
+          cp "$FFMPEG_BIN" ffmpeg
+          cp "$FFPROBE_BIN" ffprobe
           chmod +x ffmpeg ffprobe
           mkdir -p ffmpeg-licenses
-          find "$FFMPEG_DIR" -maxdepth 1 -type f \( -iname 'LICENSE*' -o -iname 'COPYING*' -o -iname 'README*' \) -exec cp {} ffmpeg-licenses/ \;
+          find ffmpeg-dist -maxdepth 2 -type f \( -iname 'LICENSE*' -o -iname 'COPYING*' -o -iname 'README*' \) -exec cp {} ffmpeg-licenses/ \;
 
       - name: Build Linux executable
         run: |
