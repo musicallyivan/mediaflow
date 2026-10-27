@@ -1,0 +1,16 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Media Flow
+GenericName=Conversor Multimedia
+GenericName[en]=Multimedia Converter
+Comment=Convierte, recorta y comprime archivos de audio, vídeo e imagen localmente con aceleración GPU
+Comment[en]=Convert, trim, and compress audio, video, and image files locally with GPU acceleration
+Exec=/usr/bin/media-flow %F
+Icon=media-flow
+Terminal=false
+Categories=AudioVideo;AudioVideoEditing;Video;Audio;GTK;
+MimeType=audio/mpeg;audio/mp4;audio/x-wav;audio/flac;audio/ogg;video/mp4;video/x-matroska;video/quicktime;video/webm;video/x-msvideo;image/png;image/jpeg;image/webp;image/avif;
+StartupNotify=true
+StartupWMClass=media-flow
+Keywords=ffmpeg;converter;video;audio;image;mp4;mp3;flac;4k;av1;

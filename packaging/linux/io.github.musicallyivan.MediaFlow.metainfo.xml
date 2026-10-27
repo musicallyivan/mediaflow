@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.musicallyivan.MediaFlow</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Media Flow</name>
+  <summary>Suite de conversión y procesamiento multimedia con aceleración GPU</summary>
+  <summary xml:lang="en">Multimedia conversion and processing suite with GPU acceleration</summary>
+  <description>
+    <p>
+      Media Flow es una suite multimedia moderna para convertir, recortar, comprimir y unir archivos de audio, vídeo e imagen de forma 100% local mediante FFmpeg.
+    </p>
+    <p>
+      Incluye soporte para formatos estándar y de alta fidelidad (MP4, MKV, AV1, H.265, MP3, FLAC, OPUS, ALAC, WebP, AVIF), aceleración por hardware GPU (NVIDIA NVENC, AMD AMF e Intel QSV) y procesamiento por lotes.
+    </p>
+  </description>
+  <launchable type="desktop-id">media-flow.desktop</launchable>
+  <url type="homepage">https://musicallyivan.github.io/mediaflow/</url>
+  <url type="bugtracker">https://github.com/musicallyivan/mediaflow/issues</url>
+  <developer id="io.github.musicallyivan">
+    <name>MusicallyIvan</name>
+  </developer>
+  <provides>
+    <binary>media-flow</binary>
+  </provides>
+  <content_rating type="oars-1.1" />
+  <releases>
+    <release version="1.7.8" date="2026-10-27" />
+  </releases>
+</component>

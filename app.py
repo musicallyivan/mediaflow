@@ -10,20 +10,34 @@ import sys
 import tempfile
 import threading
 import time
+import types
 import urllib.error
 import urllib.request
 import webbrowser
 from pathlib import Path
 from typing import Any, Optional
 
+try:
+    import PIL._tkinter_finder  # noqa: F401
+except ModuleNotFoundError:
+    try:
+        from tkinter import _tkinter as _tk_mod
+
+        _finder_shim = types.ModuleType("PIL._tkinter_finder")
+        _finder_shim.TKINTER_LIB = getattr(_tk_mod, "__file__", None)  # type: ignore[attr-defined]
+        _finder_shim.tk_version = str(getattr(_tk_mod, "TK_VERSION", "8.6"))  # type: ignore[attr-defined]
+        sys.modules["PIL._tkinter_finder"] = _finder_shim
+    except Exception:
+        pass
+
 import customtkinter as ctk
-from PIL import Image
+from PIL import Image, ImageTk
 from tkinter import filedialog, messagebox
 
 from microsoft_store_pro import MicrosoftStorePro
 
 APP_TITLE = "Media Flow"
-APP_VERSION = "1.7.7"
+APP_VERSION = "1.7.8"
 GITHUB_REPO = os.environ.get("MEDIA_FLOW_GITHUB_REPO", "musicallyivan/mediaflow")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 STRIPE_CHECKOUT_URL = os.environ.get("MEDIA_FLOW_STRIPE_URL", "https://buy.stripe.com/4gM00l2uV0aXe6k1eIgEg00")
@@ -76,10 +90,29 @@ def app_dir() -> Path:
 
 
 def resource_path(name: str) -> Path:
-    return app_dir() / name
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        meipass_candidate = Path(getattr(sys, "_MEIPASS")) / name
+        if meipass_candidate.exists():
+            return meipass_candidate
+    local_candidate = app_dir() / name
+    if local_candidate.exists():
+        return local_candidate
+    if sys.platform.startswith("linux"):
+        for sys_dir in (Path("/opt/media-flow"), Path("/usr/share/media-flow")):
+            sys_candidate = sys_dir / name
+            if sys_candidate.exists():
+                return sys_candidate
+    return local_candidate
 
 
 def config_path() -> Path:
+    if sys.platform.startswith("linux"):
+        legacy = Path.home() / "Media Flow" / "settings.json"
+        if legacy.exists():
+            return legacy
+        xdg = os.environ.get("XDG_CONFIG_HOME")
+        base_xdg = Path(xdg) if xdg else (Path.home() / ".config")
+        return base_xdg / "media-flow" / "settings.json"
     base = Path(os.environ.get("LOCALAPPDATA") or Path.home())
     return base / "Media Flow" / "settings.json"
 
@@ -104,8 +137,11 @@ def find_ffmpeg() -> Optional[str]:
     program_files = [Path(os.environ.get("ProgramFiles", "")), Path(os.environ.get("ProgramFiles(x86)", ""))]
     candidates = [
         base / "ffmpeg.exe",
+        base / "ffmpeg",
         base / "ffmpeg" / "bin" / "ffmpeg.exe",
         base / "bin" / "ffmpeg.exe",
+        base / "bin" / "ffmpeg",
+        Path("/opt/media-flow/ffmpeg"),
         Path.home() / "scoop" / "shims" / "ffmpeg.exe",
         Path.home() / ".local" / "bin" / "ffmpeg",
         Path("/usr/local/bin/ffmpeg"),
@@ -125,7 +161,7 @@ def find_ffmpeg() -> Optional[str]:
         candidates.extend(winget_packages.glob("Gyan.FFmpeg*/*/bin/ffmpeg.exe"))
 
     for candidate in candidates:
-        if candidate.exists():
+        if candidate.exists() and candidate.is_file():
             return str(candidate)
     return None
 
@@ -134,7 +170,7 @@ def find_ffprobe() -> Optional[str]:
     ffmpeg = find_ffmpeg()
     if ffmpeg:
         candidate = Path(ffmpeg).with_name("ffprobe.exe" if sys.platform == "win32" else "ffprobe")
-        if candidate.exists():
+        if candidate.exists() and candidate.is_file():
             return str(candidate)
 
     found = shutil.which("ffprobe")
@@ -144,14 +180,17 @@ def find_ffprobe() -> Optional[str]:
     base = app_dir()
     candidates = [
         base / "ffprobe.exe",
+        base / "ffprobe",
         base / "ffmpeg" / "bin" / "ffprobe.exe",
         base / "bin" / "ffprobe.exe",
+        base / "bin" / "ffprobe",
+        Path("/opt/media-flow/ffprobe"),
         Path.home() / ".local" / "bin" / "ffprobe",
         Path("/usr/local/bin/ffprobe"),
         Path("/usr/bin/ffprobe"),
     ]
     for candidate in candidates:
-        if candidate.exists():
+        if candidate.exists() and candidate.is_file():
             return str(candidate)
     return None
 
@@ -775,6 +814,15 @@ class MediaConverterApp(ctk.CTk):
     # ==========================================
     def _load_app_icons(self) -> None:
         self.logo_image = None
+        self._icon_cache: dict[tuple[str, tuple[int, int], str], ctk.CTkImage] = {}
+        self._imagetk_available = False
+        try:
+            _test_probe = ImageTk.PhotoImage(Image.new("RGBA", (1, 1)))
+            del _test_probe
+            self._imagetk_available = True
+        except Exception:
+            return
+
         icon_path = resource_path("icon-300.png")
         if icon_path.exists():
             try:
@@ -782,14 +830,15 @@ class MediaConverterApp(ctk.CTk):
                 self.logo_image = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(26, 26))
             except Exception:
                 pass
-        self._icon_cache: dict[tuple[str, tuple[int, int], str], ctk.CTkImage] = {}
 
     def _get_icon(self, name: str, size: tuple[int, int] = (20, 20), variant: str = "auto") -> Optional[ctk.CTkImage]:
+        if not getattr(self, "_imagetk_available", True):
+            return None
         cache_key = (name, size, variant)
         if cache_key in self._icon_cache:
             return self._icon_cache[cache_key]
 
-        icons_dir = resource_path("assets") / "icons"
+        icons_dir = resource_path("assets/icons")
         if not icons_dir.exists():
             icons_dir = app_dir() / "assets" / "icons"
 

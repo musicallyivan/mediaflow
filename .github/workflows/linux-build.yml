@@ -1,4 +1,4 @@
-name: Build Linux App
+name: Build Linux App (.deb, .rpm, .tar.gz)
 
 on:
   push:
@@ -10,6 +10,7 @@ on:
       - "linux_app.py"
       - "microsoft_store_pro.py"
       - "requirements.txt"
+      - "packaging/linux/**"
       - ".github/workflows/linux-build.yml"
   workflow_dispatch:
 
@@ -32,7 +33,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-tk xz-utils
+          sudo apt-get install -y python3-tk xz-utils rpm dpkg-dev
 
       - name: Install Python dependencies
         run: |
@@ -59,39 +60,26 @@ jobs:
           pyinstaller --noconfirm --onefile --windowed \
             --name media-flow \
             --collect-all customtkinter \
+            --collect-all PIL \
+            --collect-all darkdetect \
+            --hidden-import PIL._tkinter_finder \
+            --hidden-import PIL.ImageTk \
+            --add-data "icon-300.png:." \
+            --add-data "assets/icons:assets/icons" \
             linux_app.py
 
-      - name: Prepare Linux package
+      - name: Build .deb, .rpm and .tar.gz packages
         run: |
-          mkdir -p release/media-flow/assets/icons
-          cp dist/media-flow release/media-flow/
-          cp ffmpeg ffprobe release/media-flow/
-          cp icon-300.png release/media-flow/ 2>/dev/null || true
-          cp -r assets/icons/* release/media-flow/assets/icons/ 2>/dev/null || true
-          cp README.md CHANGELOG.md PRIVACY.md THIRD_PARTY_NOTICES.md release/media-flow/
-          cp -r ffmpeg-licenses release/media-flow/
-          cat > release/media-flow/README-LINUX.md <<'EOF'
-          # Media Flow para Linux
+          VERSION="$(cat VERSION | tr -d '[:space:]')"
+          chmod +x packaging/linux/build_packages.sh
+          bash packaging/linux/build_packages.sh "${VERSION}"
 
-          ## Requisitos
-
-          - Linux x86_64
-          - Tk disponible en el sistema
-          - X11 o Wayland
-
-          ## Ejecutar
-
-          Haz ejecutable `media-flow` y ejecuta `./media-flow`.
-          FFmpeg y FFprobe están incluidos en el paquete.
-
-          Media Flow procesa los archivos localmente.
-          EOF
-          chmod +x release/media-flow/media-flow
-          tar -C release -czf "media-flow-linux-x86_64-${GITHUB_SHA::7}.tar.gz" media-flow
-
-      - name: Upload Linux artifact
+      - name: Upload Linux packages (.deb, .rpm, .tar.gz)
         uses: actions/upload-artifact@v4
         with:
-          name: media-flow-linux-x86_64
-          path: media-flow-linux-x86_64-*.tar.gz
+          name: media-flow-linux-packages
+          path: |
+            media-flow_*.deb
+            media-flow-*.rpm
+            media-flow-*.tar.gz
           if-no-files-found: error

@@ -1,4 +1,4 @@
-name: Release Linux
+name: Release Linux (.deb, .rpm, .tar.gz)
 
 on:
   push:
@@ -25,7 +25,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-tk xz-utils
+          sudo apt-get install -y python3-tk xz-utils rpm dpkg-dev
 
       - name: Install Python dependencies
         run: |
@@ -52,38 +52,37 @@ jobs:
           pyinstaller --noconfirm --onefile --windowed \
             --name media-flow \
             --collect-all customtkinter \
+            --collect-all PIL \
+            --collect-all darkdetect \
+            --hidden-import PIL._tkinter_finder \
+            --hidden-import PIL.ImageTk \
+            --add-data "icon-300.png:." \
+            --add-data "assets/icons:assets/icons" \
             linux_app.py
 
-      - name: Prepare release package
+      - name: Build .deb, .rpm and .tar.gz release packages
         run: |
-          mkdir -p release/media-flow/assets/icons
-          cp dist/media-flow release/media-flow/
-          cp ffmpeg ffprobe release/media-flow/
-          cp icon-300.png release/media-flow/ 2>/dev/null || true
-          cp -r assets/icons/* release/media-flow/assets/icons/ 2>/dev/null || true
-          cp README.md CHANGELOG.md PRIVACY.md THIRD_PARTY_NOTICES.md release/media-flow/
-          cp -r ffmpeg-licenses release/media-flow/
-          cat > release/media-flow/README-LINUX.md <<'EOF'
-          # Media Flow para Linux
+          RAW_TAG="${GITHUB_REF_NAME:-$(cat VERSION | tr -d '[:space:]')}"
+          VERSION="${RAW_TAG#v}"
+          chmod +x packaging/linux/build_packages.sh
+          bash packaging/linux/build_packages.sh "${VERSION}"
 
-          Media Flow es una aplicación de escritorio para convertir audio, vídeo e imágenes localmente mediante FFmpeg.
-
-          ## Instalación
-
-          1. Extrae el archivo `.tar.gz`.
-          2. Abre una terminal dentro de la carpeta `media-flow`.
-          3. Ejecuta `chmod +x media-flow` si fuera necesario.
-          4. Ejecuta `./media-flow`.
-
-          FFmpeg y FFprobe ya están incluidos.
-
-          Esta versión está preparada para Linux x86_64.
-          EOF
-          chmod +x release/media-flow/media-flow
-          tar -C release -czf "media-flow-${GITHUB_REF_NAME}-linux-x86_64.tar.gz" media-flow
-
-      - name: Publish GitHub release asset
+      - name: Publish GitHub release assets (.deb, .rpm, .tar.gz)
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: media-flow-${{ github.ref_name }}-linux-x86_64.tar.gz
+          files: |
+            media-flow_*.deb
+            media-flow-*.rpm
+            media-flow-*.tar.gz
           fail_on_unmatched_files: true
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-flow-linux-release-packages
+          path: |
+            media-flow_*.deb
+            media-flow-*.rpm
+            media-flow-*.tar.gz
+          if-no-files-found: error

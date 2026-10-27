@@ -1,0 +1,44 @@
+# Maintainer: MusicallyIvan <https://github.com/musicallyivan/mediaflow>
+pkgname=media-flow-bin
+pkgver=1.7.8
+pkgrel=1
+pkgdesc="Suite de conversión y procesamiento multimedia con aceleración GPU (FFmpeg incluido)"
+arch=('x86_64')
+url="https://github.com/musicallyivan/mediaflow"
+license=('MIT')
+depends=('glibc' 'libx11' 'libxext' 'libxrender' 'libxft' 'fontconfig' 'freetype2')
+optdepends=('libnotify: notificaciones de escritorio')
+provides=('media-flow')
+conflicts=('media-flow')
+source=("https://github.com/musicallyivan/mediaflow/releases/download/v${pkgver}/media-flow-v${pkgver}-linux-x86_64.tar.gz")
+sha256sums=('SKIP')
+
+package() {
+  install -dm755 "${pkgdir}/opt/media-flow"
+  install -dm755 "${pkgdir}/usr/bin"
+  install -dm755 "${pkgdir}/usr/share/applications"
+  install -dm755 "${pkgdir}/usr/share/pixmaps"
+
+  cp -r "${srcdir}/media-flow/"* "${pkgdir}/opt/media-flow/"
+  chmod 0755 "${pkgdir}/opt/media-flow/media-flow"
+  [ -f "${pkgdir}/opt/media-flow/ffmpeg" ] && chmod 0755 "${pkgdir}/opt/media-flow/ffmpeg"
+  [ -f "${pkgdir}/opt/media-flow/ffprobe" ] && chmod 0755 "${pkgdir}/opt/media-flow/ffprobe"
+
+  ln -sf /opt/media-flow/media-flow "${pkgdir}/usr/bin/media-flow"
+
+  if [ -f "${pkgdir}/opt/media-flow/icon-300.png" ]; then
+    install -Dm644 "${pkgdir}/opt/media-flow/icon-300.png" "${pkgdir}/usr/share/pixmaps/media-flow.png"
+  fi
+
+  cat > "${pkgdir}/usr/share/applications/media-flow.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Media Flow
+Comment=Convierte, recorta y comprime archivos de audio, vídeo e imagen localmente
+Exec=/usr/bin/media-flow %F
+Icon=media-flow
+Terminal=false
+Categories=AudioVideo;AudioVideoEditing;GTK;
+StartupWMClass=media-flow
+EOF
+}

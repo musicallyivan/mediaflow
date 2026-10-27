@@ -9,8 +9,24 @@ import os
 import shutil
 import subprocess
 import sys
+import types
 import webbrowser
 from pathlib import Path
+
+try:
+    import PIL._tkinter_finder  # noqa: F401
+except ModuleNotFoundError:
+    try:
+        from tkinter import _tkinter as _tk_mod
+
+        _finder_shim = types.ModuleType("PIL._tkinter_finder")
+        _finder_shim.TKINTER_LIB = getattr(_tk_mod, "__file__", None)  # type: ignore[attr-defined]
+        _finder_shim.tk_version = str(getattr(_tk_mod, "TK_VERSION", "8.6"))  # type: ignore[attr-defined]
+        sys.modules["PIL._tkinter_finder"] = _finder_shim
+    except Exception:
+        pass
+
+from PIL import Image, ImageTk  # noqa: F401
 
 import app
 
@@ -61,10 +77,12 @@ app.MediaConverterApp._check_for_updates = _linux_check_for_updates
 
 def main() -> None:
     # Ensure bundled ffmpeg/ffprobe or common Linux bin directories are prioritized
-    app_dir = Path(sys.argv[0]).resolve().parent
+    app_dir = app.app_dir()
     extra_paths = [
         str(app_dir),
         str(app_dir / "bin"),
+        "/opt/media-flow",
+        "/opt/media-flow/bin",
         str(Path.home() / ".local" / "bin"),
         "/usr/local/bin",
         "/usr/bin",
@@ -74,6 +92,14 @@ def main() -> None:
 
     window = app.MediaConverterApp()
     window.title(f"{app.APP_TITLE} Suite — Linux v{app.APP_VERSION}")
+    try:
+        icon_file = app.resource_path("icon-300.png")
+        if icon_file.exists():
+            icon_photo = ImageTk.PhotoImage(Image.open(icon_file))
+            window._linux_icon_ref = icon_photo  # type: ignore[attr-defined]
+            window.iconphoto(True, icon_photo)
+    except Exception:
+        pass
     window.mainloop()
 
 

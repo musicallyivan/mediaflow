@@ -1,0 +1,37 @@
+name: media-flow
+base: core24
+version: '1.7.8'
+summary: Suite de conversión y procesamiento multimedia con aceleración GPU
+description: |
+  Media Flow convierte, recorta, comprime y une archivos de audio, vídeo e imagen
+  de forma 100% local con FFmpeg y soporte para aceleración por hardware GPU.
+grade: stable
+confinement: strict
+license: MIT
+
+apps:
+  media-flow:
+    command: opt/media-flow/media-flow
+    desktop: usr/share/applications/media-flow.desktop
+    plugs:
+      - desktop
+      - desktop-legacy
+      - x11
+      - wayland
+      - home
+      - removable-media
+      - opengl
+      - network
+
+parts:
+  media-flow:
+    plugin: dump
+    source: https://github.com/musicallyivan/mediaflow/releases/download/v1.7.8/media-flow_1.7.8_amd64.deb
+    source-type: deb
+    stage-packages:
+      - libx11-6
+      - libxext6
+      - libxrender1
+      - libxft2
+      - libfontconfig1
+      - libfreetype6

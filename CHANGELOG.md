@@ -2,6 +2,23 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.7.8] - 2026-10-27
+
+### Added
+
+- **Paquetes Nativos `.deb` y `.rpm` para Distribuciones Linux**:
+  - Generación automatizada de paquetes `.deb` (`media-flow_1.7.8_amd64.deb`) para **Kali Linux, Debian, Ubuntu, Linux Mint y Pop!_OS**.
+  - Generación automatizada de paquetes `.rpm` (`media-flow-1.7.8-1.x86_64.rpm`) para **Fedora, RHEL, CentOS Stream, Rocky Linux, AlmaLinux y openSUSE**.
+  - Integración completa con el escritorio Linux (`/usr/share/applications/media-flow.desktop`, iconos en `/usr/share/icons/hicolor` y metadatos AppStream).
+  - Script de instalación universal en 1 comando (`curl -fsSL https://musicallyivan.github.io/mediaflow/install.sh | sudo bash`) y manifiestos para **AUR (`PKGBUILD`)**, **Snap Store (`snapcraft.yaml`)** y **Flathub (`io.github.musicallyivan.MediaFlow.yml`)**.
+
+### Fixed
+
+- **Corrección de `ModuleNotFoundError: No module named 'PIL._tkinter_finder'` en Kali / Debian**:
+  - Empaquetado completo de submódulos de `PIL` (`PIL._tkinter_finder`, `PIL.ImageTk`) e iconos integrados en el ejecutable de Linux con PyInstaller.
+  - Añadido *shim* de respaldo para `PIL._tkinter_finder` y verificación segura de `ImageTk` al iniciar la interfaz gráfica.
+  - Detección automática de binarios y recursos en `/opt/media-flow` y `/usr/share/media-flow`.
+
 ## [1.7.7] - 2026-10-23
 
 ### Added
