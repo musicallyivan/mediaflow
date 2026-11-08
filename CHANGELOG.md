@@ -2,6 +2,10 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.8.2] - 2026-11-08
+
+- Corregido el empaquetado para Linux: ahora incluye la clave pública de licencias y el indicador de entrega automática de Stripe configurado en GitHub Actions.
+
 ## [1.8.1] - 2026-11-08
 
 - Stripe queda como único método de compra PRO. Se retiran el botón, la compra integrada y la activación por complemento de Microsoft Store.

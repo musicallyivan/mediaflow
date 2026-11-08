@@ -8,8 +8,9 @@ on:
     paths:
       - "app.py"
       - "linux_app.py"
-      - "microsoft_store_pro.py"
+      - "license_crypto.py"
       - "requirements.txt"
+      - "stripe_fulfillment_ready.txt"
       - "packaging/linux/**"
       - ".github/workflows/linux-build.yml"
   workflow_dispatch:
@@ -57,16 +58,33 @@ jobs:
           find ffmpeg-dist -maxdepth 2 -type f \( -iname 'LICENSE*' -o -iname 'COPYING*' -o -iname 'README*' \) -exec cp {} ffmpeg-licenses/ \;
 
       - name: Build Linux executable
+        env:
+          MEDIA_FLOW_LICENSE_PUBLIC_KEY: ${{ vars.MEDIA_FLOW_LICENSE_PUBLIC_KEY }}
+          MEDIA_FLOW_STRIPE_FULFILLMENT_READY: ${{ vars.MEDIA_FLOW_STRIPE_FULFILLMENT_READY }}
         run: |
+          if [ -z "$MEDIA_FLOW_LICENSE_PUBLIC_KEY" ]; then
+            echo "Set the MEDIA_FLOW_LICENSE_PUBLIC_KEY GitHub Actions variable before building a release." >&2
+            exit 1
+          fi
+          printf '%s' "$MEDIA_FLOW_LICENSE_PUBLIC_KEY" > license_public_key.txt
+          if [ "$MEDIA_FLOW_STRIPE_FULFILLMENT_READY" = "1" ]; then
+            printf '1' > stripe_fulfillment_ready.txt
+          else
+            printf '0' > stripe_fulfillment_ready.txt
+          fi
           pyinstaller --noconfirm --onefile --windowed \
             --name media-flow \
             --collect-all customtkinter \
             --collect-all PIL \
             --collect-all darkdetect \
+            --collect-all cryptography \
+            --hidden-import cryptography.hazmat.primitives.asymmetric.ed25519 \
             --hidden-import PIL._tkinter_finder \
             --hidden-import PIL.ImageTk \
             --add-data "icon-300.png:." \
             --add-data "assets/icons:assets/icons" \
+            --add-data "license_public_key.txt:." \
+            --add-data "stripe_fulfillment_ready.txt:." \
             linux_app.py
 
       - name: Build .deb, .rpm and .tar.gz packages

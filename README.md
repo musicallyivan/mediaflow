@@ -1,6 +1,6 @@
 # Media Flow Suite
 
-Versión actual: `1.8.1`
+Versión actual: `1.8.2`
 
 Media Flow es una suite multimedia moderna para Windows con diseño contemporáneo de tarjetas y esquinas redondeadas, que convierte, recorta, comprime y procesa archivos de audio, video e imagen con aceleración por hardware mediante `ffmpeg`.
 
