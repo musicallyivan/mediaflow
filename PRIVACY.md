@@ -24,6 +24,10 @@ Media Flow ofrece un complemento PRO opcional. La activación puede realizarse c
 
 La activación de PRO no modifica el tratamiento de tus archivos: el contenido multimedia sigue procesándose localmente y no se sube a servidores de Media Flow.
 
+## Licencias compradas con Stripe
+
+Para entregar las licencias, el servidor de Media Flow recibe del checkout el correo del comprador y el identificador de la sesión de pago. Conserva esos datos junto con la licencia emitida para evitar duplicados y facilitar la recuperación de la compra. El correo se envía mediante Resend; el webhook y la base de datos se alojan en Render. No se reciben ni almacenan números de tarjeta. Puedes solicitar soporte o la eliminación de los datos asociados a la licencia mediante el contacto del proyecto.
+
 ## Contacto
 
 Para dudas de privacidad o soporte, usa la pagina del proyecto:

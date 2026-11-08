@@ -38,8 +38,15 @@ jobs:
           Get-ChildItem -Path ffmpeg-dist -Recurse -File -Include LICENSE*,COPYING*,README* | Copy-Item -Destination ffmpeg-licenses -Force
 
       - name: Build executable
+        env:
+          MEDIA_FLOW_LICENSE_PUBLIC_KEY: ${{ vars.MEDIA_FLOW_LICENSE_PUBLIC_KEY }}
+          MEDIA_FLOW_STRIPE_FULFILLMENT_READY: ${{ vars.MEDIA_FLOW_STRIPE_FULFILLMENT_READY }}
         run: |
-          pyinstaller --noconfirm --onefile --windowed --name media-flow --icon assets\installer\media-flow.ico --collect-all customtkinter --collect-all winrt app.py
+          if (-not $env:MEDIA_FLOW_LICENSE_PUBLIC_KEY) { throw "Set the MEDIA_FLOW_LICENSE_PUBLIC_KEY GitHub Actions variable before building a release." }
+          Set-Content -Path license_public_key.txt -Value $env:MEDIA_FLOW_LICENSE_PUBLIC_KEY -NoNewline
+          $stripeReady = if ($env:MEDIA_FLOW_STRIPE_FULFILLMENT_READY -eq "1") { "1" } else { "0" }
+          Set-Content -Path stripe_fulfillment_ready.txt -Value $stripeReady -NoNewline
+          pyinstaller --noconfirm --onefile --windowed --name media-flow --icon assets\installer\media-flow.ico --add-data "license_public_key.txt;." --add-data "stripe_fulfillment_ready.txt;." --hidden-import cryptography.hazmat.primitives.asymmetric.ed25519 --collect-all cryptography --collect-all customtkinter --collect-all winrt app.py
 
       - name: Prepare release ZIP
         shell: pwsh
@@ -49,6 +56,8 @@ jobs:
           Copy-Item ffmpeg.exe release\media-flow\
           Copy-Item ffprobe.exe release\media-flow\
           Copy-Item icon-300.png release\media-flow\
+          Copy-Item license_public_key.txt release\media-flow\
+          Copy-Item stripe_fulfillment_ready.txt release\media-flow\
           Copy-Item assets\icons\* release\media-flow\assets\icons\ -Force
           Copy-Item README.md release\media-flow\
           Copy-Item CHANGELOG.md release\media-flow\
@@ -74,11 +83,12 @@ jobs:
         env:
           MSIX_PFX_BASE64: ${{ secrets.MSIX_PFX_BASE64 }}
           MSIX_PFX_PASSWORD: ${{ secrets.MSIX_PFX_PASSWORD }}
+          MSIX_PACKAGE_NAME: ${{ vars.MSIX_PACKAGE_NAME }}
           MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
         run: |
           $version = "${{ github.ref_name }}".TrimStart("v")
           $packageVersion = "$version.0"
-          $packageName = "MusicallyIvan.MediaFlow"
+          $packageName = if ($env:MSIX_PACKAGE_NAME) { $env:MSIX_PACKAGE_NAME } else { "MusicallyIvan.MediaFlow" }
           $publisher = if ($env:MSIX_PUBLISHER) { $env:MSIX_PUBLISHER } else { "CN=33EC4121-53F8-4312-9812-C8687536BF5A" }
           $msixName = "media-flow-${{ github.ref_name }}.msix"
           $appInstallerName = "media-flow-${{ github.ref_name }}.appinstaller"

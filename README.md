@@ -33,6 +33,8 @@ La app no descarga contenido de servicios de terceros. Convierte archivos locale
 1. Windows 10 o Windows 11.
 2. `ffmpeg` incluido en la version empaquetada o instalado en el sistema.
 
+Para configurar la entrega automática de licencias PRO, consulta [LICENSE_SETUP.md](LICENSE_SETUP.md).
+
 ## Version Android
 
 Hay una primera version nativa para Android en `android-app/`. No usa WebView:

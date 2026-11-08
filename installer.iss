@@ -59,6 +59,8 @@ Source: "release\media-flow\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignorever
 Source: "release\media-flow\ffmpeg.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "release\media-flow\ffprobe.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "release\media-flow\icon-300.png"; DestDir: "{app}"; Flags: ignoreversion
+Source: "release\media-flow\license_public_key.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "release\media-flow\stripe_fulfillment_ready.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "release\media-flow\assets\icons\*"; DestDir: "{app}\assets\icons"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "release\media-flow\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "release\media-flow\CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion

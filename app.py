@@ -35,6 +35,7 @@ from PIL import Image, ImageTk
 from tkinter import filedialog, messagebox
 
 from microsoft_store_pro import MicrosoftStorePro
+from license_crypto import verify_license_key
 
 APP_TITLE = "Media Flow"
 APP_VERSION = "1.7.8"
@@ -42,6 +43,11 @@ GITHUB_REPO = os.environ.get("MEDIA_FLOW_GITHUB_REPO", "musicallyivan/mediaflow"
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 STRIPE_CHECKOUT_URL = os.environ.get("MEDIA_FLOW_STRIPE_URL", "https://buy.stripe.com/4gM00l2uV0aXe6k1eIgEg00")
 MS_STORE_PRODUCT_ID = os.environ.get("MEDIA_FLOW_STORE_ID", "9N6VZZ3HDFHJ")
+_app_bundle_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+try:
+    STRIPE_FULFILLMENT_READY = (_app_bundle_dir / "stripe_fulfillment_ready.txt").read_text(encoding="ascii").strip() == "1"
+except OSError:
+    STRIPE_FULFILLMENT_READY = False
 
 AUDIO_FORMATS_FREE = ("MP3", "M4A", "WAV", "OGG", "AAC")
 AUDIO_FORMATS_PRO = ("FLAC", "OPUS", "ALAC", "AIFF")
@@ -475,30 +481,24 @@ class LicenseManager:
 
     def __init__(self, initial_data: dict[str, Any]) -> None:
         self.pro_key: str = str(initial_data.get("pro_license_key", "")).strip()
-        self._is_pro: bool = bool(initial_data.get("is_pro", False)) and self.pro_key != "MICROSOFT-STORE"
-        if self.pro_key and self.validate_key(self.pro_key):
-            self._is_pro = True
+        # Never trust the cached is_pro flag. Only a signed Stripe license or
+        # an entitlement verified against Microsoft Store may unlock PRO.
+        self._is_pro: bool = bool(self.pro_key and self.validate_key(self.pro_key))
 
     @property
     def is_pro(self) -> bool:
         return self._is_pro
 
     def validate_key(self, key: str) -> bool:
-        cleaned = key.strip().upper()
-        if not cleaned:
-            return False
-        if cleaned in ("MFPRO-VIP-2026-PLUS", "MFPRO-PREMIUM-LIFETIME"):
-            return True
-        pattern = r"^MFPRO-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$"
-        return bool(re.match(pattern, cleaned))
+        return verify_license_key(key.strip())
 
     def activate(self, key: str) -> tuple[bool, str]:
-        cleaned = key.strip().upper()
+        cleaned = key.strip()
         if self.validate_key(cleaned):
             self._is_pro = True
             self.pro_key = cleaned
             return True, "¡Complemento PRO activado con éxito! Todas las funciones prémium están desbloqueadas."
-        return False, "La clave introducida no es válida. Formato esperado: MFPRO-XXXX-XXXX-XXXX"
+        return False, "La clave no es válida. Comprueba que has copiado la licencia completa del correo de compra."
 
     def activate_store_purchase(self) -> None:
         self._is_pro = True
@@ -712,6 +712,13 @@ class ProUpgradeModal(ctk.CTkToplevel):
         self.destroy()
 
     def _on_buy_stripe_clicked(self) -> None:
+        if not STRIPE_FULFILLMENT_READY:
+            messagebox.showinfo(
+                "Stripe",
+                "La entrega automática de licencias todavía no está activada. No completes un pago de Stripe desde este botón hasta que publiquemos la actualización.",
+                parent=self,
+            )
+            return
         try:
             webbrowser.open(STRIPE_CHECKOUT_URL)
         except Exception:
