@@ -2,6 +2,19 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.7.9] - 2026-11-08
+
+### Added
+
+- Licencias PRO firmadas Ed25519 emitidas tras pagos confirmados de Stripe y enviadas por correo.
+- Persistencia idempotente de entregas en Cloudflare D1 y envío transaccional mediante Resend.
+
+### Fixed
+
+- La activación PRO ya no confía en claves con formato arbitrario ni en el indicador local guardado.
+- La compra Stripe permanece desactivada hasta habilitarla en la compilación tras configurar la entrega.
+- El manifiesto MSIX conserva la identidad confirmada de Partner Center para compras del complemento.
+
 ## [1.7.8] - 2026-10-27
 
 ### Added
