@@ -59,9 +59,23 @@ async function verifyStripe(raw: string, header: string, secret: string): Promis
 }
 
 async function makeLicense(env: Env, purchaseId: string, email: string): Promise<string> {
+  const rawPrivateKey = fromBase64(env.MEDIA_FLOW_LICENSE_PRIVATE_KEY);
+  if (rawPrivateKey.length !== 32) {
+    throw new Error("MEDIA_FLOW_LICENSE_PRIVATE_KEY must encode a 32-byte Ed25519 seed");
+  }
+
+  // Web Crypto in Workers imports Ed25519 private keys as PKCS#8, not raw
+  // seeds. The wrapper below is the standard RFC 8410 PKCS#8 prefix.
+  const pkcs8Prefix = Uint8Array.from([
+    0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06,
+    0x03, 0x2b, 0x65, 0x70, 0x04, 0x22, 0x04, 0x20,
+  ]);
+  const pkcs8Key = new Uint8Array(pkcs8Prefix.length + rawPrivateKey.length);
+  pkcs8Key.set(pkcs8Prefix);
+  pkcs8Key.set(rawPrivateKey, pkcs8Prefix.length);
   const privateKey = await crypto.subtle.importKey(
-    "raw",
-    fromBase64(env.MEDIA_FLOW_LICENSE_PRIVATE_KEY),
+    "pkcs8",
+    pkcs8Key,
     { name: "Ed25519" },
     false,
     ["sign"],
