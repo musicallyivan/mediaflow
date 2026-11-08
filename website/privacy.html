@@ -148,11 +148,11 @@
           Media Flow ofrece un complemento <strong>PRO</strong> opcional que desbloquea aceleración por hardware GPU (NVIDIA NVENC, AMD AMF, Intel QSV), procesamiento por lotes multihilo, resolución 4K a 60 FPS y formatos de estudio sin pérdidas.
         </p>
         <ul>
-          <li>Si decides adquirir el complemento PRO a través de <strong>Microsoft Store</strong> o <strong>Stripe</strong>, la transacción y los datos de facturación son procesados de forma segura y exclusiva por el proveedor de pago correspondiente conforme a su propia política de privacidad.</li>
+          <li>Si compras PRO mediante <strong>Microsoft Store</strong> o <strong>Stripe</strong>, el pago y los datos de tarjeta son procesados por el proveedor correspondiente. Para emitir la licencia Stripe, Media Flow recibe además el correo del comprador y el identificador de la sesión de pago, según se detalla abajo.</li>
           <li>Media Flow nunca almacena ni tiene acceso a los números completos de tu tarjeta bancaria o credenciales financieras.</li>
           <li>La activación de PRO mantiene el procesamiento de tus archivos 100% local y privado.</li>
         </ul>
-        <p>Para entregar las licencias Stripe, el servidor de Media Flow recibe el correo del comprador y el identificador de la sesión de pago. Los conserva junto con la licencia para evitar duplicados y ayudar a recuperar la compra. El correo se envía mediante Resend y el webhook con su base de datos se aloja en Render. No se reciben ni almacenan números de tarjeta.</p>
+        <p>Para entregar las licencias Stripe, el webhook de Media Flow recibe el correo del comprador y el identificador de la sesión de pago. Cloudflare D1 conserva esos datos junto con la licencia para evitar duplicados y ayudar a recuperar la compra. El correo se envía mediante Resend y el webhook se ejecuta en Cloudflare Workers. No se reciben ni almacenan números de tarjeta.</p>
       </section>
 
       <section class="policy-section">

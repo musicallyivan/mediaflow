@@ -1,39 +1,49 @@
-# Activación de licencias PRO
+# Stripe PRO license delivery (free deployment)
 
-La licencia de Stripe se firma con Ed25519: la app lleva la clave pública y el servidor conserva la privada. No publiques la clave privada ni la incluyas en el instalador.
+Production host: Cloudflare Workers Free + D1 Free. Email delivery: Resend Free. Cloudflare's free limits currently include 100,000 Worker requests/day, 5 million D1 rows read/day, 100,000 rows written/day, and 500 MB per D1 database. Resend Free includes 3,000 emails/month and 100/day. Check provider dashboards for current usage and limits.
 
-## Preparar claves
+## Already prepared
 
-1. Instala dependencias: `python -m pip install -r requirements.txt`.
-2. Ejecuta `python license_server.py --generate-keys` en un entorno seguro.
-3. Guarda `MEDIA_FLOW_LICENSE_PRIVATE_KEY` como secreto del hosting. Configura `MEDIA_FLOW_LICENSE_PUBLIC_KEY` como variable del flujo de compilación de Windows en GitHub Actions. El flujo la incrusta en `license_public_key.txt` dentro del paquete.
-4. Vuelve a compilar y distribuir la app con esa clave pública. Las instalaciones anteriores no podrán validar las licencias nuevas.
+- `cloudflare/src/index.ts`: Stripe signature verification, paid-session validation, signed license issuance and Resend delivery.
+- `cloudflare/migrations/0001_create_deliveries.sql`: persistent idempotency and delivery status table.
+- `cloudflare/wrangler.toml`: Worker and D1 binding configuration.
+- `license_crypto.py`: Windows app verifies the Ed25519 signature offline using the public key bundled at build time.
 
-## Configurar Stripe y correo
+## Deploy the Worker
 
-Recomiendo **Render** para alojar el webhook y **Resend** para entregar los correos. Ya añadí `render.yaml`: al crear el Blueprint, Render configura el servicio Python, HTTPS, health check, disco persistente y los campos secretos. El plan gratuito no sirve para producción con esta SQLite: los servicios gratuitos se duermen y el almacenamiento del servicio es efímero. Render documenta que los discos persistentes requieren un servicio de pago, y factura el almacenamiento por separado ([discos persistentes](https://render.com/docs/disks), [planes y límites](https://render.com/docs/faq)).
+Install Node.js if needed, then in PowerShell:
 
-En Resend, verifica un dominio remitente y crea una API key SMTP. Usa `smtp.resend.com`, puerto `587`, usuario `resend`, la API key como contraseña y un remitente de ese dominio verificado. Resend admite SMTP con STARTTLS en 587 ([credenciales SMTP](https://resend.com/changelog/smtp-service)).
+```powershell
+cd "G:\IVAN MUSICALLY CARPETA\mediaflow\cloudflare"
+npx wrangler login
+npx wrangler d1 create mediaflow-licenses
+```
 
-Configura estas variables en Render:
+Copy the `database_id` printed by Wrangler into `wrangler.toml`, replacing `REPLACE_WITH_D1_DATABASE_ID`. Then create the table and deploy:
 
-- `STRIPE_WEBHOOK_SECRET`: secreto del endpoint webhook.
-- `STRIPE_PAYMENT_LINK_ID`: ID `plink_...` del Payment Link PRO.
-- `MEDIA_FLOW_LICENSE_PRIVATE_KEY`: clave privada Ed25519 en Base64.
-- `MEDIA_FLOW_SMTP_HOST=smtp.resend.com`, `MEDIA_FLOW_SMTP_PORT=587`, `MEDIA_FLOW_SMTP_USER=resend`, `MEDIA_FLOW_SMTP_PASSWORD` (la API key SMTP), `MEDIA_FLOW_EMAIL_FROM` (remitente verificado).
-- `MEDIA_FLOW_LICENSE_DB`: ruta persistente para `licenses.sqlite3`.
-- `PORT`: puerto que indique el hosting.
+```powershell
+npx wrangler d1 migrations apply mediaflow-licenses --remote
+npx wrangler secret put MEDIA_FLOW_LICENSE_PRIVATE_KEY
+npx wrangler secret put RESEND_API_KEY
+npx wrangler secret put MEDIA_FLOW_EMAIL_FROM
+npx wrangler deploy
+```
 
-Crea en Stripe un endpoint `https://TU-DOMINIO/stripe/webhook` y suscribe `checkout.session.completed`. Configura el Payment Link para recoger el correo del comprador y copia su ID al servidor. El webhook exige pago único abonado y ese Payment Link. Los eventos repetidos no vuelven a emitir licencias.
+At each `secret put` prompt, paste the value locally in the terminal, never into chat or Git. Use the private Ed25519 key generated earlier, the Resend Sending API key, and `licencias@musicallyivan.com`. The Worker URL will be printed after deployment; `/health` should return `ok`.
 
-Las licencias se verifican sin conexión. Reembolsos y contracargos no revocan una clave ya emitida; para revocación inmediata haría falta una verificación online adicional.
+## Connect Stripe after deploying
 
-## Activar el botón Stripe
+1. In Stripe, create a webhook endpoint at `WORKER_URL/stripe/webhook` for `checkout.session.completed` and `checkout.session.async_payment_succeeded`.
+2. Store its signing secret as a Worker secret: `npx wrangler secret put STRIPE_WEBHOOK_SECRET`.
+3. Find the existing Payment Link's `plink_...` ID in Stripe and store it as `npx wrangler secret put STRIPE_PAYMENT_LINK_ID`.
+4. Ensure the Payment Link collects the buyer's email. Keep it deactivated until the webhook and email delivery have been tested.
 
-El botón no debe permitir pagar hasta probar el webhook y el correo en modo de prueba. Cuando la entrega esté desplegada y comprobada, establece la variable GitHub Actions `MEDIA_FLOW_STRIPE_FULFILLMENT_READY=1` y publica una nueva versión.
+## Release the Windows app
 
-## Microsoft Store
+In GitHub repository settings, add the public Ed25519 key as an Actions variable named `MEDIA_FLOW_LICENSE_PUBLIC_KEY`. Keep `MEDIA_FLOW_STRIPE_FULFILLMENT_READY` unset or `0` until Stripe's webhook and test email both work. Then set it to `1`, create a new release build, and publish the updated app/site. Never put the private signing key in GitHub.
 
-En Partner Center copia el **Store ID** del complemento durable PRO (no el Product ID interno) y confirma que está asociado a la ficha publicada de Media Flow. `GetStoreProductsAsync` busca Store IDs de complementos asociados a la app en ejecución.
+The license database is persistent in D1 and email delivery retries use the same stored license. Free-plan request/email/database quotas apply. Refunds and chargebacks do not revoke an already issued offline license.
 
-El MSIX debe usar exactamente el Package/Publisher identity de Partner Center. Los valores confirmados para Media Flow son `MSIX_PACKAGE_NAME=MusicallyIvan.MediaFlow` y `MSIX_PUBLISHER=CN=33EC4121-53F8-4312-9812-C8687536BF5A`; coinciden con los valores predeterminados del manifiesto y del flujo de compilación. El Store ID del complemento ya está configurado como `9N6VZZ3HDFHJ`. Los instaladores `.exe` y ZIP no tienen identidad MSIX y no pueden consultar compras de Store de forma fiable.
+## Microsoft Store identity
+
+The confirmed app identity is `MusicallyIvan.MediaFlow` / `CN=33EC4121-53F8-4312-9812-C8687536BF5A`; the add-on Store ID is `9N6VZZ3HDFHJ`. Install the app from Microsoft Store to query Store ownership. The `.exe` and ZIP builds do not carry the Store package identity.

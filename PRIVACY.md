@@ -20,13 +20,13 @@ La app puede consultar GitHub Releases para comprobar si hay una version nueva. 
 
 ## Complemento PRO y pagos opcionales
 
-Media Flow ofrece un complemento PRO opcional. La activación puede realizarse con una clave de licencia o mediante los canales de compra disponibles, como Stripe o Microsoft Store. Los pagos y los datos de facturación son gestionados por el proveedor de pago correspondiente conforme a su propia política de privacidad; Media Flow no usa esos datos para procesar ni analizar tus archivos.
+Media Flow ofrece un complemento PRO opcional. La activación puede realizarse con una clave de licencia o mediante Stripe o Microsoft Store. Los proveedores procesan el pago y los datos de tarjeta conforme a sus políticas. Para entregar licencias Stripe, Media Flow recibe el correo del comprador y el identificador de la sesión de pago, como se explica abajo; esos datos no se usan para procesar ni analizar tus archivos.
 
 La activación de PRO no modifica el tratamiento de tus archivos: el contenido multimedia sigue procesándose localmente y no se sube a servidores de Media Flow.
 
 ## Licencias compradas con Stripe
 
-Para entregar las licencias, el servidor de Media Flow recibe del checkout el correo del comprador y el identificador de la sesión de pago. Conserva esos datos junto con la licencia emitida para evitar duplicados y facilitar la recuperación de la compra. El correo se envía mediante Resend; el webhook y la base de datos se alojan en Render. No se reciben ni almacenan números de tarjeta. Puedes solicitar soporte o la eliminación de los datos asociados a la licencia mediante el contacto del proyecto.
+Para entregar las licencias, el webhook de Media Flow recibe del checkout el correo del comprador y el identificador de la sesión de pago. Cloudflare D1 conserva esos datos junto con la licencia emitida para evitar duplicados y facilitar la recuperación de la compra. El correo se envía mediante Resend y el webhook se ejecuta en Cloudflare Workers. No se reciben ni almacenan números de tarjeta. Puedes solicitar soporte o la eliminación de los datos asociados a la licencia mediante el contacto del proyecto.
 
 ## Contacto
 
