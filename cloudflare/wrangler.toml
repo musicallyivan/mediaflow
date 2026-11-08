@@ -5,5 +5,5 @@ compatibility_date = "2026-11-08"
 [[d1_databases]]
 binding = "DB"
 database_name = "mediaflow-licenses"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "f64e296d-9130-4cab-82a3-baa5ac65b1c3"
 migrations_dir = "migrations"

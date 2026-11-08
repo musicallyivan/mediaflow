@@ -15,18 +15,18 @@ Install Node.js if needed, then in PowerShell:
 
 ```powershell
 cd "G:\IVAN MUSICALLY CARPETA\mediaflow\cloudflare"
-npx wrangler login
-npx wrangler d1 create mediaflow-licenses
+npx.cmd wrangler login
+npx.cmd wrangler d1 create mediaflow-licenses
 ```
 
 Copy the `database_id` printed by Wrangler into `wrangler.toml`, replacing `REPLACE_WITH_D1_DATABASE_ID`. Then create the table and deploy:
 
 ```powershell
-npx wrangler d1 migrations apply mediaflow-licenses --remote
-npx wrangler secret put MEDIA_FLOW_LICENSE_PRIVATE_KEY
-npx wrangler secret put RESEND_API_KEY
-npx wrangler secret put MEDIA_FLOW_EMAIL_FROM
-npx wrangler deploy
+npx.cmd wrangler d1 migrations apply mediaflow-licenses --remote
+npx.cmd wrangler deploy
+npx.cmd wrangler secret put MEDIA_FLOW_LICENSE_PRIVATE_KEY
+npx.cmd wrangler secret put RESEND_API_KEY
+npx.cmd wrangler secret put MEDIA_FLOW_EMAIL_FROM
 ```
 
 At each `secret put` prompt, paste the value locally in the terminal, never into chat or Git. Use the private Ed25519 key generated earlier, the Resend Sending API key, and `licencias@musicallyivan.com`. The Worker URL will be printed after deployment; `/health` should return `ok`.
@@ -34,8 +34,8 @@ At each `secret put` prompt, paste the value locally in the terminal, never into
 ## Connect Stripe after deploying
 
 1. In Stripe, create a webhook endpoint at `WORKER_URL/stripe/webhook` for `checkout.session.completed` and `checkout.session.async_payment_succeeded`.
-2. Store its signing secret as a Worker secret: `npx wrangler secret put STRIPE_WEBHOOK_SECRET`.
-3. Find the existing Payment Link's `plink_...` ID in Stripe and store it as `npx wrangler secret put STRIPE_PAYMENT_LINK_ID`.
+2. Store its signing secret as a Worker secret: `npx.cmd wrangler secret put STRIPE_WEBHOOK_SECRET`.
+3. Find the existing Payment Link's `plink_...` ID in Stripe and store it as `npx.cmd wrangler secret put STRIPE_PAYMENT_LINK_ID`.
 4. Ensure the Payment Link collects the buyer's email. Keep it deactivated until the webhook and email delivery have been tested.
 
 ## Release the Windows app
