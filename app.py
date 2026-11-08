@@ -38,7 +38,7 @@ from microsoft_store_pro import MicrosoftStorePro
 from license_crypto import verify_license_key
 
 APP_TITLE = "Media Flow"
-APP_VERSION = "1.7.9"
+APP_VERSION = "1.8.0"
 GITHUB_REPO = os.environ.get("MEDIA_FLOW_GITHUB_REPO", "musicallyivan/mediaflow")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 STRIPE_CHECKOUT_URL = os.environ.get("MEDIA_FLOW_STRIPE_URL", "https://buy.stripe.com/4gM00l2uV0aXe6k1eIgEg00")
@@ -885,11 +885,14 @@ class MediaConverterApp(ctk.CTk):
         return None
 
     def _verify_store_purchase_async(self) -> None:
-        def worker() -> None:
+        # StoreContext is UI-thread-affine. Creating it in a worker during
+        # startup and reusing it from the purchase button causes WinError
+        # -2147417848 (RPC_E_WRONG_THREAD) when the Store UI is opened.
+        def verify_on_ui_thread() -> None:
             if self.store_pro.is_pro_owned():
                 self.messages.put(("store_pro_owned", None))
 
-        threading.Thread(target=worker, daemon=True).start()
+        self.after(0, verify_on_ui_thread)
 
     def _load_settings(self) -> dict[str, Any]:
         path = config_path()

@@ -2,6 +2,10 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.8.0] - 2026-11-08
+
+- Corregida la compra del complemento de Microsoft Store: la comprobación de propiedad ahora se ejecuta en el hilo de interfaz para evitar errores de afinidad de hilo al abrir la compra.
+
 ## [1.7.9] - 2026-11-08
 
 ### Added
