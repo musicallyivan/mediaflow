@@ -2,9 +2,13 @@
 
 Todas las versiones publicadas se documentan en este archivo.
 
+## [1.8.1] - 2026-11-08
+
+- Stripe queda como único método de compra PRO. Se retiran el botón, la compra integrada y la activación por complemento de Microsoft Store.
+
 ## [1.8.0] - 2026-11-08
 
-- Corregida la compra del complemento de Microsoft Store: la comprobación de propiedad ahora se ejecuta en el hilo de interfaz para evitar errores de afinidad de hilo al abrir la compra.
+- Corregida la comprobación de propiedad del complemento de Microsoft Store para ejecutarse en el hilo de interfaz.
 
 ## [1.7.9] - 2026-11-08
 

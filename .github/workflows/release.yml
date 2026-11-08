@@ -46,7 +46,7 @@ jobs:
           Set-Content -Path license_public_key.txt -Value $env:MEDIA_FLOW_LICENSE_PUBLIC_KEY -NoNewline
           $stripeReady = if ($env:MEDIA_FLOW_STRIPE_FULFILLMENT_READY -eq "1") { "1" } else { "0" }
           Set-Content -Path stripe_fulfillment_ready.txt -Value $stripeReady -NoNewline
-          pyinstaller --noconfirm --onefile --windowed --name media-flow --icon assets\installer\media-flow.ico --add-data "license_public_key.txt;." --add-data "stripe_fulfillment_ready.txt;." --hidden-import cryptography.hazmat.primitives.asymmetric.ed25519 --collect-all cryptography --collect-all customtkinter --collect-all winrt app.py
+          pyinstaller --noconfirm --onefile --windowed --name media-flow --icon assets\installer\media-flow.ico --add-data "license_public_key.txt;." --add-data "stripe_fulfillment_ready.txt;." --hidden-import cryptography.hazmat.primitives.asymmetric.ed25519 --collect-all cryptography --collect-all customtkinter app.py
 
       - name: Prepare release ZIP
         shell: pwsh

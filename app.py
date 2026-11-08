@@ -34,15 +34,13 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 from tkinter import filedialog, messagebox
 
-from microsoft_store_pro import MicrosoftStorePro
 from license_crypto import verify_license_key
 
 APP_TITLE = "Media Flow"
-APP_VERSION = "1.8.0"
+APP_VERSION = "1.8.1"
 GITHUB_REPO = os.environ.get("MEDIA_FLOW_GITHUB_REPO", "musicallyivan/mediaflow")
 LATEST_RELEASE_API = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 STRIPE_CHECKOUT_URL = os.environ.get("MEDIA_FLOW_STRIPE_URL", "https://buy.stripe.com/4gM00l2uV0aXe6k1eIgEg00")
-MS_STORE_PRODUCT_ID = os.environ.get("MEDIA_FLOW_STORE_ID", "9N6VZZ3HDFHJ")
 _app_bundle_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 try:
     STRIPE_FULFILLMENT_READY = (_app_bundle_dir / "stripe_fulfillment_ready.txt").read_text(encoding="ascii").strip() == "1"
@@ -481,8 +479,7 @@ class LicenseManager:
 
     def __init__(self, initial_data: dict[str, Any]) -> None:
         self.pro_key: str = str(initial_data.get("pro_license_key", "")).strip()
-        # Never trust the cached is_pro flag. Only a signed Stripe license or
-        # an entitlement verified against Microsoft Store may unlock PRO.
+        # Only a signed Stripe license may unlock PRO.
         self._is_pro: bool = bool(self.pro_key and self.validate_key(self.pro_key))
 
     @property
@@ -499,10 +496,6 @@ class LicenseManager:
             self.pro_key = cleaned
             return True, "¡Complemento PRO activado con éxito! Todas las funciones prémium están desbloqueadas."
         return False, "La clave no es válida. Comprueba que has copiado la licencia completa del correo de compra."
-
-    def activate_store_purchase(self) -> None:
-        self._is_pro = True
-        self.pro_key = "MICROSOFT-STORE"
 
     def deactivate(self) -> None:
         self._is_pro = False
@@ -680,21 +673,6 @@ class ProUpgradeModal(ctk.CTkToplevel):
                 height=38,
             ).grid(row=0, column=0, sticky="ew")
 
-            store_box = ctk.CTkFrame(container, fg_color="transparent")
-            store_box.grid(row=5, column=0, sticky="ew", padx=8, pady=(0, 8))
-            store_box.grid_columnconfigure(0, weight=1)
-
-            ctk.CTkButton(
-                store_box,
-                text="🛍️ Comprar en Microsoft Store",
-                corner_radius=10,
-                fg_color=("gray75", "#2c2c2c"),
-                hover_color=("gray65", "#3a3a3a"),
-                font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
-                command=self._on_buy_store_clicked,
-                height=34,
-            ).grid(row=0, column=0, sticky="ew")
-
     def _on_activate_clicked(self) -> None:
         key = self.key_entry.get().strip()
         success, message = self.parent_app.license_manager.activate(key)
@@ -729,26 +707,6 @@ class ProUpgradeModal(ctk.CTkToplevel):
             parent=self,
         )
 
-    def _on_buy_store_clicked(self) -> None:
-        try:
-            purchased = self.parent_app.store_pro.purchase_pro()
-        except Exception as exc:
-            messagebox.showerror("Microsoft Store", f"No se pudo iniciar la compra del complemento PRO.\n\n{exc}", parent=self)
-            return
-
-        if not purchased:
-            messagebox.showwarning(
-                "Microsoft Store",
-                "La compra no se completó. Para comprar el complemento, instala Media Flow desde Microsoft Store e inténtalo de nuevo.",
-                parent=self,
-            )
-            return
-
-        self.parent_app.license_manager.activate_store_purchase()
-        self.parent_app.on_license_updated()
-        messagebox.showinfo("Media Flow PRO", "¡Compra confirmada! El complemento PRO está activo.", parent=self)
-        self.destroy()
-
 
 # ==========================================
 # APLICACIÓN PRINCIPAL (MICROSOFT STORE STYLE)
@@ -771,7 +729,6 @@ class MediaConverterApp(ctk.CTk):
 
         # Gestor de Licencias PRO
         self.license_manager = LicenseManager(self.settings)
-        self.store_pro = MicrosoftStorePro(MS_STORE_PRODUCT_ID)
 
         # Variables de estado
         self.mode = ctk.StringVar(value=self.settings.get("mode", "Audio"))
@@ -813,7 +770,6 @@ class MediaConverterApp(ctk.CTk):
         self._load_app_icons()
         self._build_ui()
         self._detect_gpu_async()
-        self._verify_store_purchase_async()
         self._poll_messages()
 
     # ==========================================
@@ -883,16 +839,6 @@ class MediaConverterApp(ctk.CTk):
                 pass
 
         return None
-
-    def _verify_store_purchase_async(self) -> None:
-        # StoreContext is UI-thread-affine. Creating it in a worker during
-        # startup and reusing it from the purchase button causes WinError
-        # -2147417848 (RPC_E_WRONG_THREAD) when the Store UI is opened.
-        def verify_on_ui_thread() -> None:
-            if self.store_pro.is_pro_owned():
-                self.messages.put(("store_pro_owned", None))
-
-        self.after(0, verify_on_ui_thread)
 
     def _load_settings(self) -> dict[str, Any]:
         path = config_path()
@@ -2777,10 +2723,6 @@ class MediaConverterApp(ctk.CTk):
                         )
                     else:
                         self.gpu_badge.configure(image=None, text="GPU: CPU", fg_color=("gray85", "#282828"), text_color=COLOR_TEXT_SECONDARY)
-                elif kind == "store_pro_owned":
-                    if not self.license_manager.is_pro:
-                        self.license_manager.activate_store_purchase()
-                        self.on_license_updated()
                 elif kind == "progress":
                     self.progress_detail.set(data)
                 elif kind == "media_info":
