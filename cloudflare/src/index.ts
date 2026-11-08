@@ -11,6 +11,8 @@ interface CheckoutSession {
   id?: string;
   mode?: string;
   payment_status?: string;
+  amount_total?: number | null;
+  total_details?: { amount_discount?: number | null } | null;
   payment_link?: string | null;
   customer_email?: string | null;
   customer_details?: { email?: string | null } | null;
@@ -97,7 +99,12 @@ async function sendLicense(env: Env, email: string, key: string): Promise<void> 
 }
 
 async function deliver(env: Env, session: CheckoutSession): Promise<void> {
-  if (session.mode !== "payment" || session.payment_status !== "paid") return;
+  if (session.mode !== "payment") return;
+
+  const fullyDiscounted = session.payment_status === "no_payment_required"
+    && session.amount_total === 0
+    && (session.total_details?.amount_discount ?? 0) > 0;
+  if (session.payment_status !== "paid" && !fullyDiscounted) return;
   if (session.payment_link !== env.STRIPE_PAYMENT_LINK_ID) throw new Error("Unexpected Stripe Payment Link");
 
   const purchaseId = session.id;
