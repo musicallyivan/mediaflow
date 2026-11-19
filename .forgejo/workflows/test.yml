@@ -1,0 +1,19 @@
+name: MediaFlow CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: FreeBSD
+    steps:
+      - name: Obtener código
+        uses: https://data.forgejo.org/actions/checkout@v7
+
+      - name: Mostrar información
+        run: |
+          echo "MediaFlow CI iniciado"
+          uname -a
+          git status
