@@ -1,3 +1,4 @@
+
 name: MediaFlow CI
 
 on:
@@ -7,13 +8,13 @@ on:
 
 jobs:
   test:
-    runs-on: FreeBSD
-    steps:
-      - name: Obtener código
-        uses: https://data.forgejo.org/actions/checkout@v7
+    runs-on: ubuntu-latest
 
-      - name: Mostrar información
+    steps:
+      - name: Comprobar entorno
         run: |
-          echo "MediaFlow CI iniciado"
+          echo "¡MediaFlow CI funciona!"
+          echo "Runner: $RUNNER_NAME"
           uname -a
-          git status
+          node --version
+          npm --version
